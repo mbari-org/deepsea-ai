@@ -64,9 +64,10 @@ If your training has been scaled to 640x640, use yolov5s or yolov5x, e.g.
 deepsea-ai train --model yolov5x --instance-type ml.p2.xlarge \
 --labels split/labels.tar.gz \
 --images split/images.tar.gz \
---label-map yolo.names \
+--label-map names.txt \
 --input-s3 s3://benthic-dive-training/ \
---output-s3 s3://benthic-dive-checkpoints/
+--output-s3 s3://benthic-dive-checkpoints/ \
+--epochs 1
 ```
 
 ## YOLOv5 Models and Instance Types
@@ -83,3 +84,18 @@ for a batch size of 2:
 
 Larger batch sizes require larger instance type, e.g. the yolov5x with a batch size=8 would require ml.p3.16xlarge or ml.p4d.24xlarge (recommended)
  
+
+## Resuming from a previously trained YOLOv5 model
+
+To resume from a previously trained model, pass in the checkpoint bucket from the previous training run. For example,
+to resume training for another 4 epochs
+
+```
+deepsea-ai train --model yolov5x --instance-type ml.p2.xlarge \
+--labels split/labels.tar.gz \
+--images split/images.tar.gz \
+--label-map names.txt \
+--input-s3 s3://benthic-dive-training/20220901T221143Z/checkpoints/ \
+--output-s3 s3://benthic-dive-checkpoints/ \
+--resume True --epochs 4
+```
