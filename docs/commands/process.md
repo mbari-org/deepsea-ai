@@ -1,5 +1,3 @@
-## Processing
-
 If you have just a few videos to process, or are experimenting, the **process** command is recommended.
 This creates a SageMaker Processing Job which uses the [SageMaker ScriptProcessor](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-container-run-scripts.html).
  

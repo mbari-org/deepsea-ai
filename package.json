@@ -20,7 +20,7 @@
         "@semantic-release/changelog",
         {
           "changelogFile": "docs/CHANGELOG.md",
-          "changelogTitle": "# DeepSea AI PyPi Changelog"
+          "changelogTitle": "# DeepSeaAI Changelog"
         }
       ],
       [

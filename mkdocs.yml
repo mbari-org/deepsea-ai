@@ -17,6 +17,7 @@ nav:
   - Commands:
       - commands/train.md
       - commands/process.md
+  - Prepare your data: 'data.md'
   - Change Log: CHANGELOG.md
 
 
