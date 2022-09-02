@@ -1,5 +1,5 @@
 site_name: DeepSeaAI
-site_description: DeepSeaAI
+site_description: Documentation for the deepsea-ai python package
 site_author: Danelle Cline
 repo_url: "https://github.com/mbari-org/deepsea-ai/"
 theme:
