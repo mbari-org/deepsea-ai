@@ -39,4 +39,4 @@ Thumbs.db
 *.wmv
 
 #Mkdocs
-site/
+docs/site
