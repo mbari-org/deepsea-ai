@@ -1,5 +1,12 @@
 # DeepSea AI PyPi Changelog
 
+# 1.0.0 (2022-09-02)
+
+
+### Features
+
+* initial commit ([a571e66](https://github.com/mbari-org/deepsea-ai/commit/a571e664868c5c9483291ee36614ab6ac616c57b))
+
 ## [1.2.8](https://github.com/mbari-org/deepsea-ai/compare/v1.2.7...v1.2.8) (2022-09-01)
 
 
