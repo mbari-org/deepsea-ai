@@ -1,0 +1,43 @@
+name: New Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  semantic_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+      - name: Semantic Release
+        uses: cycjimmy/semantic-release-action@v3
+        id: release # Need an `id` for output variables
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NPM_TOKEN: 000000000000000
+          GIT_AUTHOR_NAME: danellecline
+          GIT_COMMITTER_NAME: danellecline
+        with:
+          extra_plugins: |
+            commitizen
+            @semantic-release/commit-analyzer
+            @semantic-release/release-notes-generator
+            @semantic-release/exec
+            @semantic-release/changelog
+            @semantic-release/npm
+            @semantic-release/git
+  pypi_release:
+    name: Builds Using Poetry and Publishes to PyPI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+      - name: Install Poetry
+        run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python
+      - name: Add Poetry to path
+        run: echo "${HOME}/.poetry/bin" >> $GITHUB_PATH
+      - run: poetry install
+      - run: poetry run pytest
+      - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
+      - name: Publish package
+        run: poetry publish --build

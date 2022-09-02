@@ -1,0 +1,26 @@
+site_name: DeepSeaAI
+site_description: DeepSeaAI
+site_author: Danelle Cline
+repo_url: "https://github.com/mbari-org/deepsea-ai/"
+theme:
+  name: material
+  logo: imgs/logo_small.png
+extra_css:
+    - https://docs.mbari.org/css/mbari.css
+
+markdown_extensions:
+  - admonition
+
+nav:
+  - Introduction: 'index.md'
+  - Install: 'install.md'
+  - Commands:
+      - commands/train.md
+      - commands/process.md
+  - Change Log: CHANGELOG.md
+
+
+copyright: Maintained by <a href="https://www.mbari.org/cline-danelle-e/">Danelle Cline</a>.
+
+plugins:
+    - search
