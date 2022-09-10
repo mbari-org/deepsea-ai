@@ -28,9 +28,10 @@ pytest = "^6.2"
 
 [tool.poetry.dependencies]
 python = "^3.8"
+awscli = "^1.25.71"
 click = "^8.1.3"
 sagemaker = "^2.102.0"
-boto3 = "^1.24.46"
+boto3 = "^1.24.70"
 requests = "^2.26.0"
 tqdm = "^4.41.0"
 

@@ -2,14 +2,11 @@
 
 DeepSeaAI requires
 
-1. An AWS account
+1. [An AWS account](https://aws.amazon.com)
 2. [Python 3.8 or later](https://python.org/downloads/) 
-3. [AWS Command Line Interface (cli)](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html).
 
 
-## AWS CLI
-Install [AWS Command Line Interface (cli)](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html)
-and confirm setup:
+## Confirm AWS Account by listing your s3 buckets
 
 ```
 $ aws --version
