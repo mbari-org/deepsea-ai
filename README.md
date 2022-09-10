@@ -14,23 +14,40 @@ DeepSea-AI currently supports:
    - [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) 
  
 
-Authors: Danelle Cline, [dcline@mbari.org](mailto:dcline@mbari.org), Duane Edgington, [duane@mbari.org](mailto:duane@mbari.org)
+**Authors**: Danelle Cline, [dcline@mbari.org](mailto:dcline@mbari.org), Duane Edgington, [duane@mbari.org](mailto:duane@mbari.org)
+
 ----
+ 
+## Requirements
+ 
+* [An AWS account](https://aws.amazon.com)
+* [Python 3.8 or later](https://python.org/downloads/) 
 
-### For details on AWS installation, see [docs.mbari.org/deepsea-ai/install](http://docs.mbari.org/deepsea-ai/install)  
 
-Assuming you have completed the AWS installation, install and update using [pip](https://pip.pypa.io/en/stable/getting-started/):
+**After you have setup your AWS account, confirm your AWS Account by listing your s3 buckets**
+
+```
+$ aws --version
+$ aws s3 ls 
+```
+
+## Installing
+
+Install and update using [pip](https://pip.pypa.io/en/stable/getting-started/):
 
 ```shell
 $ pip install -U deepsea-ai
 ```
+
+For more details, see the [official documentation](http://docs.mbari.org/deepsea-ai/install).
+
 ----
 
 
 ## Commands
 
-* [`deepsea-ai train --help` - Train a YOLOv5 model and save the model to a bucket](https://docs.mbari.org/deepsea-ai/train/)
-* [`deepsea-ai process --help` - Process one or more videos and save the results to  a bucket](https://docs.mbari.org/deepsea-ai/process/)
-* [`deepsea-ai ecsprocess --help` - Process one or more videos using the Elastic Container Service and save the results to  a bucket](https://docs.mbari.org/deepsea-ai/process/)
-* [`deepsea-ai split --help` - Split your training data; required before the train command.](https://docs.mbari.org/deepsea-ai/split/) 
+* [`deepsea-ai train --help` - Train a YOLOv5 model and save the model to a bucket](https://docs.mbari.org/deepsea-ai/commands/train/)
+* [`deepsea-ai process --help` - Process one or more videos and save the results to  a bucket](https://docs.mbari.org/deepsea-ai/commands/process/)
+* [`deepsea-ai ecsprocess --help` - Process one or more videos using the Elastic Container Service and save the results to  a bucket](https://docs.mbari.org/deepsea-ai/commands/process/)
+* [`deepsea-ai split --help` - Split your training data; required before the train command.](https://docs.mbari.org/deepsea-ai/data/) 
 * `deepsea-ai -h` - Print help message and exit.

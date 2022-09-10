@@ -15,7 +15,7 @@ DeepSea-AI currently supports:
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet)
      
    
-**See the instructions on the [install page](install.md).** 
+**See the instructions on the [install page](install.md) or in the [official docs](https://docs.mbari.org/deepsea-ai/install/).** 
 
 ## Commands
 
