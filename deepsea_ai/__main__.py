@@ -259,13 +259,6 @@ def split_command(input:str, output:str):
     if not output_path.exists():
         output_path.mkdir(parents=True)
 
-    paths = [input_path / 'labels', input_path / 'images']
-
-    exists = [not p.exists() for p in paths]
-    if any(exists):
-        print (f'Error: one or more {paths} missing')
-        return
-
     train.split(Path(input), Path(output))
 
 if __name__ == '__main__':
