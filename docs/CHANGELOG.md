@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.1.1](https://github.com/mbari-org/deepsea-ai/compare/v1.1.0...v1.1.1) (2022-09-18)
+
+
+### Bug Fixes
+
+* correction in training volume size estimate and some minor documentation fixes ([0593eef](https://github.com/mbari-org/deepsea-ai/commit/0593eef4f45e2495813f8bb74db1ed74671a8e73))
+
 # [1.1.0](https://github.com/mbari-org/deepsea-ai/compare/v1.0.1...v1.1.0) (2022-09-13)
 
 
