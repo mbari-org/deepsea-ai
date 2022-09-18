@@ -185,14 +185,14 @@ def upload_command(input, s3):
 @click.option('--label-map', type=str, required=True,
               help='Path to a simple text file with the yolo names in the sorted order of the training label indexes')
 @click.option('--input-s3', type=str, required=True,
-              help=f'Path to the s3 bucket to save the training data, e.g. s3://{example_input_train_s3} or {example_input_train_s3}')
+              help=f'Path to the s3 bucket to save the training data, e.g. {example_input_train_s3} or {example_input_train_s3}')
 @click.option('--output-s3', type=str, required=True,
-              help=f'Path to the s3 bucket to store the output, e.g. s3://{example_output_train_s3} or {example_output_train_s3}')
+              help=f'Path to the s3 bucket to store the output, e.g. {example_output_train_s3} or {example_output_train_s3}')
 @click.option('--resume', type=bool, default=False, help="Resume training from previous run")
 @click.option('--model', type=str, default='yolov5x', help=f"Model choice: {','.join(train.models)} " )
 @click.option('--epochs', type=int, default=2, help='Number of epochs. Default 2.')
 @click.option('--batch-size', type=int, default=2, help='Batch size. Default 2.')
-@click.option('--instance-type', type=str, default='ml.p3.2xlarge', help='AWS instance type, e.g. ml.p3.2xlarge, ml.p3.2xlarge, ml.p3.8xlarge, ml.p3.16xlarge, ml.p4d.24xlarge')
+@click.option('--instance-type', type=str, default='ml.p3.2xlarge', help='AWS instance type, e.g. ml.p3.2xlarge, ml.p3.8xlarge, ml.p3.16xlarge, ml.p4d.24xlarge')
 def train_command(images, labels, label_map, input_s3, output_s3, resume, model, epochs, batch_size, instance_type):
     """
      (optional) upload training data, then train a YOLOv5 model
