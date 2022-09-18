@@ -75,7 +75,7 @@ def training_data(data: [Path], input:tuple, tags:dict):
     """
 
     # upload and tag the video objects individually
-    print("Reduce your upload speed by running ' aws configure set default.s3.max_bandwidth 62MB/s'")
+    print("Reduce your upload speed by running 'aws configure set default.s3.max_bandwidth 62MB/s'")
 
     s3 = boto3.client('s3')
     s3_resource = boto3.resource('s3')
@@ -115,6 +115,6 @@ def training_data(data: [Path], input:tuple, tags:dict):
             raise error
 
     output = urlparse(f's3://{input.netloc}/{prefix_path}/{config.default_training_prefix}/')
-    size_bytes = bucket.size(output)
+    size_gb = bucket.size(output)
 
-    return output, np.round(size_bytes/1e6)
+    return output, size_gb

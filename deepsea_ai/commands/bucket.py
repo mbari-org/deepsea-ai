@@ -15,6 +15,7 @@ Bucket utilities
 '''
 import logging
 import boto3
+import numpy as np
 from botocore.exceptions import ClientError
 
 
@@ -73,7 +74,7 @@ def size(bucket:tuple) -> int:
     """
     Get the total size in GB of the bucket.
     :param bucket: Bucket name to searc
-    :return: Total size in bytes
+    :return: Total size in gigabytes
     """
     size_gb = 0
     session = boto3.session.Session()
@@ -84,4 +85,4 @@ def size(bucket:tuple) -> int:
         folder = object.key.split('/')[0]
         size_gb += object.size
 
-    return size_gb
+    return np.round(size_gb/1e9)
