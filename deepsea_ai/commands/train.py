@@ -87,7 +87,7 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
     estimator = Estimator(base_job_name=f'{model}-{user_name}-args',
                            role=role,
                            tags=tags,
-                           image_uri='872338704006.dkr.ecr.us-west-2.amazonaws.com/deepsea-yolov5:1.0.0',
+                           image_uri='872338704006.dkr.ecr.us-west-2.amazonaws.com/deepsea-yolov5:1.0.1',
                            volume_size = volume_size_gb,
     #                        max_wait=43200,
     #                        max_run=42300,
