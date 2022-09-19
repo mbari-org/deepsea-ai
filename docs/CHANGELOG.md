@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.2.0](https://github.com/mbari-org/deepsea-ai/compare/v1.1.1...v1.2.0) (2022-09-19)
+
+
+### Features
+
+* bumped training docker image to deepsea-yolov5:1.0.1 ([f0c499c](https://github.com/mbari-org/deepsea-ai/commit/f0c499cf26b72dc2b3405c7afa0c0fb3a59a2c52))
+
 ## [1.1.1](https://github.com/mbari-org/deepsea-ai/compare/v1.1.0...v1.1.1) (2022-09-18)
 
 
