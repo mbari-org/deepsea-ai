@@ -47,7 +47,7 @@ class Config:
         return self.parser.get(args[0], args[1])
 
     staticmethod
-    def get_role():
+    def get_role(self):
         """
         Get the user role or default to an MBARI generated one
         :return
@@ -111,7 +111,7 @@ class Config:
         return tag_dict
 
     staticmethod
-    def get_resources(stack_name: str) -> dict:
+    def get_resources(self, stack_name: str) -> dict:
         """
         Get resources relevant to the pipeline from the stack name; see deepsea-ai/cluster/stacks
         :param stack_name:
