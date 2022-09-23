@@ -16,11 +16,11 @@ Bucket upload and tagging utility
 
 import botocore
 import boto3
+import deepsea_ai.config as config
 from pathlib import Path
 from urllib.parse import urlparse
 
 from . import bucket
-from config import config
 
 
 def video_data(videos: [], input_s3:tuple, tags:dict):

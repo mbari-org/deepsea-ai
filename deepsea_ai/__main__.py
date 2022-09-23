@@ -20,11 +20,12 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from deepsea_ai.commands import upload_tag, process, train, bucket
-from deepsea_ai.config import Config, default_config_ini
+from deepsea_ai.config import config as cfg
 from deepsea_ai.database import api, queries
 from deepsea_ai import __version__
 
-default_config = Config()
+default_config = cfg.Config()
+default_config_ini = cfg.default_config_ini
 user_name = default_config.get_username()
 
 # example s3 buckets for help
@@ -67,14 +68,14 @@ def batchprocess_command(config, check, endpoint, upload, clean, cluster, job, i
     """
      (optional) upload, then batch process in an ECS cluster
     """
-    cfg = Config(config)
+    custom_config = cfg.Config(config)
     database = None
     if check:
-        database = api.DeepSeaAIClient(cfg('database', 'gql'))
+        database = api.DeepSeaAIClient(custom_config('database', 'gql'))
 
     input_path = Path(input)
-    resources = cfg.get_resources(cluster)
-    user_name = cfg.get_username()
+    resources = custom_config.get_resources(cluster)
+    user_name = custom_config.get_username()
 
     for v in videos:
         loaded = False
@@ -123,7 +124,7 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
     """
      (optional) upload, then process video with a model
     """
-    cfg = Config(config)
+    custom_config = cfg.Config(config)
 
     instance_type == 'ml.g4dn.xlarge'
     input_path = Path(input)
@@ -132,14 +133,14 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
     model_s3 = urlparse(model_s3)
 
     # get tags to apply to the resources for cost monitoring
-    tags = cfg.get_tags(f'Processing {input} with model {model_s3} confidence {conf_thres} ')
+    tags = custom_config.get_tags(f'Processing {input} with model {model_s3} confidence {conf_thres} ')
 
     # create the buckets
     print(f'Creating buckets')
     bucket.create(input_s3, tags)
     bucket.create(output_s3, tags)
 
-    videos = cfg.check_videos(input_path)
+    videos = custom_config.check_videos(input_path)
     input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
  
     # insert the datetime prefix to make a unique key for the output
@@ -167,12 +168,12 @@ def upload_command(config, input, s3):
     """
     Upload videos
     """
-    cfg = Config(config)
+    custom_config = cfg.Config(config)
     input_path = Path(input)
     input_s3 = urlparse(s3)
-    tags = cfg.get_tags(f'Uploaded {input} to {s3}')
+    tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
     bucket.create(input_s3, tags)
-    videos = cfg.check_videos(Path(input))
+    videos = custom_config.check_videos(Path(input))
     upload_tag.video_data(videos, input_s3, tags)
 
 
@@ -203,7 +204,7 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     """
      (optional) upload training data, then train a YOLOv5 model
     """
-    cfg = Config(config)
+    custom_config = cfg.Config(config)
 
     if instance_type == 'ml.p2.xlarge':
         raise Exception(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
@@ -219,7 +220,7 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     data = [image_path, label_path, name_path]
 
     # get tags to apply to the resources for cost monitoring
-    tags = cfg.get_tags(f'Training {input_s3} with {model}, batch {batch_size}, instance {instance_type}')
+    tags = custom_config.get_tags(f'Training {input_s3} with {model}, batch {batch_size}, instance {instance_type}')
 
     # create the buckets
     bucket.create(input_s3, tags)
