@@ -20,7 +20,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from deepsea_ai.commands import upload_tag, process, train, bucket
-from config import Config, default_config_ini
+from deepsea_ai.config import Config, default_config_ini
 from deepsea_ai.database import api, queries
 from deepsea_ai import __version__
 

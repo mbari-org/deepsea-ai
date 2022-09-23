@@ -20,7 +20,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from . import bucket
-import config
+from config import config
 
 
 def video_data(videos: [], input_s3:tuple, tags:dict):
