@@ -12,8 +12,7 @@ markdown_extensions:
   - admonition
 
 nav:
-  - Introduction: 'index.md'
-  - Install: 'install.md'
+  - Installation: 'index.md'
   - Commands:
       - commands/train.md
       - commands/process.md
