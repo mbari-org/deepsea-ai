@@ -69,12 +69,13 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
         size_gb = bucket.size(output)
         return output, size_gb
 
-def training_data(data: [Path], input:tuple, tags:dict):
+def training_data(data: [Path], input:tuple, tags:dict, training_prefix:str):
     """
      Does an upload and tagging of training data to S3
     :param data: Paths to training data to upload
     :param input: Bucket to upload to
     :param bucket: Tags to assign to the video
+    :param training_prefix: Training prefix to append to the bucket upload
     :return: Uploaded bucket path, Size in GB of training data
     """
 
@@ -94,7 +95,7 @@ def training_data(data: [Path], input:tuple, tags:dict):
 
         # check if the video exists in s3
         # all of the data needs to be under the same prefix for training
-        target_prefix =  f'{prefix_path}/{config.default_training_prefix}/{d.name}'
+        target_prefix =  f'{prefix_path}/{training_prefix}/{d.name}'
         try:
             s3_resource.Object(input.netloc, target_prefix).load()
         except botocore.exceptions.ClientError as e:
@@ -118,7 +119,7 @@ def training_data(data: [Path], input:tuple, tags:dict):
         except Exception as error:
             raise error
 
-    output = urlparse(f's3://{input.netloc}/{prefix_path}/{config.default_training_prefix}/')
+    output = urlparse(f's3://{input.netloc}/{prefix_path}/{training_prefix}/')
     size_gb = bucket.size(output)
 
     return output, size_gb

@@ -53,17 +53,17 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
         arguments.append('--save-vid')
     print(arguments)
 
-    account = config.get_account()
+    account = custom_config.get_account()
     image_uri = {'deepsort':  custom_config('aws', 'deepsort_ecr'), 'strongsort': custom_config('aws', 'strongsort_ecr')}
     script_processor = ScriptProcessor(command=['python3'],
                                        image_uri=image_uri[tracker],
-                                       role=config.get_role(),
+                                       role=custom_config.get_role(),
                                        instance_count=1,
                                        base_job_name=f'{tracker}-yolov5-{user_name}',
                                        instance_type=instance_type,
                                        volume_size_in_gb=volume_size_gb,
                                        max_runtime_in_seconds=172800,
-                                       tags=config.get_tags())
+                                       tags=custom_config.get_tags(f"ScriptProcessor job {image_uri[tracker]}"))
     script_processor.run(code=f'{code_path.parent.parent.parent}/deepsea_ai/pipeline/run_{tracker}.py',
                          arguments=arguments,
                          inputs=[ProcessingInput(
