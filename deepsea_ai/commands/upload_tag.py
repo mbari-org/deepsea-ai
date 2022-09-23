@@ -16,12 +16,12 @@ Bucket upload and tagging utility
 
 import botocore
 import boto3
-import sys
-import numpy as np
 from pathlib import Path
 from urllib.parse import urlparse
 
-from . import config, bucket
+from . import bucket
+import config
+
 
 def video_data(videos: [], input_s3:tuple, tags:dict):
     """
@@ -29,7 +29,7 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
     :param videos: Array of video files in the input_path to upload
     :param bucket: Base bucket to upload to, e.g. 902005-video-in-dev
     :param bucket: Tags to assign to the video
-    :return:
+    :return: Uploaded bucket path, Size in GB of video data
     """
 
     print("Reduce your upload speed by running ' aws configure set default.s3.max_bandwidth 62MB/s'")
@@ -64,6 +64,10 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
             s3.put_object_tagging(Bucket=input_s3.netloc, Key=f'{target_prefix}', Tagging={'TagSet': tags})
         except Exception as error:
             raise error
+
+        output = urlparse(f's3://{input_s3.netloc}/{prefix_path}/')
+        size_gb = bucket.size(output)
+        return output, size_gb
 
 def training_data(data: [Path], input:tuple, tags:dict):
     """
