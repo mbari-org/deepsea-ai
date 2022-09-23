@@ -24,12 +24,14 @@ import tarfile
 from pathlib import Path
 from urllib.parse import urlparse
 from sagemaker.estimator import Estimator
+from deepsea_ai.config import config as cfg
+
 
 models = ['yolov5n', 'yolov5s', 'yolov5m', 'yolov5l', 'yolov5x', 'yolov5n6', 'yolov5s6', 'yolov5m6', 'yolov5l6',
           'yolov5x6']
 
 def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epochs:int, batch_size:int,
-           volume_size_gb:int,  model:str, instance_type:str, config:object):
+           volume_size_gb:int,  model:str, instance_type:str, custom_config:cfg.Config):
     """
     Train a YOLOv5 model with SageMaker
     :param data: three part array with compressed artifacts in the order: 0: images, 1: labels, and 2: a text file with the names to ID mapping
@@ -41,14 +43,14 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
     :volume_size_gb: Size in GB of the volume to attach to training
     :model: YOLOv5 model type
     :instance_type: Type of the AWS instance used, e.g. ml.p2.xlarge
-    :config: configuration
+    :custom_config: configuration
     """
     sagemaker_session = sagemaker.Session()
 
     # if you are running this outside of a SageMaker notebook, you must set SAGEMAKER_ROLE
-    role = config.get_role()
+    role = custom_config.get_role()
 
-    tags = config.get_tags(f'YOLOv5 training batch {batch_size} model {model}')
+    tags = custom_config.get_tags(f'YOLOv5 training batch {batch_size} model {model}')
 
     # capture the common metrics
     metric_definitions = [{'Name': 'box_loss', 'Regex': 'box_loss = ([0-9.]+)'},
@@ -80,14 +82,14 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
     img_size = 640
     if '6' in model: img_size = 1280  # all larger (1280x1280) models have the number 6 in them, e.g. yolov5n6
 
-    user_name = config.get_username()
+    user_name = custom_config.get_username()
     output_ckpts_s3 = f's3://{ckpts_s3.netloc}{ckpts_s3.path}'
     output_model_s3 = f's3://{model_s3.netloc}{model_s3.path}'
     training_s3 = f's3://{input_s3.netloc}{input_s3.path}'
     estimator = Estimator(base_job_name=f'{model}-{user_name}',
                            role=role,
                            tags=tags,
-                           image_uri=config('aws', 'yolov5_ecr'),
+                           image_uri=custom_config('aws', 'yolov5_ecr'),
                            volume_size = volume_size_gb,
     #                        max_wait=43200,
     #                        max_run=42300,

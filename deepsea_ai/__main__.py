@@ -126,14 +126,14 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
     """
     custom_config = cfg.Config(config)
 
+    # get tags to apply to the resources for cost monitoring
+    tags = custom_config.get_tags(f'Processing {input} with model {model_s3} confidence {conf_thres} ')
+
     instance_type = 'ml.g4dn.xlarge'
     input_path = Path(input)
     input_s3 = urlparse(input_s3)
     output_s3 = urlparse(output_s3)
     model_s3 = urlparse(model_s3)
-
-    # get tags to apply to the resources for cost monitoring
-    tags = custom_config.get_tags(f'Processing {input} with model {model_s3} confidence {conf_thres} ')
 
     # create the buckets
     print(f'Creating buckets')
@@ -153,9 +153,8 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
     else:
         volume_size_gb = int(1.25*size_gb)
 
-    image_uri = {'deepsort':  config('aws', 'deepsort_ecr'), 'strongsort': config('aws', 'strongsort_ecr')}
     process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, volume_size_gb, instance_type,
-                                 config_s3, save_vid, conf_thres, tracker, image_uri[tracker])
+                                 config_s3, save_vid, conf_thres, tracker, config)
 
 
 @cli.command(name="upload")
@@ -209,6 +208,9 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     if instance_type == 'ml.p2.xlarge':
         raise Exception(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
 
+    # get tags to apply to the resources for cost monitoring
+    tags = custom_config.get_tags(f'Training {input_s3} with {model}, batch {batch_size}, instance {instance_type}')
+
     image_path = Path(images)
     label_path = Path(labels)
     name_path = Path(label_map)
@@ -218,9 +220,6 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     output_s3 = urlparse(output_s3)
 
     data = [image_path, label_path, name_path]
-
-    # get tags to apply to the resources for cost monitoring
-    tags = custom_config.get_tags(f'Training {input_s3} with {model}, batch {batch_size}, instance {instance_type}')
 
     # create the buckets
     bucket.create(input_s3, tags)

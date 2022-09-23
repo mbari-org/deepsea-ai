@@ -20,6 +20,7 @@ import boto3
 import json
 from datetime import datetime
 from pathlib import Path
+from deepsea_ai.config import config as cfg
 
 from sagemaker.processing import ScriptProcessor, ProcessingInput, ProcessingOutput
 
@@ -27,12 +28,11 @@ code_path = Path(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, model_size: int,
                         volume_size_gb:int, instance_type:str, config_s3: str, save_vid: bool,
-                         conf_thresh: float, tracker:str, image_uri: str):
+                         conf_thresh: float, tracker:str, custom_config:cfg.Config):
     """
     Process a collection of videos with the ScriptProcessor
     """
-    user_name = config.get_username()
-
+    user_name = custom_config.get_username()
     if tracker not in ['deepsort', 'strongsort']:
         raise Exception(f'{tracker} not currently supported')
 
@@ -46,16 +46,15 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
         arguments.append(f'--config-s3={config_s3}')
     else:
         if tracker == 'deepsort':
-            arguments.append(f"--config-s3={config('aws','deepsort_track_config_s3')}")
+            arguments.append(f"--config-s3={custom_config('aws','deepsort_track_config_s3')}")
         if tracker == 'strongsort':
-            arguments.append(f"--config-s3={config('aws','strongsort_track_config_s3')}")
+            arguments.append(f"--config-s3={custom_config('aws','strongsort_track_config_s3')}")
     if save_vid:
         arguments.append('--save-vid')
     print(arguments)
 
-    print(os.listdir(os.getcwd()))
-    print(os.getcwd())
     account = config.get_account()
+    image_uri = {'deepsort':  custom_config('aws', 'deepsort_ecr'), 'strongsort': custom_config('aws', 'strongsort_ecr')}
     script_processor = ScriptProcessor(command=['python3'],
                                        image_uri=image_uri[tracker],
                                        role=config.get_role(),
