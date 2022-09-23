@@ -126,7 +126,7 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
     """
     custom_config = cfg.Config(config)
 
-    instance_type == 'ml.g4dn.xlarge'
+    instance_type = 'ml.g4dn.xlarge'
     input_path = Path(input)
     input_s3 = urlparse(input_s3)
     output_s3 = urlparse(output_s3)
