@@ -137,3 +137,18 @@ class Config:
                 break
         print(resources)
         return resources
+
+    staticmethod
+    def check_videos(self, input_path: Path) -> List[Path]:
+        """
+         Check for videos with acceptable suffixes and return the Paths to them
+        :param input_path: input path to search (non-recursively)
+        :return:
+        """
+        vid_formats = ['.mov', '.avi', '.mp4', '.mpg', '.mpeg', '.m4v', '.wmv', '.mkv']  # acceptable video suffixes
+        files = sorted(input_path.glob('**/*'))
+        videos = [x for x in files if x.suffix.lower() in vid_formats and '._' not in x.name]
+        num_videos = len(videos)
+        assert (num_videos > 0), "No videos to process"
+        video_paths = [Path(x) for x in videos]
+        return video_paths
