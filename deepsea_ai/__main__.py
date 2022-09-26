@@ -226,7 +226,7 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     bucket.create(output_s3, tags)
 
     # upload and return the final bucket prefix to the training data and its total size
-    input_training, size_gb = upload_tag.training_data(data, input_s3, tag, cfg.default_training_prefix)
+    input_training, size_gb = upload_tag.training_data(data, input_s3, tags, cfg.default_training_prefix)
 
     # guess on how much volume is needed per each GB plus the size for the checkpoints
     volume_size_gb = int(2*size_gb + 50)
