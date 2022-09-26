@@ -1,5 +1,18 @@
 # DeepSeaAI Changelog
 
+# [1.3.0](https://github.com/mbari-org/deepsea-ai/compare/v1.2.0...v1.3.0) (2022-09-26)
+
+
+### Bug Fixes
+
+* correct instance type var which broke after refactor ([9631304](https://github.com/mbari-org/deepsea-ai/commit/9631304aeb2c1f80d69c597b48e68a9e990f05a6))
+* put back in check_videos which was accidentally removed ([36829dc](https://github.com/mbari-org/deepsea-ai/commit/36829dc66647cee0b959b539ccd49d81f12b7d8d))
+
+
+### Features
+
+* added config.ini support to support modifying tags, docker uris, and allocate process disk based on video size and command ([701623e](https://github.com/mbari-org/deepsea-ai/commit/701623e11ceff4fe60ae82c50717401b3b92dfa4))
+
 # [1.2.0](https://github.com/mbari-org/deepsea-ai/compare/v1.1.1...v1.2.0) (2022-09-19)
 
 
