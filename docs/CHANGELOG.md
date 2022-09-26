@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.3.1](https://github.com/mbari-org/deepsea-ai/compare/v1.3.0...v1.3.1) (2022-09-26)
+
+
+### Bug Fixes
+
+* remove any leading / for video upload ([aa419f7](https://github.com/mbari-org/deepsea-ai/commit/aa419f75584e17d630a0c4cf4fb0de8c41a44a83))
+
 # [1.3.0](https://github.com/mbari-org/deepsea-ai/compare/v1.2.0...v1.3.0) (2022-09-26)
 
 
