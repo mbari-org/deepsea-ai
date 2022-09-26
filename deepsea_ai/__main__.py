@@ -64,7 +64,7 @@ def cli():
                    'Container Service cluster.')
 @click.option('--job', type=str, default='lonny33k',
               help='Name of the job, e.g. DiveV4361 benthic outline')
-def batchprocess_command(config, check, endpoint, upload, clean, cluster, job, input):
+def batchprocess_command(config, check, upload, clean, cluster, job, input):
     """
      (optional) upload, then batch process in an ECS cluster
     """
@@ -76,13 +76,14 @@ def batchprocess_command(config, check, endpoint, upload, clean, cluster, job, i
     input_path = Path(input)
     resources = custom_config.get_resources(cluster)
     user_name = custom_config.get_username()
+    videos = custom_config.check_videos(input_path)
 
     for v in videos:
         loaded = False
         if database:
             # Check if the video has already been loaded by looking it up by the media name per this job name
             medias = database.execute(queries.GET_MEDIA_IN_JOB,
-                                      processing_job_name=f"{resources['processor']}-“{job_name}”",
+                                      processing_job_name=f"{resources['processor']}-“{job}”",
                                       media_name=v.name)
 
             # Found a media in the job as keyed by the processing name, so assume that this was already processed
@@ -209,7 +210,7 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
         raise Exception(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
 
     # get tags to apply to the resources for cost monitoring
-    tags = custom_config.get_tags(f'Training {input_s3} with {model}, batch {batch_size}, instance {instance_type}')
+    tags = custom_config.get_tags(f'Training {input_s3} with {model} batch {batch_size} instance {instance_type}')
 
     image_path = Path(images)
     label_path = Path(labels)
@@ -242,7 +243,7 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     model_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/models/")
 
     # train
-    train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type, cfg)
+    train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type, custom_config)
 
 
 @cli.command(name="package")
