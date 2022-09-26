@@ -39,7 +39,7 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
 
     # upload and tag the video objects individually
     for v in videos:
-        prefix_path = v.parent.as_posix().split("Volumes/")[-1] ## get Directory string
+        prefix_path = v.parent.as_posix().split("Volumes/")[-1].lstrip('/') ## get Directory string
         target_prefix = f'{input_s3.path}{prefix_path}/{v.name}'
 
         # check if the video exists in s3
@@ -65,7 +65,7 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
         except Exception as error:
             raise error
 
-        output = urlparse(f's3://{input_s3.netloc}/{prefix_path}/')
+        output = urlparse(f's3://{input_s3.netloc}/{prefix_path}/', allow_fragments=True)
         size_gb = bucket.size(output)
         return output, size_gb
 
