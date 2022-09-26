@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.3.2](https://github.com/mbari-org/deepsea-ai/compare/v1.3.1...v1.3.2) (2022-09-26)
+
+
+### Bug Fixes
+
+* typo fix ([9ed0a2a](https://github.com/mbari-org/deepsea-ai/commit/9ed0a2a4b840ad6b1b59356cf38719cbd4ea1a9c))
+
 ## [1.3.1](https://github.com/mbari-org/deepsea-ai/compare/v1.3.0...v1.3.1) (2022-09-26)
 
 
