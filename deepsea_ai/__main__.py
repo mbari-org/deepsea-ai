@@ -17,20 +17,22 @@ Main entry point for deepsea-ai
 import click
 from datetime import datetime
 from pathlib import Path
-import sys
-import numpy as np
 from urllib.parse import urlparse
 
-from deepsea_ai.commands import upload_tag, config, process, train, bucket
+from deepsea_ai.commands import upload_tag, process, train, bucket
+from deepsea_ai.config import config as cfg
 from deepsea_ai.database import api, queries
 from deepsea_ai import __version__
 
-# example s3 buckets for help
-example_input_process_s3 = 's3://902005-video-in-dev'
-example_output_process_s3 = 's3://902005-tracks-out-dev'
-example_input_train_s3 = 's3://902005-training-dev'
-example_output_train_s3 = 's3://902005-model-checkpoints-dev'
+default_config = cfg.Config()
+default_config_ini = cfg.default_config_ini
+user_name = default_config.get_username()
 
+# example s3 buckets for help
+example_input_process_s3 = f's3://{user_name}-video-in-dev'
+example_output_process_s3 = f's3://{user_name}-tracks-out-dev'
+example_input_train_s3 = f's3://{user_name}-training-dev'
+example_output_train_s3 = f's3://{user_name}-model-checkpoints-dev'
 
 @click.group(context_settings={'help_option_names': ['-h', '--help']})
 @click.version_option(
@@ -46,8 +48,9 @@ def cli():
 
 
 @cli.command(name="ecsprocess")
-@click.option('--endpoint', required=False, help='Set to the database endpoint to check if any video has already '
-                                                 'been processed and loaded before sending off a job')
+@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--check', is_flag=True, default=False,  help='Check if video has been processed and loaded before '
+                                                            'sending off a job. Requires a deepsea-ai GraphQL endpoint')
 @click.option('-u', '--upload', is_flag=True, default=False,
               help='Set option to upload local video files to S3 bucket')
 @click.option('--clean', is_flag=True, default=True,
@@ -61,17 +64,18 @@ def cli():
                    'Container Service cluster.')
 @click.option('--job', type=str, default='lonny33k',
               help='Name of the job, e.g. DiveV4361 benthic outline')
-def batchprocess_command(endpoint, upload, clean, cluster, job, input):
+def batchprocess_command(config, check, endpoint, upload, clean, cluster, job, input):
     """
      (optional) upload, then batch process in an ECS cluster
     """
+    custom_config = cfg.Config(config)
     database = None
-    if endpoint:
-        database = api.DeepSeaAIClient(endpoint)
+    if check:
+        database = api.DeepSeaAIClient(custom_config('database', 'gql'))
 
     input_path = Path(input)
-    resources = config.get_resources(cluster)
-    user_name = config.get_username()
+    resources = custom_config.get_resources(cluster)
+    user_name = custom_config.get_username()
 
     for v in videos:
         loaded = False
@@ -95,8 +99,7 @@ def batchprocess_command(endpoint, upload, clean, cluster, job, input):
 
 
 @cli.command(name="process")
-@click.option('-u', '--upload', is_flag=True, default=True,
-              help='Set option to upload local video files to S3 bucket')
+@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
  # this might be cleaner as an enum but click does not support that fully yet
 @click.option('--tracker', default='deepsort',
               help='Tracking type: deepsort or strongsort')
@@ -108,7 +111,7 @@ def batchprocess_command(endpoint, upload, clean, cluster, job, input):
                                                f'mov files that ffmpeg understands, e.g. s3://{example_input_process_s3}')
 @click.option('--output-s3', type=str, required=True,
               help=f'Path to the s3 bucket to store the output, e.g. s3://{example_output_process_s3}')
-@click.option('-m', '--model-s3', type=str, default=process.default_model_s3,
+@click.option('-m', '--model-s3', type=str, default=default_config('aws', 'yolov5_model_s3'),
               help='S3 location of the trained model tar gz file - must contain a model.tar.gz file with a valid YOLOv5 '
                    'Pytorch model.')
 @click.option('-c', '--config-s3', type=str, help='S3 location of tracking algorithm config yaml file')
@@ -116,62 +119,65 @@ def batchprocess_command(endpoint, upload, clean, cluster, job, input):
 @click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
 @click.option('-s', '--save-vid', is_flag=True, default=False,
               help='Set option to output original video with detection boxes overlaid.')
-@click.option('--instance-type', type=str, default='ml.p3.xlarge', help='AWS instance type, e.g. ml.p2.xlarge, ml.p3.2xlarge, ml.p3.8xlarge, ml.p3.16xlarge, ml.p4d.24xlarge')
-def process_command(upload, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres,
-                    save_vid, instance_type):
+def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres,
+                    save_vid):
     """
      (optional) upload, then process video with a model
     """
-    if instance_type == 'ml.p2.xlarge':
-        raise Exception(f'{instance_type} too small. Choose ml.p3.2xlarge or better')
+    custom_config = cfg.Config(config)
 
+    # get tags to apply to the resources for cost monitoring
+    tags = custom_config.get_tags(f'Processing {input} with model {model_s3} confidence {conf_thres} ')
+
+    instance_type = 'ml.g4dn.xlarge'
     input_path = Path(input)
     input_s3 = urlparse(input_s3)
     output_s3 = urlparse(output_s3)
     model_s3 = urlparse(model_s3)
-
-    # get tags to apply to the resources for cost monitoring
-    tags = config.get_tags()
 
     # create the buckets
     print(f'Creating buckets')
     bucket.create(input_s3, tags)
     bucket.create(output_s3, tags)
 
-    if upload:
-        videos = config.check_videos(input_path)
-        upload_tag.video_data(videos, input_s3, tags)
+    videos = custom_config.check_videos(input_path)
+    input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
  
     # insert the datetime prefix to make a unique key for the output
     now = datetime.utcnow()
     prefix = now.strftime("%Y%m%dT%H%M%SZ")
     output_unique_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path}/{prefix}/")
 
-    volume_size_gb = 10
-    
+    if save_vid:
+        volume_size_gb = int(2*size_gb)
+    else:
+        volume_size_gb = int(1.25*size_gb)
+
     process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, volume_size_gb, instance_type,
-                                 config_s3, save_vid, conf_thres, tracker)
+                                 config_s3, save_vid, conf_thres, tracker, custom_config)
 
 
 @cli.command(name="upload")
+@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('-i', '--input', type=click.Path(exists=True, file_okay=False, dir_okay=True), required=True,
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg understands.')
 @click.option('--s3', type=str, help='S3 bucket to upload to, e.g. s3://902005-video-in-dev', required=True)
-def upload_command(input, s3):
+def upload_command(config, input, s3):
     """
     Upload videos
     """
+    custom_config = cfg.Config(config)
     input_path = Path(input)
     input_s3 = urlparse(s3)
-    tags = config.get_tags()
+    tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
     bucket.create(input_s3, tags)
-    videos = config.check_videos(Path(input))
-
+    videos = custom_config.check_videos(Path(input))
     upload_tag.video_data(videos, input_s3, tags)
 
 
 @cli.command(name="train")
+@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('--images', type=str, required=True,
               help='Path to compressed training images. Images should be put into a tar.gz file '
                    'that decompress into images/train images/val and optionally images/test. This compressed file should not include any archive artifacts,'
@@ -193,12 +199,17 @@ def upload_command(input, s3):
 @click.option('--epochs', type=int, default=2, help='Number of epochs. Default 2.')
 @click.option('--batch-size', type=int, default=2, help='Batch size. Default 2.')
 @click.option('--instance-type', type=str, default='ml.p3.2xlarge', help='AWS instance type, e.g. ml.p3.2xlarge, ml.p3.8xlarge, ml.p3.16xlarge, ml.p4d.24xlarge')
-def train_command(images, labels, label_map, input_s3, output_s3, resume, model, epochs, batch_size, instance_type):
+def train_command(config, images, labels, label_map, input_s3, output_s3, resume, model, epochs, batch_size, instance_type):
     """
      (optional) upload training data, then train a YOLOv5 model
     """
+    custom_config = cfg.Config(config)
+
     if instance_type == 'ml.p2.xlarge':
         raise Exception(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
+
+    # get tags to apply to the resources for cost monitoring
+    tags = custom_config.get_tags(f'Training {input_s3} with {model}, batch {batch_size}, instance {instance_type}')
 
     image_path = Path(images)
     label_path = Path(labels)
@@ -210,15 +221,12 @@ def train_command(images, labels, label_map, input_s3, output_s3, resume, model,
 
     data = [image_path, label_path, name_path]
 
-    # get tags to apply to the resources for cost monitoring
-    tags = config.get_tags()
-
     # create the buckets
     bucket.create(input_s3, tags)
     bucket.create(output_s3, tags)
 
     # upload and return the final bucket prefix to the training data and its total size
-    input_training, size_gb = upload_tag.training_data(data, input_s3, tags)
+    input_training, size_gb = upload_tag.training_data(data, input_s3, tag, cfg.default_training_prefix)
 
     # guess on how much volume is needed per each GB plus the size for the checkpoints
     volume_size_gb = int(2*size_gb + 50)
@@ -234,7 +242,7 @@ def train_command(images, labels, label_map, input_s3, output_s3, resume, model,
     model_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/models/")
 
     # train
-    train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type)
+    train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type, cfg)
 
 
 @cli.command(name="package")
@@ -242,6 +250,11 @@ def train_command(images, labels, label_map, input_s3, output_s3, resume, model,
               help=f"Bucket with the model checkpoints, e.g. s3://{example_output_train_s3}/20220821T005204Z"
               )
 def package_command(s3):
+    """
+    Package a YOLOv5 model into a format that the deepsea-ai can use in its pipelines.
+    This is done at the end of the train command automatically and stored in a model.tar.gz file.
+    This is added in case checkpoints were generated outside of the deepsea-ai-traing command, e.g. SageMaker Studio. Colab
+    """
     train.package(urlparse(s3))
 
 @cli.command(name="split")
@@ -251,7 +264,7 @@ def package_command(s3):
               help='Path to the root folder to save the split, compressed files. If it does not exist, it will be created.')
 def split_command(input:str, output:str):
     """
-    split data into train/val/test sets randomly per the following percentages 85%/10%/5%
+    Split data into train/val/test sets randomly per the following percentages 85%/10%/5%
     """
     input_path = Path(input)
     output_path = Path(output)

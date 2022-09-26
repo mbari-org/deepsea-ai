@@ -13,9 +13,24 @@ DeepSea-AI currently supports:
  - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipelines* using either:
      * [DeepSort](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch)
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet)
-     
-   
-**See the instructions on the [install page](install.md) or in the [official docs](https://docs.mbari.org/deepsea-ai/install/).** 
+
+## Install
+
+Install and update using [pip](https://pip.pypa.io/en/stable/getting-started/) in a Python>=3.8.0 environment:
+
+```shell
+$ pip install -U deepsea-ai
+```
+
+Setup [an AWS account](https://aws.amazon.com).  
+
+
+After you have setup your AWS account, confirm your AWS Account by listing your s3 buckets
+
+```
+$ aws --version
+$ aws s3 ls 
+```
 
 ## Commands
 

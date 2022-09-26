@@ -16,12 +16,12 @@ Bucket upload and tagging utility
 
 import botocore
 import boto3
-import sys
-import numpy as np
+import deepsea_ai.config as config
 from pathlib import Path
 from urllib.parse import urlparse
 
-from . import config, bucket
+from . import bucket
+
 
 def video_data(videos: [], input_s3:tuple, tags:dict):
     """
@@ -29,7 +29,7 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
     :param videos: Array of video files in the input_path to upload
     :param bucket: Base bucket to upload to, e.g. 902005-video-in-dev
     :param bucket: Tags to assign to the video
-    :return:
+    :return: Uploaded bucket path, Size in GB of video data
     """
 
     print("Reduce your upload speed by running ' aws configure set default.s3.max_bandwidth 62MB/s'")
@@ -65,12 +65,17 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
         except Exception as error:
             raise error
 
-def training_data(data: [Path], input:tuple, tags:dict):
+        output = urlparse(f's3://{input_s3.netloc}/{prefix_path}/')
+        size_gb = bucket.size(output)
+        return output, size_gb
+
+def training_data(data: [Path], input:tuple, tags:dict, training_prefix:str):
     """
      Does an upload and tagging of training data to S3
     :param data: Paths to training data to upload
     :param input: Bucket to upload to
     :param bucket: Tags to assign to the video
+    :param training_prefix: Training prefix to append to the bucket upload
     :return: Uploaded bucket path, Size in GB of training data
     """
 
@@ -90,7 +95,7 @@ def training_data(data: [Path], input:tuple, tags:dict):
 
         # check if the video exists in s3
         # all of the data needs to be under the same prefix for training
-        target_prefix =  f'{prefix_path}/{config.default_training_prefix}/{d.name}'
+        target_prefix =  f'{prefix_path}/{training_prefix}/{d.name}'
         try:
             s3_resource.Object(input.netloc, target_prefix).load()
         except botocore.exceptions.ClientError as e:
@@ -114,7 +119,7 @@ def training_data(data: [Path], input:tuple, tags:dict):
         except Exception as error:
             raise error
 
-    output = urlparse(f's3://{input.netloc}/{prefix_path}/{config.default_training_prefix}/')
+    output = urlparse(f's3://{input.netloc}/{prefix_path}/{training_prefix}/')
     size_gb = bucket.size(output)
 
     return output, size_gb

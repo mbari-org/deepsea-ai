@@ -17,31 +17,22 @@ Process a collection of videos; assumes videos have previously been uploaded wit
 import os
 import inspect
 import boto3
-import sys
 import json
 from datetime import datetime
 from pathlib import Path
-from . import config
+from deepsea_ai.config import config as cfg
 
 from sagemaker.processing import ScriptProcessor, ProcessingInput, ProcessingOutput
 
 code_path = Path(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
-# A known pretrained model
-default_model_s3 = 's3://902005-public/models/yolov5x_mbay_benthic_model.tar.gz'
-
-# benthic tracking config
-default_track_config_s3 = {'deepsort':  "s3://902005-public/models/deep_sort_benthic.yaml",
-              'strongsort':"s3://902005-public/models/strong_sort_benthic.yaml" }
-
 def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, model_size: int,
                         volume_size_gb:int, instance_type:str, config_s3: str, save_vid: bool,
-                         conf_thresh: float, tracker:str):
+                         conf_thresh: float, tracker:str, custom_config:cfg.Config):
     """
     Process a collection of videos with the ScriptProcessor
     """
-    user_name = config.get_username()
-
+    user_name = custom_config.get_username()
     if tracker not in ['deepsort', 'strongsort']:
         raise Exception(f'{tracker} not currently supported')
 
@@ -54,25 +45,25 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
     if config_s3:
         arguments.append(f'--config-s3={config_s3}')
     else:
-        arguments.append(f'--config-s3={default_track_config_s3[tracker]}')
+        if tracker == 'deepsort':
+            arguments.append(f"--config-s3={custom_config('aws','deepsort_track_config_s3')}")
+        if tracker == 'strongsort':
+            arguments.append(f"--config-s3={custom_config('aws','strongsort_track_config_s3')}")
     if save_vid:
         arguments.append('--save-vid')
     print(arguments)
 
-    print(os.listdir(os.getcwd()))
-    print(os.getcwd())
-    account = config.get_account()
-    image_uri = {'deepsort':  f"{account}.dkr.ecr.us-west-2.amazonaws.com/deepsort-yolov5:1.3.2",
-                  'strongsort': f"{account}.dkr.ecr.us-west-2.amazonaws.com/strongsort-yolov5:1.0.1"}
+    account = custom_config.get_account()
+    image_uri = {'deepsort':  custom_config('aws', 'deepsort_ecr'), 'strongsort': custom_config('aws', 'strongsort_ecr')}
     script_processor = ScriptProcessor(command=['python3'],
                                        image_uri=image_uri[tracker],
-                                       role=config.get_role(),
+                                       role=custom_config.get_role(),
                                        instance_count=1,
                                        base_job_name=f'{tracker}-yolov5-{user_name}',
                                        instance_type=instance_type,
                                        volume_size_in_gb=volume_size_gb,
                                        max_runtime_in_seconds=172800,
-                                       tags=config.get_tags())
+                                       tags=custom_config.get_tags(f"ScriptProcessor job {image_uri[tracker]}"))
     script_processor.run(code=f'{code_path.parent.parent.parent}/deepsea_ai/pipeline/run_{tracker}.py',
                          arguments=arguments,
                          inputs=[ProcessingInput(
