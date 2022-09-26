@@ -12,12 +12,7 @@ for a batch size of 2:
 
 Larger batch sizes require larger instance type, e.g. the yolov5x with a batch size=8 would require ml.p3.16xlarge or ml.p4d.24xlarge (recommended)
 
-{==
-
-Be sure your --batch-size is a multiple of the available GPUs, e.g. --batch-size 4 for ml.p3.8xlarge,
---batch-size 8, or 16 for  ml.p3.16xlarge. The default is --batch-size 2 which would only work for  ml.p3.2xlarge 
-
-==}
+!! danger Be sure your --batch-size is a multiple of the available GPUs, e.g. --batch-size 4 for ml.p3.8xlarge, --batch-size 8, or 16 for  ml.p3.16xlarge. The default is --batch-size 2 which would only work for  ml.p3.2xlarge
  
 ## Training a YOLOv5 model
 
