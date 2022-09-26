@@ -10,6 +10,8 @@ extra_css:
 
 markdown_extensions:
   - admonition
+  - pymdownx.details
+  - pymdownx.superfences
 
 nav:
   - Installation: 'index.md'

@@ -10,15 +10,14 @@ for a batch size of 2:
 |yolov5s6| 1280x1280               | ml.p3.8xlarge, ml.p3.16xlarge or ml.p4d.24xlarge   | 4, 8, 8 | 43.3                         |
 |yolov5x6| 1280x1280               | ml.p3.16xlarge,  or ml.p4d.24xlarge | 8, 8 | **54.4**                     |
 
-Larger batch sizes require larger instance type, e.g. the yolov5x with a batch size=8 would require ml.p3.16xlarge or ml.p4d.24xlarge (recommended)
-
-!! danger Be sure your --batch-size is a multiple of the available GPUs, e.g. --batch-size 4 for ml.p3.8xlarge, --batch-size 8, or 16 for  ml.p3.16xlarge. The default is --batch-size 2 which would only work for  ml.p3.2xlarge
- 
 ## Training a YOLOv5 model
 
 Before training, see the instructions on **[preparing your data](data)**.
 
 If your training has been scaled to 640x640, use yolov5s or yolov5x, e.g.
+
+!!! info inline end 
+    Be sure your --batch-size is a multiple of the available GPUs, e.g.  --batch-size 1,2,3,4 for ml.p3.2xlarge --batch-size 4 for ml.p3.8xlarge, --batch-size 8, or 16 for  ml.p3.16xlarge.
 
 ```
 deepsea-ai train --model yolov5x --instance-type ml.p3.xlarge \
