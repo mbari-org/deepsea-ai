@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.3.3](https://github.com/mbari-org/deepsea-ai/compare/v1.3.2...v1.3.3) (2022-09-26)
+
+
+### Bug Fixes
+
+* remove , from tags - these throw InvalidTag exceptions in boto3 and fix video and job in ecs args ([20a859f](https://github.com/mbari-org/deepsea-ai/commit/20a859fde57cc86d67828f71f3c4db9c2d288b05))
+
 ## [1.3.2](https://github.com/mbari-org/deepsea-ai/compare/v1.3.1...v1.3.2) (2022-09-26)
 
 
