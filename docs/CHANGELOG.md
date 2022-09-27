@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.4.0](https://github.com/mbari-org/deepsea-ai/compare/v1.3.3...v1.4.0) (2022-09-27)
+
+
+### Features
+
+* switched to the latest public ecr images as default ([ac332e1](https://github.com/mbari-org/deepsea-ai/commit/ac332e1e398883930dd9f954ca76e341ceb2bfe9))
+
 ## [1.3.3](https://github.com/mbari-org/deepsea-ai/compare/v1.3.2...v1.3.3) (2022-09-26)
 
 
