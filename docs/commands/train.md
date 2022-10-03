@@ -1,15 +1,3 @@
-## YOLOv5 Models and Instance Types
-
-SageMaker has a number of instances available. The instance type chosen depends on the model and how larger your batch size is, e.g.
-for a batch size of 2:
-
-| Model (the --model option)  | Training Image Size (pixels) | Recommended Instance Type (instance-type option) | # GPUs   | COCO mAP<sup>val<br>0.5:0.95 |
-|---|------------------------------|-----------------------------------------------------|-----------------------|--------------------|
-|yolov5s| 640x640                  | ml.p3.2xlarge                                    | 1  | 36.7                         |
-|yolov5x| 640x640                  | ml.p3.2xlarge                                      | 1 | **50.4**                     |
-|yolov5s6| 1280x1280               | ml.p3.8xlarge, ml.p3.16xlarge or ml.p4d.24xlarge   | 4, 8, 8 | 43.3                         |
-|yolov5x6| 1280x1280               | ml.p3.16xlarge,  or ml.p4d.24xlarge | 8, 8 | **54.4**                     |
-
 ## Training a YOLOv5 model
 
 Before training, see the instructions on **[preparing your data](data)**.
@@ -45,3 +33,16 @@ deepsea-ai train --model yolov5x --instance-type ml.p3.xlarge \
 --resume True --epochs 4 \
 --batch-size 2
 ```
+
+## YOLOv5 Models and Instance Types
+
+SageMaker has a number of instances available. The instance type chosen depends on the model and how larger your batch size is, e.g.
+for a batch size of 2:
+
+| Model (the --model option)  | Training Image Size (pixels) | Recommended Instance Type (instance-type option) | # GPUs   | COCO mAP<sup>val<br>0.5:0.95 |
+|---|------------------------------|-----------------------------------------------------|-----------------------|--------------------|
+|yolov5s| 640x640                  | ml.p3.2xlarge                                    | 1  | 36.7                         |
+|yolov5x| 640x640                  | ml.p3.2xlarge                                      | 1 | **50.4**                     |
+|yolov5s6| 1280x1280               | ml.p3.8xlarge, ml.p3.16xlarge or ml.p4d.24xlarge   | 4, 8, 8 | 43.3                         |
+|yolov5x6| 1280x1280               | ml.p3.16xlarge,  or ml.p4d.24xlarge | 8, 8 | **54.4**                     |
+v
