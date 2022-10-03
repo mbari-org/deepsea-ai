@@ -1,6 +1,6 @@
 ## Training a YOLOv5 model
 
-Before training, see the instructions on **[preparing your data](data)**.
+Before training, see the instructions on **[preparing your data](/data)**.
 
 If your training has been scaled to 640x640, use yolov5s or yolov5x, e.g.
 
