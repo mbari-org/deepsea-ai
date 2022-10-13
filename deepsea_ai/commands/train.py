@@ -188,7 +188,10 @@ def split(input_path:Path, output_path:Path):
         random.seed(0)  # for reproducibility
         indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
         txt = ['autosplit_train.txt', 'autosplit_val.txt', 'autosplit_test.txt']
-        [(path.parent / x).unlink(missing_ok=True) for x in txt]  # remove existing
+        # remove existing
+        for x in txt:
+            if (path.parent / x).exists():
+                (path.parent / x).unlink()
         print(f'Autosplitting images from {path}' + ', using *.txt labeled images only' * annotated_only)
         for i, img in tqdm(zip(indices, files), total=n):
             if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
