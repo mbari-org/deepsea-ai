@@ -11,8 +11,8 @@ DeepSea-AI currently supports:
 
  - *Training [YOLOv5](http://github.com/ultralytics/yolov5) object detection* models
  - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipelines* using either:
-     * [DeepSort](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch)
-     * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet)
+     * [DeepSort](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch) tracking
+     * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) tracking
 
 ## Install
 
@@ -23,6 +23,7 @@ $ pip install -U deepsea-ai
 ```
 
 Setup [an AWS account](https://aws.amazon.com).  
+Setup [IAM permissions for your AWS account](iam_install.md).  
 
 
 After you have setup your AWS account, confirm your AWS Account by listing your s3 buckets
@@ -31,6 +32,13 @@ After you have setup your AWS account, confirm your AWS Account by listing your 
 $ aws --version
 $ aws s3 ls 
 ```
+
+
+## Tutorials
+
+---
+
+* [FathomNet](docs/notebooks/fathomnet_train.ipynb) ✨ Recommended first step to learn more about how to train a YOLOv5 object detection model using freely available FathomNet data
 
 ## Commands
 
