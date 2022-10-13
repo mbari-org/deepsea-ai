@@ -5,6 +5,9 @@ grant access to use the services used in the *deepsea-ai* module.
 
 Batch processing uses the Elastic Container Service (ECS) which requires permissions
 for the tasks that run the detection and processing pipelines to assume the role.
+
+Training uses SageMaker which requires permissions for the trainer to assume the role.
+
 This requires a JSON formatted description which can be created with
 
 ```shell
@@ -17,6 +20,14 @@ POLICY_JSON=$(cat <<-END
       "Effect": "Allow",
       "Principal": {
         "Service": "ecs-tasks.amazonaws.com"
+      },
+      "Action": "sts:AssumeRole"
+    },
+    {
+      "Sid": "",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "sagemaker.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
     }
@@ -81,7 +92,8 @@ This will return a JSON formatted string similar to this
 
 
 ```
-Use the field returned called "Arn", for example *arn:aws:iam::12345678911:role/DeepSeaAI*
+Use the field returned called "Arn", for example *arn:aws:iam::12345678911:role/DeepSeaAI* to set the environment
+variable **SAGEMAKER_ROLE**
 
 ```shell
 export SAGEMAKER_ROLE=arn:aws:iam::872338704006:role/DeepSeaAI
