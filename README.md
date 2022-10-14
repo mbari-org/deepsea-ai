@@ -37,6 +37,7 @@ Install and update using [pip](https://pip.pypa.io/en/stable/getting-started/):
 
 ```shell
 $ pip install -U deepsea-ai
+$ deepsea-ai setup
 ```
 
 For more details, see the [official documentation](http://docs.mbari.org/deepsea-ai/install).

@@ -3,6 +3,8 @@
 Use the following instructions to create an execution policy that will
 grant access to use the services used in the *deepsea-ai* module.
 
+**You can safely skip this if you have run the ```deepsea-ai setup``` command which will do this for you**
+
 Batch processing uses the Elastic Container Service (ECS) which requires permissions
 for the tasks that run the detection and processing pipelines to assume the role.
 
@@ -89,11 +91,14 @@ This will return a JSON formatted string similar to this
         "RoleLastUsed": {}
     }
 }
-
-
 ```
+
+## Set the SAGEMAKER_ROLE environment variable
+
+**You can safely skip this if you have run the ```deepsea-ai setup``` command which will do this for you**
+
 Use the field returned called "Arn", for example *arn:aws:iam::12345678911:role/DeepSeaAI* to set the environment
-variable **SAGEMAKER_ROLE**
+variable SAGEMAKER_ROLE
 
 ```shell
 export SAGEMAKER_ROLE=arn:aws:iam::872338704006:role/DeepSeaAI

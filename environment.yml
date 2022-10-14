@@ -1,8 +1,8 @@
-name: deepsea-ai
+name: deepsea-ai-notebooks
 channels:
   - conda-forge
 dependencies:
-  - python>=3.8
+  - python>=3.7
   - pip
   - pip:
     - -r requirements.txt
