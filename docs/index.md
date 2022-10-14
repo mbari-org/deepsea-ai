@@ -18,9 +18,12 @@ DeepSea-AI currently supports:
 
 Setup [an AWS account](https://aws.amazon.com).
 
-After you have setup your AWS account, confirm your AWS Account by listing your s3 buckets
+
+After you have setup your AWS account, configure it using the awscli tool, and confirm your AWS Account by listing your s3 buckets
 
 ```
+pip install awscli
+aws configure
 aws --version
 aws s3 ls 
 ```
@@ -31,7 +34,7 @@ Install and update using [pip](https://pip.pypa.io/en/stable/getting-started/) i
 pip install -U deepsea-ai
 ```
 
-Setup your AWS account for use with
+Setup your AWS account for use with this module with
 
 ```shell
 deepsea-ai setup
@@ -74,3 +77,4 @@ jupyter notebook
  
 Source code is available at [github.com/mbari-org/deepsea-ai](https://github.com/mbari-org/deepsea-ai/).
   
+For more details, see the [official documentation](http://docs.mbari.org/deepsea-ai/install).
