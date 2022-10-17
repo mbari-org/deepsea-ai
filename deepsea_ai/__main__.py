@@ -14,13 +14,16 @@ Main entry point for deepsea-ai
 @license: __license__
 '''
 
+import boto3
 import click
+import shutil
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
 from deepsea_ai.commands import upload_tag, process, train, bucket
 from deepsea_ai.config import config as cfg
+from deepsea_ai.config import setup
 from deepsea_ai.database import api, queries
 from deepsea_ai import __version__
 
@@ -46,6 +49,25 @@ def cli():
     """
     pass
 
+
+@cli.command(name="setup")
+@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
+def setup_command(config):
+    """
+     (optional) upload, then batch process in an ECS cluster
+    """
+    custom_config = cfg.Config(config)
+    account = custom_config.get_account()
+    region = custom_config.get_region()
+    image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
+    image_tags = [custom_config('aws', t) for t in image_cfg]
+    setup.mirror_docker_hub_images_to_ecr( ecr_client=boto3.client("ecr"), account_id=account, region=region, image_tags=image_tags)
+    setup.create_role()
+    setup.store_role(default_config)
+
+    # override the default config file with the custom one
+    if config:
+        shutil.copy2(config,  cfg.default_config_ini)
 
 @cli.command(name="ecsprocess")
 @click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')

@@ -4,15 +4,31 @@ site_author: Danelle Cline
 repo_url: "https://github.com/mbari-org/deepsea-ai/"
 theme:
   name: material
-  logo: imgs/logo_small.png
-extra_css:
-    - https://docs.mbari.org/css/mbari.css
-
+  logo: https://docs.mbari.org/imgs/mbari-logo.png
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.force
+    - navigation.tracking
+    - search.highlight
+    - search.share
+    - search.suggest
+    - toc.follow
+    - toc.integrate
 markdown_extensions:
+  - meta
   - admonition
-  - pymdownx.details
-  - pymdownx.superfences
-
+  - footnotes
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed
+  - toc:
+      permalink: True
+  - pymdownx.keys:
+      separator: "\uff0b"
+  - pymdownx.details:
+  - pymdownx.superfences:
 nav:
   - Installation: 'index.md'
   - Commands:
@@ -20,9 +36,14 @@ nav:
       - commands/process.md
   - Prepare your data: 'data.md'
   - Change Log: CHANGELOG.md
+  - License: LICENSE.md
 
 
 copyright: Maintained by <a href="https://www.mbari.org/cline-danelle-e/">Danelle Cline</a>.
 
 plugins:
-    - search
+  - search
+  - mkdocs-jupyter:
+      include_source: True
+      ignore_h1_titles: True
+      execute: False

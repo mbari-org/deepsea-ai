@@ -32,8 +32,6 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
     :return: Uploaded bucket path, Size in GB of video data
     """
 
-    print("Reduce your upload speed by running ' aws configure set default.s3.max_bandwidth 62MB/s'")
-
     s3 = boto3.client('s3')
     s3_resource = boto3.resource('s3')
 
@@ -80,8 +78,6 @@ def training_data(data: [Path], input:tuple, tags:dict, training_prefix:str):
     """
 
     # upload and tag the video objects individually
-    print("Reduce your upload speed by running 'aws configure set default.s3.max_bandwidth 62MB/s'")
-
     s3 = boto3.client('s3')
     s3_resource = boto3.resource('s3')
 

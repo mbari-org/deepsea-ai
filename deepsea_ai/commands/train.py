@@ -81,7 +81,7 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
 
     img_size = 640
     if '6' in model: img_size = 1280  # all larger (1280x1280) models have the number 6 in them, e.g. yolov5n6
-
+    image_uri = f"{custom_config.get_account()}.dkr.ecr.{custom_config.get_region()}.amazonaws.com/{custom_config('aws', 'yolov5_ecr')}"
     user_name = custom_config.get_username()
     output_ckpts_s3 = f's3://{ckpts_s3.netloc}{ckpts_s3.path}'
     output_model_s3 = f's3://{model_s3.netloc}{model_s3.path}'
@@ -89,7 +89,7 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
     estimator = Estimator(base_job_name=f'{model}-{user_name}',
                            role=role,
                            tags=tags,
-                           image_uri=custom_config('aws', 'yolov5_ecr'),
+                           image_uri=image_uri,
                            volume_size = volume_size_gb,
     #                        max_wait=43200,
     #                        max_run=42300,
@@ -188,7 +188,10 @@ def split(input_path:Path, output_path:Path):
         random.seed(0)  # for reproducibility
         indices = random.choices([0, 1, 2], weights=weights, k=n)  # assign each image to a split
         txt = ['autosplit_train.txt', 'autosplit_val.txt', 'autosplit_test.txt']
-        [(path.parent / x).unlink(missing_ok=True) for x in txt]  # remove existing
+        # remove existing
+        for x in txt:
+            if (path.parent / x).exists():
+                (path.parent / x).unlink()
         print(f'Autosplitting images from {path}' + ', using *.txt labeled images only' * annotated_only)
         for i, img in tqdm(zip(indices, files), total=n):
             if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label

@@ -41,20 +41,36 @@ class Config:
             raise Exception(f'Bad path to {self.path}')
 
         self.parser.read(self.path)
+        lines = open(self.path).readlines()
+        print(f"===============>Config file {self.path}<=================")
+        for l in lines:
+            print(l.strip())
+
+        if not path:
+            print(f"============You can override these settings by creating a customconfig.ini file and pass that in with --config=customconfig.ini =====")
 
     def __call__(self, *args, **kwargs):
         assert len(args) == 2
         return self.parser.get(args[0], args[1])
 
-    staticmethod
-    def get_role(self):
+    def save(self, *args, **kwargs):
+        assert len(args) == 3
+        self.parser.set(section=args[0], option=args[1], value=args[2])
+        with open(self.path, 'w') as fp:
+            self.parser.write(fp)
+
+    def get_role(self) -> str:
         """
-        Get the user role or default to an MBARI generated one
-        :return
+        Get the user role; first check the environment variable, then the config
+        :return role ARN string
         """
-        if 'SAGEMAKER_ROLE' not in os.environ:
-            raise Exception(f"SAGEMAKER_ROLE must be set in your environment variables")
-        return os.environ['SAGEMAKER_ROLE']
+        if 'SAGEMAKER_ROLE' in os.environ:
+            return os.environ['SAGEMAKER_ROLE']
+
+        sagemaker_arn = self.__call__('aws', 'sagemaker_arn')
+        if not sagemaker_arn:
+            raise Exception('Run deepsea-ai setup or set the SAGEMAKER_ROLE environment variable')
+        return sagemaker_arn
 
     staticmethod
     def get_account(self) -> str:
@@ -66,6 +82,16 @@ class Config:
         print(f'Found account {account_number}')
         return account_number
 
+    staticmethod
+    def get_region(self) -> str:
+        """
+        Get the region associated with this user
+        :return:
+        """
+        session = boto3.session.Session()
+        region = session.region_name
+        print(f'Found region {region}')
+        return region
 
     staticmethod
     def get_username(self) -> str:
@@ -90,7 +116,7 @@ class Config:
     staticmethod
     def get_tags(self, description: str) -> dict:
         """
-        Configure tag dictionary to associate with a job.
+        Configure tag dictionary to associate with any AWS resource.
         This is useful for cost accounting and general reporting
         :param description: descriptive information about the use
         :return dictionary with tag key/value pairs
