@@ -1,5 +1,19 @@
 # DeepSeaAI Changelog
 
+# [1.5.0](https://github.com/mbari-org/deepsea-ai/compare/v1.4.0...v1.5.0) (2022-10-17)
+
+
+### Bug Fixes
+
+* correct uri for training/processing ([2b13fa6](https://github.com/mbari-org/deepsea-ai/commit/2b13fa6b3bfbed9b70c69787e1225ca3c1f1d4db))
+* downgrade unlink for python3.7 support ([fbba59e](https://github.com/mbari-org/deepsea-ai/commit/fbba59ed338c4b270f5e3c4dbbde9accd03ddba2))
+* non static method and return missing arn ([8dd846d](https://github.com/mbari-org/deepsea-ai/commit/8dd846d117db5847f589212a6893d770f1de04d2))
+
+
+### Features
+
+* added AWS setup command ([2d6b793](https://github.com/mbari-org/deepsea-ai/commit/2d6b7934ec68827bf8b772f91128b66acdb47a2b))
+
 # [1.4.0](https://github.com/mbari-org/deepsea-ai/compare/v1.3.3...v1.4.0) (2022-09-27)
 
 
