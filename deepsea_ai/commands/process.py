@@ -57,8 +57,8 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
     # mbari/deepsea-yolov5:1.1.2 => 872338704006.dkr.ecr.us-west-2.amazonaws.com/deepsea-yolov5:1.1.2
     account = custom_config.get_account()
     region = custom_config.get_region()
-    image_uri_docker = {'deepsort':  custom_config('aws', 'deepsort_ecr'), 'strongsort': custom_config('aws', 'strongsort_ecr')}
-    image_uri_ecr = f"{account}.dkr.ecr.{region}.amazonaws.com/{image_uri_docker[tracker].split('/')[-1]}"
+    image_uri_docker = {'deepsort':  custom_config('aws', 'deepsort_ecr'), 'strongsort': custom_config('aws', f'{tracker}sort_ecr')}
+    image_uri_ecr = f"{account}.dkr.ecr.{region}.amazonaws.com/{image_uri_docker[tracker]}"
 
     script_processor = ScriptProcessor(command=['python3'],
                                        image_uri=image_uri_ecr,
