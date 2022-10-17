@@ -45,7 +45,9 @@ class Config:
         print(f"===============>Config file {self.path}<=================")
         for l in lines:
             print(l.strip())
-        print(f"============You can override these settings by creating a customconfig.ini file and pass that in with --config=customconfig.ini =====")
+
+        if not path:
+            print(f"============You can override these settings by creating a customconfig.ini file and pass that in with --config=customconfig.ini =====")
 
     def __call__(self, *args, **kwargs):
         assert len(args) == 2
@@ -57,11 +59,10 @@ class Config:
         with open(self.path, 'w') as fp:
             self.parser.write(fp)
 
-    staticmethod
-    def get_role(self):
+    def get_role(self) -> str:
         """
         Get the user role; first check the environment variable, then the config
-        :return
+        :return role ARN string
         """
         if 'SAGEMAKER_ROLE' in os.environ:
             return os.environ['SAGEMAKER_ROLE']
@@ -69,6 +70,7 @@ class Config:
         sagemaker_arn = self.__call__('aws', 'sagemaker_arn')
         if not sagemaker_arn:
             raise Exception('Run deepsea-ai setup or set the SAGEMAKER_ROLE environment variable')
+        return sagemaker_arn
 
     staticmethod
     def get_account(self) -> str:
