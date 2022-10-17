@@ -45,4 +45,3 @@ for a batch size of 2:
 |yolov5x| 640x640                  | ml.p3.2xlarge                                      | 1 | **50.4**                     |
 |yolov5s6| 1280x1280               | ml.p3.8xlarge, ml.p3.16xlarge or ml.p4d.24xlarge   | 4, 8, 8 | 43.3                         |
 |yolov5x6| 1280x1280               | ml.p3.16xlarge,  or ml.p4d.24xlarge | 8, 8 | **54.4**                     |
-v

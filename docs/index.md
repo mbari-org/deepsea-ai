@@ -44,26 +44,31 @@ deepsea-ai setup
 
 ## Tutorials
 
-* [FathomNet](docs/notebooks/fathomnet_train.ipynb) ✨ Recommended first step to learn more about how to train a YOLOv5 object detection model using freely available FathomNet data
+---
+
+  * [Training a YOLOv5 model with FathomNet data](notebooks/fathomnet_train.ipynb) ✨ Recommended first step to learn more about how to train a YOLOv5 object detection model using freely available FathomNet data
 
 The best way to use the tutorials is with [Anaconda](https://www.anaconda.com/products/distribution).
+
+## Anaconda Setup
 
 ### Create the Anaconda environment
 
 This will create an environment called *deepsea-ai-notebooks* and make that available in your local jupyter notebook as the kernel named *deepsea-ai-notebooks*
-```
+
+```shell
 conda env create 
 conda activate deepsea-ai-notebooks
-pip install ipykernel
 python -m ipykernel install --user --name=deepsea-ai-notebooks
 ```
 
 ### Launch jupyter
 
-```
+```shell
 cd docs/notebooks
 jupyter notebook
 ```
+
 ---
 
 ## Commands
