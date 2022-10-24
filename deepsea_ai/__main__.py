@@ -27,7 +27,7 @@ from deepsea_ai.config import setup
 from deepsea_ai.database import api, queries
 from deepsea_ai import __version__
 
-default_config = cfg.Config()
+default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
 user_name = default_config.get_username()
 
@@ -68,6 +68,8 @@ def setup_command(config):
     # override the default config file with the custom one
     if config:
         shutil.copy2(config,  cfg.default_config_ini)
+    else:
+        print(f'Using default config file {cfg.default_config_ini}')
 
 @cli.command(name="ecsprocess")
 @click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')

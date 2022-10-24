@@ -27,7 +27,7 @@ default_config_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'c
 
 class Config:
 
-    def __init__(self, path: str = None):
+    def __init__(self, path: str = None, quiet: bool = False):
         """
         Read the .ini file and parse it
         """
@@ -42,12 +42,13 @@ class Config:
 
         self.parser.read(self.path)
         lines = open(self.path).readlines()
-        print(f"===============>Config file {self.path}<=================")
-        for l in lines:
-            print(l.strip())
+        if not quiet:
+            print(f"===============>Config file {self.path}<=================")
+            for l in lines:
+                print(l.strip())
 
-        if not path:
-            print(f"============You can override these settings by creating a customconfig.ini file and pass that in with --config=customconfig.ini =====")
+            if not path:
+                print(f"============You can override these settings by creating a customconfig.ini file and pass that in with --config=customconfig.ini =====")
 
     def __call__(self, *args, **kwargs):
         assert len(args) == 2

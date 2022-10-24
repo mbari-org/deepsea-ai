@@ -145,11 +145,11 @@ def create_role():
         )
 
         iam.attach_role_policy(
-            PolicyArn='arn:aws:iam:aws:policy/AmazonSageMakerFullAccess',
+            PolicyArn='arn:aws:iam::aws:policy/AmazonSageMakerFullAccess',
             RoleName=role_name
         )
         iam.attach_role_policy(
-            PolicyArn='arn:aws:iam:aws:policy/AmazonS3FullAccess',
+            PolicyArn='arn:aws:iam::aws:policy/AmazonS3FullAccess',
             RoleName=role_name
         )
 
@@ -169,6 +169,7 @@ def store_role(config: cfg):
     iam = session.client('iam')
     results = iam.get_role(RoleName="DeepSeaAI")
     role_arn = results['Role']['Arn']
+    print(f'Setting SageMaker Role ARN to {role_arn} in {config.config_file}')
     config.save('aws', 'sagemaker_arn', role_arn)
 
 
