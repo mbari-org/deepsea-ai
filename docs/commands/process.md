@@ -30,7 +30,7 @@ deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRickett
 ## Elastic Cluster Processing 
 
 If you have setup an Elastic Cluster Service to processing data in batch, you can use it with the **ecsprocess**
-option. This is the most cost effective way to process data in bulk.
+option. This is the most cost-effective way to process data in bulk.
 
 To process videos in a directory with the job name *"DocRickets dive 1423"* in your cluster called *benthic33k* : 
 
