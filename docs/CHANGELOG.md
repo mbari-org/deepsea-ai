@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.6.0](https://github.com/mbari-org/deepsea-ai/compare/v1.5.1...v1.6.0) (2022-10-24)
+
+
+### Features
+
+* exit training on bucket failure ([28dd6a0](https://github.com/mbari-org/deepsea-ai/commit/28dd6a0d1fa9d119650d3c9f9118a90458649747))
+
 ## [1.5.1](https://github.com/mbari-org/deepsea-ai/compare/v1.5.0...v1.5.1) (2022-10-24)
 
 
