@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.5.1](https://github.com/mbari-org/deepsea-ai/compare/v1.5.0...v1.5.1) (2022-10-24)
+
+
+### Bug Fixes
+
+* correct policy arn, print SageMaker role for clarity and quiet down the config parse print ([542af3a](https://github.com/mbari-org/deepsea-ai/commit/542af3af87e238fe811ed5dba916b052fa8acf69))
+
 # [1.5.0](https://github.com/mbari-org/deepsea-ai/compare/v1.4.0...v1.5.0) (2022-10-17)
 
 
