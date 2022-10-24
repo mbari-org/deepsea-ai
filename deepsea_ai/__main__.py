@@ -247,27 +247,26 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     data = [image_path, label_path, name_path]
 
     # create the buckets
-    bucket.create(input_s3, tags)
-    bucket.create(output_s3, tags)
+    if bucket.create(input_s3, tags) and bucket.create(output_s3, tags):
 
-    # upload and return the final bucket prefix to the training data and its total size
-    input_training, size_gb = upload_tag.training_data(data, input_s3, tags, cfg.default_training_prefix)
+        # upload and return the final bucket prefix to the training data and its total size
+        input_training, size_gb = upload_tag.training_data(data, input_s3, tags, cfg.default_training_prefix)
 
-    # guess on how much volume is needed per each GB plus the size for the checkpoints
-    volume_size_gb = int(2*size_gb + 50)
+        # guess on how much volume is needed per each GB plus the size for the checkpoints
+        volume_size_gb = int(2*size_gb + 50)
 
-    # insert the datetime prefix to make a unique key for the outputs
-    now = datetime.utcnow()
-    prefix = now.strftime("%Y%m%dT%H%M%SZ")
+        # insert the datetime prefix to make a unique key for the outputs
+        now = datetime.utcnow()
+        prefix = now.strftime("%Y%m%dT%H%M%SZ")
 
-    if resume: # resuming from previous bucket, so no need to set prefix
-        ckpts_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.lstrip('/')}")
-    else:
-        ckpts_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/checkpoints/")
-    model_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/models/")
+        if resume: # resuming from previous bucket, so no need to set prefix
+            ckpts_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.lstrip('/')}")
+        else:
+            ckpts_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/checkpoints/")
+        model_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/models/")
 
-    # train
-    train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type, custom_config)
+        # train
+        train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type, custom_config)
 
 
 @cli.command(name="package")
