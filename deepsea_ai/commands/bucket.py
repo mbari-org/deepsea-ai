@@ -39,8 +39,10 @@ def create(bucket:tuple, tags: dict):
         except Exception as error:
             raise error
     except ClientError as e:
-        if e.response['Error']['Code'] != "BucketAlreadyOwnedByYou":
-            logging.error(e)
+        if e.response['Error']['Code'] == "BucketAlreadyOwnedByYou":
+            return True
+
+        logging.error(e)
         return False
     return True
 
