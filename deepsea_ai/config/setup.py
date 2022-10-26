@@ -112,6 +112,7 @@ def create_role():
     path = '/'
     role_name = 'DeepSeaAI'
     description = 'DeepSeaAI Role'
+    session_mins = 3600*24*7
 
     POLICY_JSON = {
         "Version": "2012-10-17",
@@ -141,7 +142,7 @@ def create_role():
             RoleName=role_name,
             AssumeRolePolicyDocument=json.dumps(POLICY_JSON),
             Description=description,
-            MaxSessionDuration=3600
+            MaxSessionDuration=session_mins
         )
 
         iam.attach_role_policy(
