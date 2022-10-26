@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.6.2](https://github.com/mbari-org/deepsea-ai/compare/v1.6.1...v1.6.2) (2022-10-26)
+
+
+### Performance Improvements
+
+* bump default role session duration to 12 hours ([c930672](https://github.com/mbari-org/deepsea-ai/commit/c930672794b5ce6409dced6b303fb13aaf282b22))
+
 ## [1.6.1](https://github.com/mbari-org/deepsea-ai/compare/v1.6.0...v1.6.1) (2022-10-26)
 
 
