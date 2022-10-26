@@ -1,5 +1,17 @@
 # DeepSeaAI Changelog
 
+## [1.6.1](https://github.com/mbari-org/deepsea-ai/compare/v1.6.0...v1.6.1) (2022-10-26)
+
+
+### Bug Fixes
+
+* correct logic for bucket check ([451a153](https://github.com/mbari-org/deepsea-ai/commit/451a153cfd377b8ae06f76b1c5d18aa1f70ee5c2))
+
+
+### Performance Improvements
+
+* bump default role session duration ([fae4a4a](https://github.com/mbari-org/deepsea-ai/commit/fae4a4ab7277d12b453a22ec2114dd4cdb789ce3))
+
 # [1.6.0](https://github.com/mbari-org/deepsea-ai/compare/v1.5.1...v1.6.0) (2022-10-24)
 
 
