@@ -112,7 +112,7 @@ def create_role():
     path = '/'
     role_name = 'DeepSeaAI'
     description = 'DeepSeaAI Role'
-    session_mins = 3600*24*7
+    session_mins = 43200
 
     POLICY_JSON = {
         "Version": "2012-10-17",
