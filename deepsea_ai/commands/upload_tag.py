@@ -27,8 +27,8 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
     """
      Does an upload and tagging of a collection of videos to S3
     :param videos: Array of video files in the input_path to upload
-    :param bucket: Base bucket to upload to, e.g. 902005-video-in-dev
-    :param bucket: Tags to assign to the video
+    :param input_s3: Base bucket to upload to, e.g. 902005-video-in-dev
+    :param tags: Tags to assign to the video
     :return: Uploaded bucket path, Size in GB of video data
     """
 
