@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.6.3](https://github.com/mbari-org/deepsea-ai/compare/v1.6.2...v1.6.3) (2022-10-27)
+
+
+### Bug Fixes
+
+* correct args for video upload in batch ([349e79f](https://github.com/mbari-org/deepsea-ai/commit/349e79f5d64eb6929878e5dace2199c6530a6b16))
+
 ## [1.6.1](https://github.com/mbari-org/deepsea-ai/compare/v1.6.0...v1.6.1) (2022-10-26)
 
 
