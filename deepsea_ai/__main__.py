@@ -101,6 +101,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input):
     resources = custom_config.get_resources(cluster)
     user_name = custom_config.get_username()
     videos = custom_config.check_videos(input_path)
+    tags = custom_config.get_tags(f'Video uploaded from {input} by user {user_name} ')
 
     for v in videos:
         loaded = False
@@ -115,7 +116,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input):
                 loaded = True
 
         if upload and not loaded:
-            upload_tag.run([v], resources['VIDEO_BUCKET'], user_name)
+            upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags)
 
         if not loaded:
             process.batch_run(resources, v, job, user_name, clean)
@@ -193,7 +194,6 @@ def upload_command(config, input, s3):
     Upload videos
     """
     custom_config = cfg.Config(config)
-    input_path = Path(input)
     input_s3 = urlparse(s3)
     tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
     bucket.create(input_s3, tags)
