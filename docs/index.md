@@ -77,6 +77,7 @@ jupyter notebook
 * [`deepsea-ai train --help` - Train a YOLOv5 model and save the model to a bucket](commands/train.md)
 * [`deepsea-ai process --help` - Process one or more videos and save the results to  a bucket](commands/process.md)
 * [`deepsea-ai ecsprocess --help` - Process one or more videos using the Elastic Container Service and save the results to a bucket](commands/process.md)
+* [`deepsea-ai monitor --help` - Monitor the Elastic Container Service](commands/monitor.md)
 * [`deepsea-ai split --help` - Split your training data. This is required before the train command.](data.md) 
 * `deepsea-ai -h` - Print help message and exit.
  

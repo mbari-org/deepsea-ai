@@ -21,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
-from deepsea_ai.commands import upload_tag, process, train, bucket
+from deepsea_ai.commands import upload_tag, process, train, bucket, monitor
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config import setup
 from deepsea_ai.database import api, queries
@@ -304,6 +304,25 @@ def split_command(input:str, output:str):
         return
 
     train.split(Path(input), Path(output))
+
+@cli.command(name="monitor")
+@click.option('--cluster', type=str, default='lonny33k',
+              help='Name of the cluster to query.  This must correspond to an available Elastic '
+                   'Container Service cluster.')
+@click.option('--autoscaling', type=bool, default=True, help='Display autoscaling information')
+@click.option('--records', type=int, default=10, help='Number of records to report. Default 10.')
+def monitor_command(cluster:str, autoscaling:bool, records:int):
+    """
+    Print monitoring information for the cluster
+    """
+    custom_config = cfg.Config()
+    resources = custom_config.get_resources(cluster)
+    if resources:
+        if autoscaling:
+            print(f' Last {records} records from autoscaling of cluster {cluster}')
+            monitor.print_scaling_activities(resources, records)
+    else:
+        print(f'No resources found for cluster {cluster}. Try another cluster with --cluster <cluster_name>')
 
 if __name__ == '__main__':
     cli()

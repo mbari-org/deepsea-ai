@@ -142,28 +142,33 @@ class Config:
         """
         Get resources relevant to the pipeline from the stack name; see deepsea-ai/cluster/stacks
         :param stack_name:
-        :return:
+        :return: dictionary with resource names
         """
         client_cf = boto3.client('cloudformation')
         client_ecs = boto3.client('ecs')
 
-        stack_resources = client_cf.list_stack_resources(StackName=stack_name)
-        resources = {'CLUSTER': stack_name}
+        try:
+            stack_resources = client_cf.list_stack_resources(StackName=stack_name)
+            resources = {'CLUSTER': stack_name}
 
-        # fetch the PROCESSOR environment variable for the single task in the stack; the job is keyed uniquely to it
-        key = ['PROCESSOR', 'TRACK_QUEUE', 'VIDEO_QUEUE', 'DEAD_QUEUE', 'TRACK_BUCKET', 'VIDEO_BUCKET']
-        for r in stack_resources['StackResourceSummaries']:
-            if 'AWS::ECS::TaskDefinition' in r['ResourceType']:
-                arn = r['PhysicalResourceId']
-                task_def = client_ecs.describe_task_definition(taskDefinition=arn)
-                environment = task_def['taskDefinition']['containerDefinitions'][0]['environment']
-                for e in environment:
-                    for k in key:
-                        if k in e['name']:
-                            resources[k] = e['value']
-                break
-        print(resources)
-        return resources
+            # fetch the PROCESSOR environment variable for the single task in the stack; the job is keyed uniquely to it
+            key = ['PROCESSOR', 'TRACK_QUEUE', 'VIDEO_QUEUE', 'DEAD_QUEUE', 'TRACK_BUCKET', 'VIDEO_BUCKET']
+            for r in stack_resources['StackResourceSummaries']:
+                if 'AWS::ECS::TaskDefinition' in r['ResourceType']:
+                    arn = r['PhysicalResourceId']
+                    task_def = client_ecs.describe_task_definition(taskDefinition=arn)
+                    environment = task_def['taskDefinition']['containerDefinitions'][0]['environment']
+                    for e in environment:
+                        for k in key:
+                            if k in e['name']:
+                                resources[k] = e['value']
+                    break
+                if 'AWS::AutoScaling::AutoScalingGroup' in r['ResourceType']:
+                    resources['ASG'] = r['PhysicalResourceId']
+            return resources
+        except ClientError as ex:
+            print(ex)
+        return None
 
     staticmethod
     def check_videos(self, input_path: Path) -> List[Path]:
