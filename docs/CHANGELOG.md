@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.7.0](https://github.com/mbari-org/deepsea-ai/compare/v1.6.3...v1.7.0) (2022-10-28)
+
+
+### Features
+
+* beginnings of monitoring of ECS; added ASG pring ([02c6328](https://github.com/mbari-org/deepsea-ai/commit/02c63288707140fddcf124c06beb301be3baca9f))
+
 ## [1.6.3](https://github.com/mbari-org/deepsea-ai/compare/v1.6.2...v1.6.3) (2022-10-27)
 
 
