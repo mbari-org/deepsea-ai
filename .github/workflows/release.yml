@@ -38,6 +38,11 @@ jobs:
       - name: Add Poetry to path
         run: echo "${HOME}/.poetry/bin" >> $GITHUB_PATH
       - run: poetry install
+      - name: Poetry run pytest
+        env:
+          SAGEMAKER_ROLE: ${{ secrets.SAGEMAKER_ROLE }}
+        run: poetry run pytest
+      - name: pytest
       - run: poetry run pytest
       - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
       - name: Publish package
