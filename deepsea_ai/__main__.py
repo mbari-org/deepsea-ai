@@ -140,20 +140,21 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input):
 @click.option('-m', '--model-s3', type=str, default=default_config('aws', 'yolov5_model_s3'),
               help='S3 location of the trained model tar gz file - must contain a model.tar.gz file with a valid YOLOv5 '
                    'Pytorch model.')
+@click.option('-j', '--job-description', type=str, help='The job description to use for the processing')
 @click.option('-c', '--config-s3', type=str, help='S3 location of tracking algorithm config yaml file')
 @click.option('--model-size', type=click.INT, default=640, help='Size of the model, e.g. 640 or 1280')
 @click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
 @click.option('-s', '--save-vid', is_flag=True, default=False,
               help='Set option to output original video with detection boxes overlaid.')
 def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres,
-                    save_vid):
+                    save_vid, job_description):
     """
      (optional) upload, then process video with a model
     """
     custom_config = cfg.Config(config)
 
     # get tags to apply to the resources for cost monitoring
-    tags = custom_config.get_tags(f'Processing {input} with model {model_s3} confidence {conf_thres} ')
+    tags = custom_config.get_tags(job_description)
 
     instance_type = 'ml.g4dn.xlarge'
     input_path = Path(input)
@@ -163,24 +164,24 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
 
     # create the buckets
     print(f'Creating buckets')
-    bucket.create(input_s3, tags)
-    bucket.create(output_s3, tags)
 
-    videos = custom_config.check_videos(input_path)
-    input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
- 
-    # insert the datetime prefix to make a unique key for the output
-    now = datetime.utcnow()
-    prefix = now.strftime("%Y%m%dT%H%M%SZ")
-    output_unique_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path}/{prefix}/")
-
-    if save_vid:
-        volume_size_gb = int(2*size_gb)
-    else:
-        volume_size_gb = int(1.25*size_gb)
-
-    process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, volume_size_gb, instance_type,
-                                 config_s3, save_vid, conf_thres, tracker, custom_config)
+    if bucket.create(input_s3, tags) and bucket.create(output_s3, tags): 
+    
+        videos = custom_config.check_videos(input_path)
+        input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
+     
+        # insert the datetime prefix to make a unique key for the output
+        now = datetime.utcnow()
+        prefix = now.strftime("%Y%m%dT%H%M%SZ")
+        output_unique_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path}/{prefix}/")
+    
+        if save_vid:
+            volume_size_gb = int(2*size_gb)
+        else:
+            volume_size_gb = int(1.25*size_gb)
+    
+        process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, volume_size_gb, instance_type,
+                                     config_s3, save_vid, conf_thres, tracker, custom_config, tags)
 
 
 @cli.command(name="upload")

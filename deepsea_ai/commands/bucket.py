@@ -28,6 +28,7 @@ def create(bucket:tuple, tags: dict):
 
     # Create bucket
     try:
+        print(f'Creating bucket {bucket.netloc}...')
         session = boto3.session.Session()
         s3_client = boto3.client('s3', region_name=session.region_name)
         location = {'LocationConstraint': session.region_name}
@@ -37,7 +38,7 @@ def create(bucket:tuple, tags: dict):
         try:
             s3_client.put_bucket_tagging(Bucket=bucket.netloc, Tagging={'TagSet': tags})
         except Exception as error:
-            raise error
+            raise f'Error creating bcket {bucket.netloc} {error}'
     except ClientError as e:
         if e.response['Error']['Code'] == "BucketAlreadyOwnedByYou":
             return True
@@ -87,4 +88,4 @@ def size(bucket:tuple) -> int:
         folder = object.key.split('/')[0]
         size_gb += object.size
 
-    return np.round(size_gb/1e9)
+    return max(np.round(size_gb/1e9), 1)

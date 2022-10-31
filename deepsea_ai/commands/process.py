@@ -28,7 +28,7 @@ code_path = Path(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, model_size: int,
                         volume_size_gb:int, instance_type:str, config_s3: str, save_vid: bool,
-                         conf_thresh: float, tracker:str, custom_config:cfg.Config):
+                         conf_thresh: float, tracker:str, custom_config:cfg.Config, tags:dict):
     """
     Process a collection of videos with the ScriptProcessor
     """
@@ -57,7 +57,7 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
     # mbari/deepsea-yolov5:1.1.2 => 872338704006.dkr.ecr.us-west-2.amazonaws.com/deepsea-yolov5:1.1.2
     account = custom_config.get_account()
     region = custom_config.get_region()
-    image_uri_docker = {'deepsort':  custom_config('aws', 'deepsort_ecr'), 'strongsort': custom_config('aws', f'{tracker}sort_ecr')}
+    image_uri_docker = {'deepsort':  custom_config('aws', 'deepsort_ecr'), 'strongsort': custom_config('aws', 'strongsort_ecr')}
     image_uri_ecr = f"{account}.dkr.ecr.{region}.amazonaws.com/{image_uri_docker[tracker]}"
 
     script_processor = ScriptProcessor(command=['python3'],
@@ -68,7 +68,7 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
                                        instance_type=instance_type,
                                        volume_size_in_gb=volume_size_gb,
                                        max_runtime_in_seconds=172800,
-                                       tags=custom_config.get_tags(f"ScriptProcessor job {image_uri_ecr}"))
+                                       tags=tags)
     script_processor.run(code=f'{code_path.parent.parent.parent}/deepsea_ai/pipeline/run_{tracker}.py',
                          arguments=arguments,
                          inputs=[ProcessingInput(
