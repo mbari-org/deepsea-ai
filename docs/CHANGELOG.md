@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.7.1](https://github.com/mbari-org/deepsea-ai/compare/v1.7.0...v1.7.1) (2022-10-31)
+
+
+### Bug Fixes
+
+* added -j option back in and handle small < 1 GB videos ([fb192fa](https://github.com/mbari-org/deepsea-ai/commit/fb192fac2e4856d999a27fe3a05f607e18b4d342))
+
 # [1.7.0](https://github.com/mbari-org/deepsea-ai/compare/v1.6.3...v1.7.0) (2022-10-28)
 
 
