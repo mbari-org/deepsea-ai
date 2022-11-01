@@ -1,7 +1,17 @@
 If you have just a few videos to process, or are experimenting, the **process** command is recommended.
 This creates a SageMaker Processing Job which uses the [SageMaker ScriptProcessor](https://docs.aws.amazon.com/sagemaker/latest/dg/processing-container-run-scripts.html).
  
-Because this command uses SageMaker, so you may need to set your SageMaker IAM role. **If you are running this in SageMaker Studio**, you can skip setting the *SAGEMAKER_ROLE* because it is automatically set for you.
+Because this command uses SageMaker, so you *may* need to set your SageMaker IAM role.  The role is captured in the following
+order or precedence:
+1. Through the SAGEMAKER_ROLE environment variable
+2. Through the --config option in the [aws] section
+
+**If you are running this in SageMaker Studio**, the *SAGEMAKER_ROLE* is automatically set for you.
+
+**If you are running this locally**, the SAGEMAKER_ROLE is not set automatically for you in an environment variable;
+it is, however, captured after you run ``deepsea-ai setup`` in the system defaults, so you do not need to
+set it through an environment variable. If you are switching accounts, you will need to either set SAGEMAKER_ROLE
+or run ``deepsea-ai setup`` again in that new account (recommended).
 
 ```
 export SAGEMAKER_ROLE="arn:aws:iam::872338704006:role/902005-sagemaker-exec"
