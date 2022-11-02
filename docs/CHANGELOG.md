@@ -1,5 +1,17 @@
 # DeepSeaAI Changelog
 
+# [1.8.0](https://github.com/mbari-org/deepsea-ai/compare/v1.7.1...v1.8.0) (2022-11-02)
+
+
+### Bug Fixes
+
+* correct path for default .ini store ([23c1b0f](https://github.com/mbari-org/deepsea-ai/commit/23c1b0f7417e1b318a932e3c507abfe2f5261c2c))
+
+
+### Features
+
+* make track queue strong and deep sort docker images the default ([ce47580](https://github.com/mbari-org/deepsea-ai/commit/ce47580e0c65cd290bcdaae80317c755295fcec8))
+
 ## [1.7.1](https://github.com/mbari-org/deepsea-ai/compare/v1.7.0...v1.7.1) (2022-10-31)
 
 
