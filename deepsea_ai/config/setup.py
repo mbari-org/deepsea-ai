@@ -170,7 +170,7 @@ def store_role(config: cfg):
     iam = session.client('iam')
     results = iam.get_role(RoleName="DeepSeaAI")
     role_arn = results['Role']['Arn']
-    print(f'Setting SageMaker Role ARN to {role_arn} in {config.config_file}')
+    print(f'Setting SageMaker Role ARN to {role_arn} in {config.path}')
     config.save('aws', 'sagemaker_arn', role_arn)
 
 
