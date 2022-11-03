@@ -45,5 +45,5 @@ option. This is the most cost-effective way to process data in bulk.
 To process videos in a directory with the job name *"DocRickets dive 1423"* in your cluster called *benthic33k* : 
 
 ```
-deepsea-ai ecsprocess -c benthic33k -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ 
+deepsea-ai ecsprocess -u -c benthic33k -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ 
 ```
