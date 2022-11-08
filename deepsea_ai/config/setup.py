@@ -102,9 +102,10 @@ def mirror_docker_hub_images_to_ecr(ecr_client, *, account_id, region, image_tag
         docker("push", ecr_tag)
 
 
-def create_role():
+def create_role(account_id: str):
     """
     Sets up the IAM role called DeepSeaAI to support ECR and SageMaker
+    :param account_id: AWS account ID
     """
     session = boto3.session.Session()
     iam = session.client('iam')
@@ -114,7 +115,7 @@ def create_role():
     description = 'DeepSeaAI Role'
     session_secs = 43200
 
-    POLICY_JSON = {
+    ASSUME_ROLE_POLICY_JSON = {
         "Version": "2012-10-17",
         "Statement": [
             {
@@ -132,15 +133,45 @@ def create_role():
                     "Service": "sagemaker.amazonaws.com"
                 },
                 "Action": "sts:AssumeRole"
+            },
+            {
+                "Sid": "TrustPolicyStatementThatAllowsEC2ServiceToAssumeTheAttachedRole",
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "ec2.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
             }
         ]
     }
 
+    ROLE_PERMISSIONS_JSON =  {
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                    "iam:GetRole",
+                    "iam:PassRole"
+                ],
+                "Resource": f"arn:aws:iam::{account_id}:role/{role_name}"
+            }]
+    }
+
     try:
+
+        policy = f"{role_name}GetAndPassRolePolicy"
+
+        iam = session.client('iam')
+
+        resource = iam.create_policy(
+            PolicyName=policy,
+            PolicyDocument=json.dumps(ROLE_PERMISSIONS_JSON)
+        )
+
         iam.create_role(
             Path=path,
             RoleName=role_name,
-            AssumeRolePolicyDocument=json.dumps(POLICY_JSON),
+            AssumeRolePolicyDocument=json.dumps(ASSUME_ROLE_POLICY_JSON),
             Description=description,
             MaxSessionDuration=session_secs
         )
@@ -151,6 +182,10 @@ def create_role():
         )
         iam.attach_role_policy(
             PolicyArn='arn:aws:iam::aws:policy/AmazonS3FullAccess',
+            RoleName=role_name
+        )
+        iam.attach_role_policy(
+            PolicyArn=f"arn:aws:iam::aws:policy/{policy}",
             RoleName=role_name
         )
 
@@ -182,6 +217,6 @@ if __name__ == "__main__":
     image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
     image_tags = [default_config('aws', t) for t in image_cfg]
     mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account, region=region, image_tags=image_tags)
-    create_role()
+    create_role(account_id=account)
     store_role(default_config)
 

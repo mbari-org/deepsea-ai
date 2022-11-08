@@ -17,6 +17,7 @@ Main entry point for deepsea-ai
 import boto3
 import click
 import shutil
+import os
 from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
@@ -27,6 +28,14 @@ from deepsea_ai.config import setup
 from deepsea_ai.database import api, queries
 from deepsea_ai import __version__
 
+
+def get_session():
+    if 'AWS_PROFILE' in os.environ:
+        print(f'AWS_PROFILE is set to {os.environ["AWS_PROFILE"]} and will be used for all AWS commands')
+        profile = os.environ['AWS_PROFILE']
+        boto3.setup_default_session(profile_name=profile)
+
+get_session()
 default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
 user_name = default_config.get_username()
@@ -62,7 +71,7 @@ def setup_command(config):
     image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
     image_tags = [custom_config('aws', t) for t in image_cfg]
     setup.mirror_docker_hub_images_to_ecr( ecr_client=boto3.client("ecr"), account_id=account, region=region, image_tags=image_tags)
-    setup.create_role()
+    setup.create_role(account_id=account)
     setup.store_role(default_config)
 
     # override the default config file with the custom one
@@ -301,7 +310,7 @@ def split_command(input:str, output:str):
 
     exists = [not p.exists() for p in paths]
     if any(exists):
-        print (f'Error: one or more {paths} missing')
+        print(f'Error: one or more {paths} missing')
         return
 
     train.split(Path(input), Path(output))
