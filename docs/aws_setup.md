@@ -13,7 +13,7 @@ Training uses SageMaker which requires permissions for the trainer to assume the
 This requires a JSON formatted description which can be created with
 
 ```shell
-POLICY_JSON=$(cat <<-END
+ASSUME_ROLE_POLICY_JSON=$(cat <<-END
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -32,6 +32,14 @@ POLICY_JSON=$(cat <<-END
         "Service": "sagemaker.amazonaws.com"
       },
       "Action": "sts:AssumeRole"
+    },
+    {
+        "Sid": "TrustPolicyStatementThatAllowsEC2ServiceToAssumeTheAttachedRole",
+        "Effect": "Allow",
+        "Principal": {
+            "Service": "ec2.amazonaws.com"
+        },
+        "Action": "sts:AssumeRole"
     }
     ]
 }
@@ -43,6 +51,27 @@ END
 aws iam create-role --role-name DeepSeaAI  --assume-role-policy-document "${POLICY_JSON}"
 ```
 
+### Create a policy called *DeepSeaAI* with the following permissions, replacing the account number with your own
+```shell
+ROLE_PERMISSIONS_JSON=$(cat <<-END
+{
+            "Version": "2012-10-17",
+            "Statement": [{
+                "Effect": "Allow",
+                "Action": [
+                    "iam:GetRole",
+                    "iam:PassRole"
+                ],
+                "Resource": "arn:aws:iam::{account_id}:role/DeepSeaAI"
+            }]
+    }
+END
+```
+
+```shell
+aws iam create-policy --policy-name DeepSeaAIGetAndPassRolePolicy  --policy-document "${ROLE_PERMISSIONS_JSON}"
+
+```
 ### Attach permission to allow full access to S3 and SageMaker to the policy
 
 This will allow permission to create S3 buckets, to store and remove artifacts in the bucket, and, finally, 
@@ -51,6 +80,7 @@ full access to the SageMaker API for training and processing.
 ```shell
 aws iam attach-role-policy --role-name DeepSeaAI --policy-arn  arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
 aws iam attach-role-policy --role-name DeepSeaAI --policy-arn  arn:aws:iam::aws:policy/AmazonS3FullAccess
+aws iam attach-role-policy --role-name DeepSeaAI --policy-arn  arn:aws:iam::{account_id}:role/DeepSeaAIGetAndPassRolePolicy
 ```
 
 ## Set the SageMaker Role Environment Variable
