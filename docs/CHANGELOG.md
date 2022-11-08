@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.8.2](https://github.com/mbari-org/deepsea-ai/compare/v1.8.1...v1.8.2) (2022-11-08)
+
+
+### Performance Improvements
+
+* require cluster and job description for batch process ([22591b3](https://github.com/mbari-org/deepsea-ai/commit/22591b3b07f7dfa08dd2d59eefdc6720b81a473c))
+
 ## [1.8.1](https://github.com/mbari-org/deepsea-ai/compare/v1.8.0...v1.8.1) (2022-11-08)
 
 
