@@ -40,10 +40,10 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
     :param model_s3: Output s3 urlparse tuple to the model
     :param epochs: Number of epochs to train; must be > 0
     :param batch_size: Batch size to use; must be > 0
-    :volume_size_gb: Size in GB of the volume to attach to training
-    :model: YOLOv5 model type
-    :instance_type: Type of the AWS instance used, e.g. ml.p2.xlarge
-    :custom_config: configuration
+    :param volume_size_gb: Size in GB of the volume to attach to training
+    :param model: YOLOv5 model type
+    :param instance_type: Type of the AWS instance used, e.g. ml.p2.xlarge
+    :param custom_config: configuration
     """
     sagemaker_session = sagemaker.Session()
 
