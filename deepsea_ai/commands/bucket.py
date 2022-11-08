@@ -38,7 +38,7 @@ def create(bucket:tuple, tags: dict):
         try:
             s3_client.put_bucket_tagging(Bucket=bucket.netloc, Tagging={'TagSet': tags})
         except Exception as error:
-            raise f'Error creating bcket {bucket.netloc} {error}'
+            raise f'Error creating bucket {bucket.netloc} {error}'
     except ClientError as e:
         if e.response['Error']['Code'] == "BucketAlreadyOwnedByYou":
             return True

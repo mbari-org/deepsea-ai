@@ -18,6 +18,9 @@ import boto3
 
 
 def print_scaling_activities(resources: dict, num_records: int = 10):
+    """
+    Print scaling activities for a given resource
+    """
     client = boto3.client('autoscaling')
     response = client.describe_scaling_activities(
         ActivityIds=[],
