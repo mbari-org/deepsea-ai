@@ -1,5 +1,14 @@
 # DeepSeaAI Changelog
 
+## [1.8.1](https://github.com/mbari-org/deepsea-ai/compare/v1.8.0...v1.8.1) (2022-11-08)
+
+
+### Bug Fixes
+
+* add GetAndPassRolePolicy to allow getting and passing of roles and scope boto3 to the profile set by AWS_PROFILE ([425b3ce](https://github.com/mbari-org/deepsea-ai/commit/425b3ce360548062cacefd53968ab90c25733958))
+* correct fetching of username ([346cfdd](https://github.com/mbari-org/deepsea-ai/commit/346cfdd0fb3e300b1a2eae57a11f617a2d6f24e5))
+* exit on error if any missing data during upload ([ff966d6](https://github.com/mbari-org/deepsea-ai/commit/ff966d6c276413207bc48c501ffb2c7ee0552ab6))
+
 # [1.8.0](https://github.com/mbari-org/deepsea-ai/compare/v1.7.1...v1.8.0) (2022-11-02)
 
 
