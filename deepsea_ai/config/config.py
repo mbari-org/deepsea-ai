@@ -102,14 +102,12 @@ class Config:
         :return:
         """
         try:
-            iam = boto3.client('iam')
-            if 'UserName' in iam.get_user()["User"]:
-                user_name = iam.get_user()["User"]["UserName"]
-            else:
-                user_name = 'root'
+            sts = boto3.client('sts')
+            response = sts.get_caller_identity()
+            user_name = response['UserId'].split(":")[-1]
         except ClientError as e:
             # The user_name may be specified in the Access Denied message...
-            user_name = e.response["Error"]["Message"].split(" ")[-1]
+            user_name = "Unknown"
 
         return user_name
 
@@ -141,7 +139,7 @@ class Config:
     def get_resources(self, stack_name: str) -> dict:
         """
         Get resources relevant to the pipeline from the stack name; see deepsea-ai/cluster/stacks
-        :param stack_name:
+        :param stack_name: name of the stack to query in the ECS cluster
         :return: dictionary with resource names
         """
         client_cf = boto3.client('cloudformation')
