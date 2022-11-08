@@ -92,10 +92,10 @@ def setup_command(config):
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg '
                    'understands.')
-@click.option('--cluster', type=str, default='lonny33k',
+@click.option('--cluster', type=str, required=True,
               help='Name of the cluster to use to batch process.  This must correspond to an available Elastic '
                    'Container Service cluster.')
-@click.option('--job', type=str, default='lonny33k',
+@click.option('--job', type=str, required=True,
               help='Name of the job, e.g. DiveV4361 benthic outline')
 def batchprocess_command(config, check, upload, clean, cluster, job, input):
     """
