@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.9.0](https://github.com/mbari-org/deepsea-ai/compare/v1.8.3...v1.9.0) (2022-11-09)
+
+
+### Features
+
+* better formatting of scaling output and force cluster name as default ([adace33](https://github.com/mbari-org/deepsea-ai/commit/adace3389c51c9e0d54bfa74ea2ad99f62e0062a))
+
 ## [1.8.3](https://github.com/mbari-org/deepsea-ai/compare/v1.8.2...v1.8.3) (2022-11-09)
 
 
