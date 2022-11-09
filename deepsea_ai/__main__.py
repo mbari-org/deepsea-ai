@@ -61,7 +61,9 @@ def cli():
 
 @cli.command(name="setup")
 @click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
-def setup_command(config):
+@click.option('--mirror', is_flag=True, default=False, help='Mirror docker images from dockerhub into your Elastic '
+                                                            'Container Registry (ECR)')
+def setup_command(config, mirror):
     """
      (optional) upload, then batch process in an ECS cluster
     """
@@ -70,7 +72,9 @@ def setup_command(config):
     region = custom_config.get_region()
     image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
     image_tags = [custom_config('aws', t) for t in image_cfg]
-    setup.mirror_docker_hub_images_to_ecr( ecr_client=boto3.client("ecr"), account_id=account, region=region, image_tags=image_tags)
+    if mirror:
+        setup.mirror_docker_hub_images_to_ecr( ecr_client=boto3.client("ecr"), account_id=account,
+                                               region=region, image_tags=image_tags)
     setup.create_role(account_id=account)
     setup.store_role(default_config)
 
@@ -158,7 +162,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input):
 def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres,
                     save_vid, job_description):
     """
-     (optional) upload, then process video with a model
+     upload video(s) then process with a model
     """
     custom_config = cfg.Config(config)
 
