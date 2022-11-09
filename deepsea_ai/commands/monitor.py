@@ -29,4 +29,4 @@ def print_scaling_activities(resources: dict, num_records: int = 10):
         MaxRecords=num_records)
 
     for i in response['Activities']:
-        print(i)
+        print(f'{i["StartTime"]} {i["Description"]}  {i["Cause"]}')

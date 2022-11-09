@@ -316,7 +316,7 @@ def split_command(input:str, output:str):
     train.split(Path(input), Path(output))
 
 @cli.command(name="monitor")
-@click.option('--cluster', type=str, default='lonny33k',
+@click.option('--cluster', type=str, required=True,
               help='Name of the cluster to query.  This must correspond to an available Elastic '
                    'Container Service cluster.')
 @click.option('--autoscaling', type=bool, default=True, help='Display autoscaling information')
