@@ -163,7 +163,7 @@ def create_role(account_id: str):
 
         iam = session.client('iam')
 
-        resource = iam.create_policy(
+        iam.create_policy(
             PolicyName=policy,
             PolicyDocument=json.dumps(ROLE_PERMISSIONS_JSON)
         )
