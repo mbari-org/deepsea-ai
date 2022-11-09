@@ -104,7 +104,7 @@ class Config:
         try:
             sts = boto3.client('sts')
             response = sts.get_caller_identity()
-            user_name = response['UserId'].split(":")[-1]
+            user_name = response['Arn'].split("/")[-1].split("@")[0]
         except ClientError as e:
             # The user_name may be specified in the Access Denied message...
             user_name = "Unknown"
