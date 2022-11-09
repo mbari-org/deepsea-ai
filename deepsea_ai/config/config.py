@@ -38,7 +38,7 @@ class Config:
             self.path = default_config_ini
 
         if not os.path.isfile(self.path):
-            raise Exception(f'Bad path to {self.path}')
+            raise Exception(f'Bad path to {self.path}. Is your {self.path} missing?')
 
         self.parser.read(self.path)
         lines = open(self.path).readlines()
