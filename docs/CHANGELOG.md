@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.10.0](https://github.com/mbari-org/deepsea-ai/compare/v1.9.0...v1.10.0) (2022-11-09)
+
+
+### Features
+
+* added mirror as optional command ([01c7fdf](https://github.com/mbari-org/deepsea-ai/commit/01c7fdf35e1db035f25379e82febe44bf36bafd4))
+
 # [1.9.0](https://github.com/mbari-org/deepsea-ai/compare/v1.8.3...v1.9.0) (2022-11-09)
 
 
