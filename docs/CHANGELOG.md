@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.8.3](https://github.com/mbari-org/deepsea-ai/compare/v1.8.2...v1.8.3) (2022-11-09)
+
+
+### Bug Fixes
+
+* improved parsing to fetch the username in both subaccounts and a root leve account by the Arn ([a1b4b6d](https://github.com/mbari-org/deepsea-ai/commit/a1b4b6dcf41f2bacbd1e5b06e1230c1ace5fa911))
+
 ## [1.8.2](https://github.com/mbari-org/deepsea-ai/compare/v1.8.1...v1.8.2) (2022-11-08)
 
 
