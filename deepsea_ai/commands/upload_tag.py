@@ -23,7 +23,7 @@ from urllib.parse import urlparse
 from . import bucket
 
 
-def video_data(videos: [], input_s3:tuple, tags:dict):
+def video_data(videos: [], input_s3: tuple, tags: dict):
     """
      Does an upload and tagging of a collection of videos to S3
     :param videos: Array of video files in the input_path to upload
@@ -37,7 +37,7 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
 
     # upload and tag the video objects individually
     for v in videos:
-        prefix_path = v.parent.as_posix().split("Volumes/")[-1].lstrip('/') ## get Directory string
+        prefix_path = get_prefix(v)
         target_prefix = f'{input_s3.path}{prefix_path}/{v.name}'
 
         # check if the video exists in s3
@@ -50,7 +50,8 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
                     with open(v.as_posix(), "rb") as f:
                         print(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
                         s3.upload_fileobj(f, input_s3.netloc, target_prefix)
-                except: print("error in uploading to s3")
+                except:
+                    print("error in uploading to s3")
             else:
                 raise
         else:
@@ -67,7 +68,8 @@ def video_data(videos: [], input_s3:tuple, tags:dict):
         size_gb = bucket.size(output)
         return output, size_gb
 
-def training_data(data: [Path], input:tuple, tags:dict, training_prefix:str):
+
+def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
     """
      Does an upload and tagging of training data to S3
     :param data: Paths to training data to upload
@@ -87,12 +89,12 @@ def training_data(data: [Path], input:tuple, tags:dict, training_prefix:str):
         if not d.exists():
             print(f"Error: {d} does not exist")
             exit(-1)
-            
+
     for d in data:
         # arbitrarily pick the first element to form a prefix; it does not matter but can serve as an intuitive
         # way to reference later.
         if not prefix_path:
-            prefix_path = d.parent.as_posix().split("Volumes/")[-1].lstrip('/')
+            prefix_path = get_prefix(d)
 
         # check if the data exists in s3
         # all the data needs to be under the same prefix for training
@@ -124,3 +126,18 @@ def training_data(data: [Path], input:tuple, tags:dict, training_prefix:str):
     size_gb = bucket.size(output)
 
     return output, size_gb
+
+
+def get_prefix(path: Path):
+    """
+    Get the prefix from a path, stripping away any volume or drive information
+    :param path: Path to get the prefix from
+    :return: Prefix
+    """
+    prefix = None
+    for m in ['Volumes/', 'mnt/']:
+        if m in path.as_posix():
+            prefix = path.parent.as_posix().split(m)[-1].lstrip('/')
+            break
+
+    return prefix

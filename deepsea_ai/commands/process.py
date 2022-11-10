@@ -21,6 +21,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from deepsea_ai.config import config as cfg
+from deepsea_ai.commands.upload_tag import get_prefix
 
 from sagemaker.processing import ScriptProcessor, ProcessingInput, ProcessingOutput
 
@@ -89,7 +90,7 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
     # Get the service resource
     sqs = boto3.resource('sqs')
 
-    prefix_path = video_path.parent.as_posix().split("Volumes/")[1]
+    prefix_path = get_prefix(video_path)
 
     # Get the queue
     queue = sqs.get_queue_by_name(QueueName=queue_name)
