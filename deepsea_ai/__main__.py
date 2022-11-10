@@ -65,7 +65,7 @@ def cli():
                                                             'Container Registry (ECR)')
 def setup_command(config, mirror):
     """
-     (optional) upload, then batch process in an ECS cluster
+     Setup your AWS environment. Only need to run this once unless running in a new AWS account.
     """
     custom_config = cfg.Config(config)
     account = custom_config.get_account()
