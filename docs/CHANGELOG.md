@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.14.0](https://github.com/mbari-org/deepsea-ai/compare/v1.13.1...v1.14.0) (2022-11-11)
+
+
+### Features
+
+* bump strong sort docker images ([c98e428](https://github.com/mbari-org/deepsea-ai/commit/c98e42815796a25f1e7d499a791816d04ff73873))
+
 ## [1.13.1](https://github.com/mbari-org/deepsea-ai/compare/v1.13.0...v1.13.1) (2022-11-11)
 
 
