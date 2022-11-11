@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.12.0](https://github.com/mbari-org/deepsea-ai/compare/v1.11.0...v1.12.0) (2022-11-11)
+
+
+### Features
+
+* pass in iou and conf for batch ([d8b4258](https://github.com/mbari-org/deepsea-ai/commit/d8b4258c5dfe4515ad06a3606bd4e0418ac246b4))
+
 # [1.11.0](https://github.com/mbari-org/deepsea-ai/compare/v1.10.0...v1.11.0) (2022-11-10)
 
 
