@@ -161,8 +161,9 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, conf
 @click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
 @click.option('-s', '--save-vid', is_flag=True, default=False,
               help='Set option to output original video with detection boxes overlaid.')
+@click.option('--instance-type', type=str, default='ml.g4dn.xlarge', help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
 def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres,
-                    save_vid, job_description):
+                    save_vid, job_description, instance_type):
     """
      upload video(s) then process with a model
     """
@@ -171,7 +172,6 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
     # get tags to apply to the resources for cost monitoring
     tags = custom_config.get_tags(job_description)
 
-    instance_type = 'ml.g4dn.xlarge'
     input_path = Path(input)
     input_s3 = urlparse(input_s3)
     output_s3 = urlparse(output_s3)
