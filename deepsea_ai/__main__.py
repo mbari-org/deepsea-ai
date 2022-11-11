@@ -188,7 +188,7 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
         # insert the datetime prefix to make a unique key for the output
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
-        output_unique_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path}/{prefix}/")
+        output_unique_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/")
     
         if save_vid:
             volume_size_gb = int(2*size_gb)
