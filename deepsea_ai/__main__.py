@@ -101,7 +101,9 @@ def setup_command(config, mirror):
                    'Container Service cluster.')
 @click.option('--job', type=str, required=True,
               help='Name of the job, e.g. DiveV4361 benthic outline')
-def batchprocess_command(config, check, upload, clean, cluster, job, input):
+@click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
+@click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
+def batchprocess_command(config, check, upload, clean, cluster, job, input, conf_thres, iou_thres):
     """
      (optional) upload, then batch process in an ECS cluster
     """
@@ -132,7 +134,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input):
             upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags)
 
         if not loaded:
-            process.batch_run(resources, v, job, user_name, clean)
+            process.batch_run(resources, v, job, user_name, clean, conf_thres, iou_thres)
         else:
             print(f'Video {v.name} has already been processed and loaded...skipping')
 

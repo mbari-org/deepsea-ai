@@ -80,7 +80,7 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
                          )
 
 
-def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, clean: bool):
+def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, clean: bool, conf_thres: float, iou_thres: float):
     """
     Process a collection of videos in with a cluster in the Elastic Container Service [ECS]
     """
@@ -97,7 +97,9 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
     message_dict = {"video": f"{prefix_path}/{video_path.name}",
                     "clean": "True" if clean else "False",
                     "user_name": user_name,
-                    "job_name": job_name}
+                    "job_name": job_name,
+                    "conf_thres": conf_thres,
+                    "iou_thres": iou_thres}
     json_object = json.dumps(message_dict, indent=4)
 
     now = datetime.utcnow()
