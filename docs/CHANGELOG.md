@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.13.0](https://github.com/mbari-org/deepsea-ai/compare/v1.12.0...v1.13.0) (2022-11-11)
+
+
+### Features
+
+* add instance-type option to process for Duane ([e60b2de](https://github.com/mbari-org/deepsea-ai/commit/e60b2de194bd67215b1eb71f8b4c7fb396fcdb51))
+
 # [1.12.0](https://github.com/mbari-org/deepsea-ai/compare/v1.11.0...v1.12.0) (2022-11-11)
 
 
