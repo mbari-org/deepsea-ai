@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.13.1](https://github.com/mbari-org/deepsea-ai/compare/v1.13.0...v1.13.1) (2022-11-11)
+
+
+### Bug Fixes
+
+* strip rightmost / which errors process command out the with "bucket does not exist" error ([53fa17e](https://github.com/mbari-org/deepsea-ai/commit/53fa17e04c09362a7e20e9afa73cf0d5c0f11ac3))
+
 # [1.13.0](https://github.com/mbari-org/deepsea-ai/compare/v1.12.0...v1.13.0) (2022-11-11)
 
 
