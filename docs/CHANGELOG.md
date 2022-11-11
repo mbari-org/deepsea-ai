@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.11.0](https://github.com/mbari-org/deepsea-ai/compare/v1.10.0...v1.11.0) (2022-11-10)
+
+
+### Features
+
+* consistent prefix naming ([3967013](https://github.com/mbari-org/deepsea-ai/commit/3967013080010808e686c5aed385fde22e76e0aa))
+
 # [1.10.0](https://github.com/mbari-org/deepsea-ai/compare/v1.9.0...v1.10.0) (2022-11-09)
 
 
