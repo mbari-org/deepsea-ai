@@ -29,7 +29,7 @@ code_path = Path(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, model_size: int,
                         volume_size_gb:int, instance_type:str, config_s3: str, save_vid: bool,
-                         conf_thresh: float, tracker:str, custom_config:cfg.Config, tags:dict):
+                         conf_thres: float, iou_thres: float, tracker:str, custom_config:cfg.Config, tags:dict):
     """
     Process a collection of videos with the ScriptProcessor
     """
@@ -39,9 +39,10 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
 
     ## TODO: check of config_s3 is a valid s3 bucket with a valid object
     arguments = ['dettrack',
-                 f'--conf-thres={conf_thresh}',
+                 f'--conf-thres={conf_thres}',
+                 f'--iou-thres={iou_thres}',
                  f'--model-size={model_size}',
-                 f'--model-s3=s3://{model_s3.netloc}{model_s3.path}',
+                 f"--model-s3=s3://{model_s3.netloc}/{model_s3.path.lstrip('/')}",
                  ]
     if config_s3:
         arguments.append(f'--config-s3={config_s3}')
@@ -73,10 +74,10 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
     script_processor.run(code=f'{code_path.parent.parent.parent}/deepsea_ai/pipeline/run_{tracker}.py',
                          arguments=arguments,
                          inputs=[ProcessingInput(
-                             source=f's3://{input_s3.netloc}{input_s3.path}',
+                             source=f"s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}",
                              destination='/opt/ml/processing/input')],
                          outputs=[ProcessingOutput(source='/opt/ml/processing/output',
-                                                   destination=f's3://{output_s3.netloc}{output_s3.path}')]
+                                                   destination=f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}")]
                          )
 
 

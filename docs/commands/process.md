@@ -37,6 +37,12 @@ To use a different pretrained model, use the *model-s3* option e.g.
 deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --tracker strongsort --model-s3 s3://902005-public/models/yolov5x_mbay_benthic_model.tar.gz
 ```
 
+To specify the confidence and IOU thresholds, use the *conf-thres* and *iou-thres* options e.g.
+
+```
+deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --tracker strongsort --iou-thres 0.1 --conf-thres 0.5
+```
+
 ## Elastic Cluster Processing 
 
 If you have setup an Elastic Cluster Service to processing data in batch, you can use it with the **ecsprocess**

@@ -159,10 +159,11 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, conf
 @click.option('-c', '--config-s3', type=str, help='S3 location of tracking algorithm config yaml file')
 @click.option('--model-size', type=click.INT, default=640, help='Size of the model, e.g. 640 or 1280')
 @click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
+@click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
 @click.option('-s', '--save-vid', is_flag=True, default=False,
               help='Set option to output original video with detection boxes overlaid.')
 @click.option('--instance-type', type=str, default='ml.g4dn.xlarge', help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
-def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres,
+def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres, iou_thres,
                     save_vid, job_description, instance_type):
     """
      upload video(s) then process with a model
@@ -173,9 +174,9 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
     tags = custom_config.get_tags(job_description)
 
     input_path = Path(input)
-    input_s3 = urlparse(input_s3)
-    output_s3 = urlparse(output_s3)
-    model_s3 = urlparse(model_s3)
+    input_s3 = urlparse(input_s3.rstrip('/'))
+    output_s3 = urlparse(output_s3.rstrip('/'))
+    model_s3 = urlparse(model_s3.rstrip('/'))
 
     # create the buckets
     print(f'Creating buckets')
@@ -188,7 +189,7 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
         # insert the datetime prefix to make a unique key for the output
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
-        output_unique_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/")
+        output_unique_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/")
     
         if save_vid:
             volume_size_gb = int(2*size_gb)
@@ -196,7 +197,7 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
             volume_size_gb = int(1.25*size_gb)
     
         process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, volume_size_gb, instance_type,
-                                     config_s3, save_vid, conf_thres, tracker, custom_config, tags)
+                                     config_s3, save_vid, conf_thres, iou_thres, tracker, custom_config, tags)
 
 
 @cli.command(name="upload")
@@ -210,7 +211,7 @@ def upload_command(config, input, s3):
     Upload videos
     """
     custom_config = cfg.Config(config)
-    input_s3 = urlparse(s3)
+    input_s3 = urlparse(s3.rstrip('/'))
     tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
     bucket.create(input_s3, tags)
     videos = custom_config.check_videos(Path(input))
@@ -256,9 +257,9 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     label_path = Path(labels)
     name_path = Path(label_map)
 
-    # strip off any s3 prefixes
-    input_s3 = urlparse(input_s3)
-    output_s3 = urlparse(output_s3)
+    # strip off any training forward slashes
+    input_s3 = urlparse(input_s3.rstrip('/'))
+    output_s3 = urlparse(output_s3.rstrip('/'))
 
     data = [image_path, label_path, name_path]
 
@@ -276,10 +277,10 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
 
         if resume: # resuming from previous bucket, so no need to set prefix
-            ckpts_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.lstrip('/')}")
+            ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}")
         else:
-            ckpts_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/checkpoints/")
-        model_s3 = urlparse(f"s3://{output_s3.netloc}{output_s3.path.rstrip('/')}/{prefix}/models/")
+            ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/checkpoints/")
+        model_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/models/")
 
         # train
         train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type, custom_config)
@@ -295,7 +296,7 @@ def package_command(s3):
     This is done at the end of the train command automatically and stored in a model.tar.gz file.
     This is added in case checkpoints were generated outside of the deepsea-ai-traing command, e.g. SageMaker Studio. Colab
     """
-    train.package(urlparse(s3))
+    train.package(urlparse(s3.rstrip('/')))
 
 @cli.command(name="split")
 @click.option('-i', '--input', type=str, required=True,

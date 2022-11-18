@@ -38,7 +38,7 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
     # upload and tag the video objects individually
     for v in videos:
         prefix_path = get_prefix(v)
-        target_prefix = f'{input_s3.path}{prefix_path}/{v.name}'
+        target_prefix = f"{input_s3.path}/{prefix_path.lstrip('/')}/{v.name}"
 
         # check if the video exists in s3
         try:
@@ -122,7 +122,7 @@ def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
         except Exception as error:
             raise error
 
-    output = urlparse(f's3://{input.netloc}/{prefix_path}/{training_prefix}/')
+    output = urlparse(f"s3://{input.netloc}/{prefix_path.lstrip('/')}/{training_prefix}/")
     size_gb = bucket.size(output)
 
     return output, size_gb

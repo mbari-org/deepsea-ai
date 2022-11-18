@@ -73,8 +73,8 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
             print(f"40 limit exceeded for metric monitoring in SageMaker. Skipping over monitoring metric 'AP_{name}'")
 
     # setup the estimator
-    print(f'Saving checkpoints to s3://{ckpts_s3.netloc}{ckpts_s3.path}')
-    print(f'Saving model to s3://{model_s3.netloc}{model_s3.path}')
+    print(f"Saving checkpoints to s3://{ckpts_s3.netloc}/{ckpts_s3.path.lstrip('/')}")
+    print(f"Saving model to s3://{model_s3.netloc}/{model_s3.path.lstrip('/')}")
 
     if model not in models:
         raise Exception(f'Model {model} invalid. Choose a model from {models}')
@@ -83,9 +83,9 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
     if '6' in model: img_size = 1280  # all larger (1280x1280) models have the number 6 in them, e.g. yolov5n6
     image_uri = f"{custom_config.get_account()}.dkr.ecr.{custom_config.get_region()}.amazonaws.com/{custom_config('aws', 'yolov5_ecr')}"
     user_name = custom_config.get_username()
-    output_ckpts_s3 = f's3://{ckpts_s3.netloc}{ckpts_s3.path}'
-    output_model_s3 = f's3://{model_s3.netloc}{model_s3.path}'
-    training_s3 = f's3://{input_s3.netloc}{input_s3.path}'
+    output_ckpts_s3 = f"s3://{ckpts_s3.netloc}/{ckpts_s3.path.lstrip('/')}"
+    output_model_s3 = f"s3://{model_s3.netloc}/{model_s3.path.lstrip('/')}"
+    training_s3 = f"s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}"
     estimator = Estimator(base_job_name=f'{model}-{user_name}',
                            role=role,
                            tags=tags,
