@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.14.1](https://github.com/mbari-org/deepsea-ai/compare/v1.14.0...v1.14.1) (2022-11-18)
+
+
+### Performance Improvements
+
+* get rid of empty / prefixes in s3 calls and add iou pass through to process ([0c381a0](https://github.com/mbari-org/deepsea-ai/commit/0c381a0155fe62da323470c9083f0ea85d0a0c99))
+
 # [1.14.0](https://github.com/mbari-org/deepsea-ai/compare/v1.13.1...v1.14.0) (2022-11-11)
 
 
