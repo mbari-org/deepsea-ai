@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.15.0](https://github.com/mbari-org/deepsea-ai/compare/v1.14.1...v1.15.0) (2022-11-20)
+
+
+### Features
+
+* added support for passing in custom trained ReID weights for testing and add yolo.txt file back into tar.gz ([a2728f8](https://github.com/mbari-org/deepsea-ai/commit/a2728f87a9d00f5045b117327adfcb14e9e44af7))
+
 ## [1.14.1](https://github.com/mbari-org/deepsea-ai/compare/v1.14.0...v1.14.1) (2022-11-18)
 
 
