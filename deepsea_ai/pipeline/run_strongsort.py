@@ -9,10 +9,6 @@ __doc__ = '''
 
 Runs strongsort tracking algorithm on YOLOv5 models
 
-The speed this runs depends on many factors including: 
-1) the size of the detection model. 
-2) the GPU and CPU it is run on
-
 @author: __author__
 @status: __status__
 @license: __license__
@@ -42,16 +38,11 @@ from pipeline.data_models import generate_uuids, parse_events
 if 'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' in os.environ:
     default_input = '/opt/ml/processing/input'
     default_output = '/opt/ml/processing/output'
-    job_config_path = Path('/opt/ml/config/')
-    sys.path.insert(0, '/app/Yolov5_StrongSort_Pytorch')
 else:
     default_input = Path(__file__).parent.parent / 'test' / 'in'
     default_output = Path(__file__).parent.parent / 'test' / 'out'
-    sys.path.insert(0, str(Path(__file__).parent.parent))
-    job_config_path = None
 
-print(default_output)
-print(default_input)
+processing_job_cfg_path = Path('/opt/ml/config/processingjobconfig.json')
 stop_flag = False
 
 # A known pretrained model
@@ -74,11 +65,11 @@ def cli():
 
 @cli.command(name="dettrack")
 @click.option('-c', '--config-s3', type=click.STRING, help='Location of strongsort tracking algorithm config yaml file')
+@click.option('-r', '--reid-weights', type=click.STRING, help='Location to the reid weights')
 @click.option('-i', '--input', type=click.STRING, default=default_input,
-              help='Path to the input path with video_path files. These can be either mp4 or mov files that ffmpeg '
-                   'understands.')
+                                help='Path to video files. These can be either mp4 or mov files that ffmpeg understands.')
 @click.option('-o', '--output', type=click.STRING, default=default_output,
-              help='Path to the output to save the results')
+                                help='Path to the output to save the results')
 @click.option('--conf-thres', type=float, default=0.01, help='object confidence threshold')
 @click.option('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
 @click.option('--save-vid', is_flag=True, help='save video_path tracking results')
@@ -87,7 +78,7 @@ def cli():
               help='S3 path to the trained model tar gz file - must contain a valid YOLOv5 Pytorch model. ')
 @click.option('--model-size', type=click.INT, default=640, help='Size of the model, e.g. 640 or 1280')
 @click.option('--debug', is_flag=True, help='Debugging flag. Skips processing and downloading of the model.')
-def process_command(config_s3, conf_thres, iou_thres, input, output, model_size, model_s3, save_vid, max_det, debug):
+def process_command(config_s3, reid_weights, conf_thres, iou_thres, input, output, model_size, model_s3, save_vid, max_det, debug):
     """
     Process a collection of videos either from an input folder, or from a sqs queue
     """
@@ -132,10 +123,17 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                     try:
                         start_utc = datetime.datetime.utcnow()
 
+                        # override the defaults if the video message has them
+                        if video.conf_thres:
+                            conf_thres = video.conf_thres
+                        if video.iou_thres:
+                            iou_thres = video.iou_thres
+
                         if not debug:
                             cmd_track = f'python3 track.py ' \
                                         f'--source {video.input_path} ' \
-                                        f"--project {in_tmp_path / 'tracks'} " \
+                                        f'--project {in_tmp_path} ' \
+                                        f'--name {video.input_path.stem} ' \
                                         f'--imgsz {model_size} ' \
                                         f'--conf-thres {conf_thres} ' \
                                         f'--iou-thres {iou_thres} ' \
@@ -144,6 +142,8 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                                         f'--agnostic-nms '
                             if model_path:
                                 cmd_track += f'--yolo-weights {model_path} '
+                            if reid_weights:
+                                cmd_track += f'--strong-sort-weights {reid_weights} '
                             if config_path:
                                 cmd_track += f'--config-strongsort {config_path} '
                             if save_vid:
@@ -151,6 +151,7 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                         else:
                             cmd_track = [f"echo track {input_path} && sleep 60"]
 
+                        print(f'======>Running {cmd_track}')
                         track_proc = subprocess.Popen(cmd_track, shell=True)
                         track_proc.wait(timeout=MAX_TIMEOUT_SECS)
                         if track_proc.returncode == 0 or debug:
@@ -160,10 +161,13 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                         print(f'Exception {ex}')
                     finally:
 
+                        # the output is defined by the combination of --project and --name options in track.py
+                        track_path = in_tmp_path / video.input_path.stem
+
                         # copy any configuration files to further downstream data loading/processing
-                        if job_config_path and job_config_path.exists():
-                            for c in job_config_path.glob('*.json'):
-                                shutil.copy2(c.as_posix(), in_tmp_dir)
+                        if processing_job_cfg_path.exists():
+                            print(f'Copying {processing_job_cfg_path} to {track_path}')
+                            shutil.copy2(processing_job_cfg_path.as_posix(), track_path.as_posix())
                         else:
                             # create a new job file in the temp_dir with job metadata
                             with open(f"{in_tmp_path.as_posix()}/processingjobconfig.json", "w", encoding="utf-8") as j:
@@ -182,11 +186,11 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                         # convert the yolo output to a more friendly json output
                         # yolo output is a simple .txt file with the same file prefix as the video_path,
                         # e.g. myvideo.mov output is myvideo.txt
-                        yolo_results = None
-                        for yolo_results in (in_tmp_path.parent.parent).rglob('**/*.txt'): break
+                        yolo_results = track_path / 'tracks' / f'{video.input_path.stem}.txt'
 
                         # handle missing data
-                        if yolo_results and yolo_results.exists():
+                        if yolo_results.exists():
+
                             events_sans_uuids = parse_events(yolo_results.as_posix())
                             events = generate_uuids(events_sans_uuids)
 
@@ -198,7 +202,7 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                                     last_frame = e['frameNum']
 
                                 if e['frameNum'] > last_frame:
-                                    with open(f"{in_tmp_dir}/f{last_frame:06}.json", 'w', encoding='utf-8') as f:
+                                    with open(f"{track_path}/f{last_frame:06}.json", 'w', encoding='utf-8') as f:
                                         json.dump(["visualevents", visual_events], f)
                                         visual_events = []
 
@@ -223,19 +227,19 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                                                       ])
 
                                 if len(visual_events) > 0:
-                                    with open(f"{in_tmp_path.as_posix()}/f{last_frame:06}.json", 'w',
+                                    with open(f"{track_path}/f{last_frame:06}.json", 'w',
                                               encoding='utf-8') as f:
                                         json.dump(["visualevents", visual_events], f)
 
                         # make the output unique with a timestamp
-                        processor.save(in_tmp_path, out_tar_path, video)
+                        processor.save(track_path, out_tar_path, video)
 
                         total_time = datetime.datetime.utcnow() - start_utc
                         print(f'Total {video.name} processing time {total_time}. Started at {start_utc}')
 
                         # clean temp input dir and remove output
                         for i in in_tmp_path.glob('*'):
-                            i.unlink()
+                            if not i.is_dir(): i.unlink()
                         for o in out_tmp_path.glob('*'):
                             o.unlink()
                         processor.clean(video)

@@ -28,8 +28,9 @@ from sagemaker.processing import ScriptProcessor, ProcessingInput, ProcessingOut
 code_path = Path(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, model_size: int,
-                        volume_size_gb:int, instance_type:str, config_s3: str, save_vid: bool,
-                         conf_thres: float, iou_thres: float, tracker:str, custom_config:cfg.Config, tags:dict):
+                         reid_model_url:str, volume_size_gb:int, instance_type:str,
+                         config_s3: str, save_vid: bool, conf_thres: float, iou_thres: float,
+                         tracker:str, custom_config:cfg.Config, tags:dict):
     """
     Process a collection of videos with the ScriptProcessor
     """
@@ -46,6 +47,8 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
                  ]
     if config_s3:
         arguments.append(f'--config-s3={config_s3}')
+    if reid_model_url and tracker == 'strongsort': # only support with strongsort as of 11-18-2022
+        arguments.append(f'--reid-weights={reid_model_url}')
     else:
         if tracker == 'deepsort':
             arguments.append(f"--config-s3={custom_config('aws','deepsort_track_config_s3')}")

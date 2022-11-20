@@ -157,14 +157,15 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, conf
                    'Pytorch model.')
 @click.option('-j', '--job-description', type=str, help='The job description to use for the processing')
 @click.option('-c', '--config-s3', type=str, help='S3 location of tracking algorithm config yaml file')
+@click.option('--reid-model-url', type=click.STRING, help='Location of the reid model')
 @click.option('--model-size', type=click.INT, default=640, help='Size of the model, e.g. 640 or 1280')
 @click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
 @click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
 @click.option('-s', '--save-vid', is_flag=True, default=False,
               help='Set option to output original video with detection boxes overlaid.')
 @click.option('--instance-type', type=str, default='ml.g4dn.xlarge', help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
-def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, conf_thres, iou_thres,
-                    save_vid, job_description, instance_type):
+def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, reid_model_url,
+                    conf_thres, iou_thres, save_vid, job_description, instance_type):
     """
      upload video(s) then process with a model
     """
@@ -195,10 +196,10 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
             volume_size_gb = int(2*size_gb)
         else:
             volume_size_gb = int(1.25*size_gb)
-    
-        process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, volume_size_gb, instance_type,
-                                     config_s3, save_vid, conf_thres, iou_thres, tracker, custom_config, tags)
 
+        process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, reid_model_url,
+                                     volume_size_gb, instance_type, config_s3, save_vid, conf_thres,
+                                     iou_thres, tracker, custom_config, tags)
 
 @cli.command(name="upload")
 @click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
