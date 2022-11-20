@@ -9,10 +9,6 @@ __doc__ = '''
 
 Runs deepsort tracking algorithm on YOLOv5 models
 
-The speed this runs depends on many factors including: 
-1) the size of the detection model. 
-2) the GPU and CPU it is run on
-
 @author: __author__
 @status: __status__
 @license: __license__
@@ -42,14 +38,13 @@ from pipeline.data_models import generate_uuids, parse_events
 if 'AWS_CONTAINER_CREDENTIALS_RELATIVE_URI' in os.environ:
     default_input = '/opt/ml/processing/input'
     default_output = '/opt/ml/processing/output'
-    job_config_path = Path('/opt/ml/config/')
     sys.path.insert(0, '/app/Yolov5_DeepSort_Pytorch')
 else:
     default_input = Path(__file__).parent.parent / 'test' / 'in'
     default_output = Path(__file__).parent.parent / 'test' / 'out'
     sys.path.insert(0, str(Path(__file__).parent.parent))
-    job_config_path = None
 
+processing_job_cfg_path = Path('/opt/ml/config/processingjobconfig.json')
 print(default_output)
 print(default_input)
 stop_flag = False
@@ -104,8 +99,10 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
 
         # deepsort track.py requires separate input/output so let's create that here
         with tempfile.TemporaryDirectory() as in_tmp_dir:
-            in_tmp_path = Path(in_tmp_dir) / 'in'; in_tmp_path.mkdir()
-            out_tmp_path = Path(in_tmp_dir) / 'out'; out_tmp_path.mkdir()
+            in_tmp_path = Path(in_tmp_dir) / 'in'
+            in_tmp_path.mkdir()
+            out_tmp_path = Path(in_tmp_dir) / 'out'
+            out_tmp_path.mkdir()
 
             while processor.has_video() and not stop_flag:
 
@@ -155,9 +152,9 @@ def process_command(config_s3, conf_thres, iou_thres, input, output, model_size,
                     finally:
 
                         # copy any configuration files to further downstream data loading/processing
-                        if job_config_path and job_config_path.exists():
-                            for c in job_config_path.glob('*.json'):
-                                shutil.copy2(c.as_posix(), in_tmp_dir)
+                        if processing_job_cfg_path.exists():
+                            print(f'Copying {processing_job_cfg_path} to {in_tmp_path}')
+                            shutil.copy2(processing_job_cfg_path.as_posix(), in_tmp_path.as_posix())
                         else:
                             # create a new job file in the temp_dir with job metadata
                             with open(f"{in_tmp_path.as_posix()}/processingjobconfig.json", "w", encoding="utf-8") as j:
