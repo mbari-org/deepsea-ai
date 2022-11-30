@@ -14,7 +14,7 @@ set it through an environment variable. If you are switching accounts, you will 
 or run ``deepsea-ai setup`` again in that new account (recommended).
 
 ```
-export SAGEMAKER_ROLE="arn:aws:iam::872338704006:role/902005-sagemaker-exec"
+export SAGEMAKER_ROLE="arn:aws:iam::872338704006:role/DeepSeaAI"
 ```
 
 
