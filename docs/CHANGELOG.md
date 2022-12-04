@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.16.0](https://github.com/mbari-org/deepsea-ai/compare/v1.15.0...v1.16.0) (2022-12-04)
+
+
+### Features
+
+* add suppport for Users/ and home/ prefixes ([e605e4c](https://github.com/mbari-org/deepsea-ai/commit/e605e4c81107d10de6c338a8e814cd43df73b6dc))
+
 # [1.15.0](https://github.com/mbari-org/deepsea-ai/compare/v1.14.1...v1.15.0) (2022-11-20)
 
 
