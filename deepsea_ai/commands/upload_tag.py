@@ -135,7 +135,7 @@ def get_prefix(path: Path):
     :return: Prefix
     """
     prefix = None
-    for m in ['Volumes/', 'mnt/']:
+    for m in ['Volumes/', 'mnt/', 'Users/', 'home/']:
         if m in path.as_posix():
             prefix = path.parent.as_posix().split(m)[-1].lstrip('/')
             break
