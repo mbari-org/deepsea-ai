@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.17.1](https://github.com/mbari-org/deepsea-ai/compare/v1.17.0...v1.17.1) (2022-12-09)
+
+
+### Bug Fixes
+
+* add correct path to processingjobconfig.json ([0379447](https://github.com/mbari-org/deepsea-ai/commit/03794479e514b3b3ff92b30b6d6684d5802d9bdc))
+
 # [1.17.0](https://github.com/mbari-org/deepsea-ai/compare/v1.16.0...v1.17.0) (2022-12-09)
 
 
