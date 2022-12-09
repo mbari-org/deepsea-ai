@@ -66,9 +66,10 @@ def cli():
 @cli.command(name="dettrack")
 @click.option('-c', '--config-s3', type=click.STRING, help='Location of strongsort tracking algorithm config yaml file')
 @click.option('-r', '--reid-weights', type=click.STRING, help='Location to the reid weights')
-@click.option('-i', '--input', type=click.STRING, help='Path to video files. These can be either mp4 or mov files '
-                                                       'that ffmpeg understands.')
-@click.option('-o', '--output', type=click.STRING,  help='Path to the output to save the results')
+@click.option('-i', '--input', type=click.STRING, default=default_input,
+                                help='Path to video files. These can be either mp4 or mov files that ffmpeg understands.')
+@click.option('-o', '--output', type=click.STRING, default=default_output,
+                                help='Path to the output to save the results')
 @click.option('--conf-thres', type=float, default=0.01, help='object confidence threshold')
 @click.option('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
 @click.option('--save-vid', is_flag=True, help='save video_path tracking results')
