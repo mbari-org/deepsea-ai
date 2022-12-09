@@ -170,7 +170,7 @@ def process_command(config_s3, reid_weights, conf_thres, iou_thres, input, outpu
                             shutil.copy2(processing_job_cfg_path.as_posix(), track_path.as_posix())
                         else:
                             # create a new job file in the temp_dir with job metadata
-                            with open(f"{in_tmp_path.as_posix()}/processingjobconfig.json", "w", encoding="utf-8") as j:
+                            with open(f"{track_path.as_posix()}/processingjobconfig.json", "w", encoding="utf-8") as j:
                                 image_uri = os.environ[
                                     'IMAGE_URI'] if 'IMAGE_URI' in os.environ else "mbari/strongsort-yolov5:latest"
                                 processor_name = os.environ[
@@ -183,6 +183,14 @@ def process_command(config_s3, reid_weights, conf_thres, iou_thres, input, outpu
                                         "ContainerArguments": sys.argv
                                     }
                                 }, j)
+
+                        # insert the video path into the processing job config file
+                        with open(processing_job_cfg_path, 'r') as f:
+                            json_dict = json.load(f)
+                        json_dict['VideoName'] = video.input_path.name
+                        with open(f"{track_path.as_posix()}/processingjobconfig.json", "w", encoding="utf-8") as j:
+                            json.dump(json_dict, j, indent=4)
+
                         # convert the yolo output to a more friendly json output
                         # yolo output is a simple .txt file with the same file prefix as the video_path,
                         # e.g. myvideo.mov output is myvideo.txt
