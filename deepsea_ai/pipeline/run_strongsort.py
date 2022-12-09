@@ -66,10 +66,9 @@ def cli():
 @cli.command(name="dettrack")
 @click.option('-c', '--config-s3', type=click.STRING, help='Location of strongsort tracking algorithm config yaml file')
 @click.option('-r', '--reid-weights', type=click.STRING, help='Location to the reid weights')
-@click.option('-i', '--input', type=click.STRING, default=default_input,
-                                help='Path to video files. These can be either mp4 or mov files that ffmpeg understands.')
-@click.option('-o', '--output', type=click.STRING, default=default_output,
-                                help='Path to the output to save the results')
+@click.option('-i', '--input', type=click.STRING, help='Path to video files. These can be either mp4 or mov files '
+                                                       'that ffmpeg understands.')
+@click.option('-o', '--output', type=click.STRING,  help='Path to the output to save the results')
 @click.option('--conf-thres', type=float, default=0.01, help='object confidence threshold')
 @click.option('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
 @click.option('--save-vid', is_flag=True, help='save video_path tracking results')
@@ -185,9 +184,11 @@ def process_command(config_s3, reid_weights, conf_thres, iou_thres, input, outpu
                                 }, j)
 
                         # insert the video path into the processing job config file
-                        with open(processing_job_cfg_path, 'r') as f:
+                        with open(f"{track_path.as_posix()}/processingjobconfig.json", "r", encoding="utf-8") as f:
                             json_dict = json.load(f)
+                        print(json_dict)
                         json_dict['VideoName'] = video.input_path.name
+                        print(json_dict)
                         with open(f"{track_path.as_posix()}/processingjobconfig.json", "w", encoding="utf-8") as j:
                             json.dump(json_dict, j, indent=4)
 
