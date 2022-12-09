@@ -1,5 +1,17 @@
 # DeepSeaAI Changelog
 
+# [1.18.0](https://github.com/mbari-org/deepsea-ai/compare/v1.17.1...v1.18.0) (2022-12-09)
+
+
+### Features
+
+* handle empty prefix paths defined as inputs in processing jobs ([64a9e4e](https://github.com/mbari-org/deepsea-ai/commit/64a9e4e59c2a555153beef97745f1e85e8225a00))
+
+
+### Reverts
+
+* add back in default input/outputs ([ff596cc](https://github.com/mbari-org/deepsea-ai/commit/ff596cc2504a960802ab22838f65319c61d8d7ce))
+
 ## [1.17.1](https://github.com/mbari-org/deepsea-ai/compare/v1.17.0...v1.17.1) (2022-12-09)
 
 
