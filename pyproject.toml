@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "deepsea-ai"
-version = "1.16.0"
+version = "1.17.0"
 description = "DeepSeaAI is a Python package to simplify processing deep sea video in AWS from a command line."
 authors = ["Danelle Cline <dcline@mbari.org>", "Duane Edgington <duane@mbari.org>"]
 repository = "https://github.com/mbari-org/deepsea-ai"

@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.17.0](https://github.com/mbari-org/deepsea-ai/compare/v1.16.0...v1.17.0) (2022-12-09)
+
+
+### Features
+
+* add VideoName to job output which is less fragile than using the tar prefix ([f71e64c](https://github.com/mbari-org/deepsea-ai/commit/f71e64c342eebd6d0b6ae126f5799b1ac2e9c4dc))
+
 # [1.16.0](https://github.com/mbari-org/deepsea-ai/compare/v1.15.0...v1.16.0) (2022-12-04)
 
 
