@@ -38,7 +38,10 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
     # upload and tag the video objects individually
     for v in videos:
         prefix_path = get_prefix(v)
-        target_prefix = f"{input_s3.path}/{prefix_path.lstrip('/')}/{v.name}"
+        if input_s3.path:
+            target_prefix = f"{input_s3.path}/{prefix_path.lstrip('/')}/{v.name}"
+        else:
+            target_prefix = f"{prefix_path.lstrip('/')}/{v.name}"
 
         # check if the video exists in s3
         try:
