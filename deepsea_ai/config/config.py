@@ -149,7 +149,7 @@ class Config:
             stack_resources = client_cf.list_stack_resources(StackName=stack_name)
             resources = {'CLUSTER': stack_name}
 
-            # fetch the PROCESSOR environment variable for the single task in the stack; the job is keyed uniquely to it
+            # fetch the PROCESSOR, etc. environment variables for the single task in the stack; the job is keyed uniquely to it
             key = ['PROCESSOR', 'TRACK_QUEUE', 'VIDEO_QUEUE', 'DEAD_QUEUE', 'TRACK_BUCKET', 'VIDEO_BUCKET']
             for r in stack_resources['StackResourceSummaries']:
                 if 'AWS::ECS::TaskDefinition' in r['ResourceType']:
