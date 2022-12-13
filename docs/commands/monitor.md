@@ -4,7 +4,7 @@ Monitor the ECS cluster by name.
 To see the last autoscaling 10 logs from the cluster public33k, run
 
 ```
-deepsea-ai monitor --cluster public33k --autoscaling --records 10 
+deepsea-ai monitor --cluster public33k --autoscaling True --records 10 
 ```
 
 ```
