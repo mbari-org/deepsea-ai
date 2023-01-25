@@ -96,3 +96,15 @@ Each time:
 
 Run command example:
 deepsea-ai process -j "DocRickets benchmark dive 232" -i /Volumes/M3/Projects/VAA/Benchmarks/mezzanine/DocRicketts/2011/05/232/ --tracker strongsort --input-s3 s3://902005-benchmark/ --model-s3 s3://902005-reid-checkpoints-dev/20221109T193423Z/models/yolov5x-duane-2022-11-09-19-34-25-092/output/model.tar.gz --output-s3 s3://902005-benchmarks-out/ --instance-type 'ml.g4dn.xlarge'
+
+
+Example script:
+#!/bin/bash
+export AWS_PROFILE=902005_dev
+deepsea-ai ecsprocess -u \
+        --config 902005_stress.txt \
+        --cluster strongsort-yolov5-mbari315k  \
+        -u \
+        -i  /Volumes/M3/mezzanine/DocRicketts/2016/11/903\
+        --job 'DocRicketss dive 903 21dec2022' \
+        --clean
