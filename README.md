@@ -41,6 +41,7 @@ deepsea-ai setup
 
 
 
+
 ## Tutorials
 
 * [FathomNet](docs/notebooks/fathomnet_train.ipynb) ✨ Recommended first step to learn more about how to train a YOLOv5 object detection model using freely available FathomNet data
@@ -77,3 +78,9 @@ jupyter notebook
 Source code is available at [github.com/mbari-org/deepsea-ai](https://github.com/mbari-org/deepsea-ai/).
   
 For more details, see the [official documentation](http://docs.mbari.org/deepsea-ai/install).
+
+
+Example set up to run one or more dives stored in M3 using AWS 
+
+1) VPN to MBARI or be inside firewall
+2) Mount smb://titan.shore.mbari.org/m3/
