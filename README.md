@@ -82,5 +82,17 @@ For more details, see the [official documentation](http://docs.mbari.org/deepsea
 
 Example set up to run one or more dives stored in M3 using AWS 
 
-1) VPN to MBARI or be inside firewall
-2) Mount smb://titan.shore.mbari.org/m3/
+Do once:
+0) have current AWS credentials for the account you are working in
+1) set up deepsea-ai
+pip install git+https://github.com/mbari-org/deepsea-ai
+
+Each time:
+1) Renew AWS credentials if expired
+2) VPN to MBARI or be inside firewall
+3) Mount smb://titan.shore.mbari.org/m3/
+4) pip install -U deepsea-ai
+5) run deepsea-ai setup  (per https://github.com/mbari-org/deepsea-ai/blob/main/docs/commands/process.md)
+
+Run command example:
+deepsea-ai process -j "DocRickets benchmark dive 232" -i /Volumes/M3/Projects/VAA/Benchmarks/mezzanine/DocRicketts/2011/05/232/ --tracker strongsort --input-s3 s3://902005-benchmark/ --model-s3 s3://902005-reid-checkpoints-dev/20221109T193423Z/models/yolov5x-duane-2022-11-09-19-34-25-092/output/model.tar.gz --output-s3 s3://902005-benchmarks-out/ --instance-type 'ml.g4dn.xlarge'
