@@ -96,6 +96,8 @@ def setup_command(config, mirror):
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg '
                    'understands.')
+@click.option('-e', '--exclude', type=str, multiple=True,
+              help='Exclude directory or file. Excludes any directory or file that contains the given string')
 @click.option('--cluster', type=str, required=True,
               help='Name of the cluster to use to batch process.  This must correspond to an available Elastic '
                    'Container Service cluster.')
@@ -103,7 +105,7 @@ def setup_command(config, mirror):
               help='Name of the job, e.g. DiveV4361 benthic outline')
 @click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
 @click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
-def batchprocess_command(config, check, upload, clean, cluster, job, input, conf_thres, iou_thres):
+def batchprocess_command(config, check, upload, clean, cluster, job, input, exclude, conf_thres, iou_thres):
     """
      (optional) upload, then batch process in an ECS cluster
     """
@@ -115,7 +117,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, conf
     input_path = Path(input)
     resources = custom_config.get_resources(cluster)
     user_name = custom_config.get_username()
-    videos = custom_config.check_videos(input_path)
+    videos = custom_config.check_videos(input_path, exclude)
     tags = custom_config.get_tags(f'Video uploaded from {input} by user {user_name} ')
 
     for v in videos:
@@ -147,6 +149,8 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, conf
 @click.option('-i', '--input', type=str, required=True,
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg understands.')
+@click.option('-e', '--exclude', type=str, multiple=True,
+              help='Exclude directory or file. Excludes any directory or file that contains the given string')
 @click.option('--input-s3', type=str, required=True,
               help=f'Path to the s3 bucket with video files. These can be either mp4 or '
                                                f'mov files that ffmpeg understands, e.g. s3://{example_input_process_s3}')
@@ -164,7 +168,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, conf
 @click.option('-s', '--save-vid', is_flag=True, default=False,
               help='Set option to output original video with detection boxes overlaid.')
 @click.option('--instance-type', type=str, default='ml.g4dn.xlarge', help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
-def process_command(config, tracker, input, input_s3, output_s3, model_s3, config_s3, model_size, reid_model_url,
+def process_command(config, tracker, input, exclude, input_s3, output_s3, model_s3, config_s3, model_size, reid_model_url,
                     conf_thres, iou_thres, save_vid, job_description, instance_type):
     """
      upload video(s) then process with a model
@@ -184,7 +188,7 @@ def process_command(config, tracker, input, input_s3, output_s3, model_s3, confi
 
     if bucket.create(input_s3, tags) and bucket.create(output_s3, tags): 
     
-        videos = custom_config.check_videos(input_path)
+        videos = custom_config.check_videos(input_path, exclude)
         input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
      
         # insert the datetime prefix to make a unique key for the output
