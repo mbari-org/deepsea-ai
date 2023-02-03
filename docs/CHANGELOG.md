@@ -1,5 +1,17 @@
 # DeepSeaAI Changelog
 
+# [1.19.0](https://github.com/mbari-org/deepsea-ai/compare/v1.18.0...v1.19.0) (2023-02-03)
+
+
+### Bug Fixes
+
+* allow buckets already created to be reused ([91479ba](https://github.com/mbari-org/deepsea-ai/commit/91479ba812223bcc575330ddb5d4ca201a9056a9))
+
+
+### Features
+
+* add --exclude flag ([0bfaef2](https://github.com/mbari-org/deepsea-ai/commit/0bfaef226d1ba5bfab076dc2dbbfe5a99c81da06))
+
 # [1.18.0](https://github.com/mbari-org/deepsea-ai/compare/v1.17.1...v1.18.0) (2022-12-09)
 
 
