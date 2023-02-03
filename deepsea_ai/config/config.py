@@ -169,15 +169,27 @@ class Config:
         return None
 
     staticmethod
-    def check_videos(self, input_path: Path) -> List[Path]:
+    def check_videos(self, input_path: Path, exclude: tuple) -> List[Path]:
         """
          Check for videos with acceptable suffixes and return the Paths to them
         :param input_path: input path to search (non-recursively)
+        :param exclude: directory or files to exclude from the list of videos to process
         :return:
         """
         vid_formats = ['.mov', '.avi', '.mp4', '.mpg', '.mpeg', '.m4v', '.wmv', '.mkv']  # acceptable video suffixes
-        files = sorted(input_path.glob('**/*'))
-        videos = [x for x in files if x.suffix.lower() in vid_formats and '._' not in x.name]
+
+        # convert exclude tuple to list
+        excludes = list(exclude)
+        print(f'Excluding any file or directory that contains {excludes}')
+
+        def search(x:Path):
+            if excludes:
+                found = [ x.name.__contains__(e) for e in excludes ]
+                return (True not in found and x.suffix.lower() in vid_formats and '._' not in x.name)
+            else:
+                return (x.suffix.lower() in vid_formats and '._' not in x.name)
+
+        videos = [x for x in input_path.glob("**/*") if search(x)]
         num_videos = len(videos)
         assert (num_videos > 0), "No videos to process"
         video_paths = [Path(x) for x in videos]

@@ -23,7 +23,7 @@ def create(bucket:tuple, tags: dict):
     """Create an S3 bucket
     :param bucket: Bucket to create
     :param tags: Tags to assign to the bucket
-    :return: True if bucket created, else False
+    :return: True if bucket created, or it already exists, else False
     """
 
     # Create bucket
@@ -40,7 +40,9 @@ def create(bucket:tuple, tags: dict):
         except Exception as error:
             raise f'Error creating bucket {bucket.netloc} {error}'
     except ClientError as e:
-        if e.response['Error']['Code'] == "BucketAlreadyOwnedByYou":
+        code = e.response['Error']['Code']
+        if code == "BucketAlreadyOwnedByYou" or code == 'BucketAlreadyExists':
+            logging.info(e)
             return True
 
         logging.error(e)
