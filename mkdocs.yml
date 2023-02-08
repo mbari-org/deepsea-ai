@@ -31,9 +31,12 @@ markdown_extensions:
   - pymdownx.superfences:
 nav:
   - Installation: 'index.md'
+  - Advanced notes on AWS install: 'aws_setup_advanced.md'
+  - Training example with FathomNet data: notebooks/fathomnet_train.ipynb
   - Commands:
       - commands/train.md
       - commands/process.md
+      - commands/monitor.md
   - Prepare your data: 'data.md'
   - Change Log: CHANGELOG.md
   - License: LICENSE.md

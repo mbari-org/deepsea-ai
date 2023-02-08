@@ -1,5 +1,4 @@
-Monitor the ECS cluster by name.
- 
+## Monitor the ECS cluster by name
 
 To see the last autoscaling 10 logs from the cluster public33k, run
 
