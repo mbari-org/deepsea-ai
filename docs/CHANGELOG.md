@@ -1,5 +1,14 @@
 # DeepSeaAI Changelog
 
+## [1.19.1](https://github.com/mbari-org/deepsea-ai/compare/v1.19.0...v1.19.1) (2023-02-08)
+
+
+### Bug Fixes
+
+* updating doc with process commands ([467e21a](https://github.com/mbari-org/deepsea-ai/commit/467e21a53ea0f4373776fccb021e8cb5c602a626))
+* updating doc with process commands ([e5341e5](https://github.com/mbari-org/deepsea-ai/commit/e5341e51e3a9c8c8b5cb056f3046c2fa00a6b1bc))
+* updating README.md with ecsprocess example and with process example ([06ce655](https://github.com/mbari-org/deepsea-ai/commit/06ce65534f9a050b825c044cbbd6f0304866f919))
+
 # [1.19.0](https://github.com/mbari-org/deepsea-ai/compare/v1.18.0...v1.19.0) (2023-02-03)
 
 
