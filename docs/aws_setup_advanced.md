@@ -1,11 +1,17 @@
+## Setup
+
+The  ```deepsea-ai setup``` command does a number of things under-the-hood which are detailed below 
+for the advanced AWS user.  
+
+**You can safely skip these steps if you have run the ```deepsea-ai setup``` command which will do this for you**
+
 ## Set up an IAM managed policy
 
 Use the following instructions to create an execution policy that will
 grant access to use the services used in the *deepsea-ai* module.
 
-**You can safely skip this if you have run the ```deepsea-ai setup``` command which will do this for you**
 
-Batch processing uses the Elastic Container Service (ECS) which requires permissions
+Batch processing ```deepsea-ai process or deepsea-ai ecsprocess``` uses the Elastic Container Service (ECS) which requires permissions
 for the tasks that run the detection and processing pipelines to assume the role.
 
 Training uses SageMaker which requires permissions for the trainer to assume the role.
@@ -46,6 +52,7 @@ ASSUME_ROLE_POLICY_JSON=$(cat <<-END
 END
 )
 ```
+
 ### Create a role called *DeepSeaAI* using the policy
 ```shell
 aws iam create-role --role-name DeepSeaAI  --assume-role-policy-document "${POLICY_JSON}"
@@ -125,11 +132,9 @@ This will return a JSON formatted string similar to this
 
 ## Set the SAGEMAKER_ROLE environment variable
 
-**You can safely skip this if you have run the ```deepsea-ai setup``` command which will do this for you**
-
 Use the field returned called "Arn", for example *arn:aws:iam::12345678911:role/DeepSeaAI* to set the environment
 variable SAGEMAKER_ROLE
 
 ```shell
-export SAGEMAKER_ROLE=arn:aws:iam::872338704006:role/DeepSeaAI
+export SAGEMAKER_ROLE=arn:aws:iam::12345678911:role/DeepSeaAI
 ```
