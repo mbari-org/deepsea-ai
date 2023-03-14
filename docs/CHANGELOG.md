@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.19.2](https://github.com/mbari-org/deepsea-ai/compare/v1.19.1...v1.19.2) (2023-03-14)
+
+
+### Bug Fixes
+
+* minor fix to capture resource name which is now capitalized and graphql ini endpoint missing s ([176b9b6](https://github.com/mbari-org/deepsea-ai/commit/176b9b68bddc14fdc82d9f31edd6f196d3f4411a))
+
 ## [1.19.1](https://github.com/mbari-org/deepsea-ai/compare/v1.19.0...v1.19.1) (2023-02-08)
 
 
