@@ -125,7 +125,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
         if database:
             # Check if the video has already been loaded by looking it up by the media name per this job name
             medias = database.execute(queries.GET_MEDIA_IN_JOB,
-                                      processing_job_name=f"{resources['processor']}-“{job}”",
+                                      processing_job_name=f"{resources['PROCESSOR']}-“{job}”",
                                       media_name=v.name)
 
             # Found a media in the job as keyed by the processing name, so assume that this was already processed
