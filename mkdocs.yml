@@ -34,6 +34,7 @@ nav:
   - Commands:
       - commands/train.md
       - commands/process.md
+      - commands/monitor.md
   - Configuration: 'config.md'
   - Prepare your data: 'data.md'
   - Change Log: CHANGELOG.md
