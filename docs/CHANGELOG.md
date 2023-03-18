@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.20.0](https://github.com/mbari-org/deepsea-ai/compare/v1.19.2...v1.20.0) (2023-03-18)
+
+
+### Features
+
+* add tagging check, retry 10 times every minute for upload failures, and add support for single file processing ([b49eeda](https://github.com/mbari-org/deepsea-ai/commit/b49eeda066d2ee858463a7e2f0db944b242c5d74))
+
 ## [1.19.2](https://github.com/mbari-org/deepsea-ai/compare/v1.19.1...v1.19.2) (2023-03-14)
 
 
