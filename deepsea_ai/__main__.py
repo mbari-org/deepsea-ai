@@ -94,8 +94,7 @@ def setup_command(config, mirror):
               help='Clean up unused artifact (e.g. video) from s3 after processing')
 @click.option('-i', '--input', type=str, default="/Volumes/M3/mezzanine/DocRicketts/2022/02/1423/",
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
-                   'ffmpeg '
-                   'understands.')
+                   'ffmpeg understands. This can also be a single video file.')
 @click.option('-e', '--exclude', type=str, multiple=True,
               help='Exclude directory or file. Excludes any directory or file that contains the given string')
 @click.option('--cluster', type=str, required=True,
@@ -148,7 +147,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
               help='Tracking type: deepsort or strongsort')
 @click.option('-i', '--input', type=str, required=True,
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
-                   'ffmpeg understands.')
+                   'ffmpeg understands. This can also be a single video file.')
 @click.option('-e', '--exclude', type=str, multiple=True,
               help='Exclude directory or file. Excludes any directory or file that contains the given string')
 @click.option('--input-s3', type=str, required=True,
@@ -209,7 +208,7 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
 @click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('-i', '--input', type=click.Path(exists=True, file_okay=False, dir_okay=True), required=True,
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
-                   'ffmpeg understands.')
+                   'ffmpeg understands.  This can also be a single video file.')
 @click.option('--s3', type=str, help='S3 bucket to upload to, e.g. s3://902005-video-in-dev', required=True)
 def upload_command(config, input, s3):
     """

@@ -133,6 +133,16 @@ class Config:
                     {'Key': f'{organization}:application', 'Value': application},
                     {'Key': f'{organization}:deletion-date', 'Value': deletion_date},
                     {'Key': f'{organization}:created-by', 'Value': user_name}]
+
+        # check that the tags conform to the AWS tagging standard (no spaces, no special characters)
+        # iterate over the tag dictionary and check the key and value
+        for tag in tag_dict:
+            print(f'Checking tag {tag}')
+            # it the value has any special characters, it is not valid, e.g. key=!@#
+            if not tag['Value'].isalnum():
+                assert (f'Tag {tag} has a value with special characters. Check your config.ini file. '
+                                f'Special characters are not allowed in AWS tags, e.g. dots, etc.')
+
         return tag_dict
 
     staticmethod
@@ -172,7 +182,7 @@ class Config:
     def check_videos(self, input_path: Path, exclude: tuple) -> List[Path]:
         """
          Check for videos with acceptable suffixes and return the Paths to them
-        :param input_path: input path to search (non-recursively)
+        :param input_path: input path to search (non-recursively) or a single video file
         :param exclude: directory or files to exclude from the list of videos to process
         :return:
         """
@@ -182,14 +192,20 @@ class Config:
         excludes = list(exclude)
         print(f'Excluding any file or directory that contains {excludes}')
 
-        def search(x:Path):
+        def search(x: Path):
             if excludes:
-                found = [ x.name.__contains__(e) for e in excludes ]
+                found = [x.name.__contains__(e) for e in excludes]
                 return (True not in found and x.suffix.lower() in vid_formats and '._' not in x.name)
             else:
                 return (x.suffix.lower() in vid_formats and '._' not in x.name)
 
-        videos = [x for x in input_path.glob("**/*") if search(x)]
+        # if the input path is a directory, search for videos
+        videos = []
+        if input_path.is_dir():
+            videos = [x for x in input_path.glob("**/*") if search(x)]
+        else:
+            if search(input_path):
+                videos = [input_path]
         num_videos = len(videos)
         assert (num_videos > 0), "No videos to process"
         video_paths = [Path(x) for x in videos]

@@ -40,6 +40,12 @@ To specify the confidence and IOU thresholds, use the *conf-thres* and *iou-thre
 deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --tracker strongsort --iou-thres 0.1 --conf-thres 0.5
 ```
 
+To process a single video, e.g.
+
+```
+deepsea-ai process -j "DocRickets dive 1423" -i  /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/D1423_20220221T164250Z_h265.mp4 --tracker strongsort 
+```
+
 ## ECS (Elastic Cluster Service) Process Examples
 
 If you have setup an Elastic Cluster Service to process data in batch, you can use it with the **ecsprocess**

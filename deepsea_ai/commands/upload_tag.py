@@ -16,7 +16,7 @@ Bucket upload and tagging utility
 
 import botocore
 import boto3
-import deepsea_ai.config as config
+import time
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -48,13 +48,21 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
             s3_resource.Object(input_s3.netloc, target_prefix).load()
         except botocore.exceptions.ClientError as e:
             if e.response['Error']['Code'] == "404":
-                # The video does not exist so upload
-                try:
-                    with open(v.as_posix(), "rb") as f:
-                        print(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
-                        s3.upload_fileobj(f, input_s3.netloc, target_prefix)
-                except:
-                    print("error in uploading to s3")
+                upload_success = False
+                # The video does not exist so upload and retry
+                for retry in range(10):
+                    try:
+                        with open(v.as_posix(), "rb") as f:
+                            print(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
+                            s3.upload_fileobj(f, input_s3.netloc, target_prefix)
+                            upload_success = True
+                            break
+                    except:
+                        print(f"Error uploading {v} to s3. Retrying every 60 seconds...")
+                        time.sleep(60)
+
+                if not upload_success:
+                    raise Exception(f"Error uploading {v} to s3 after {retry} retries. Aborting.")
             else:
                 raise
         else:
@@ -63,6 +71,7 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
 
         try:
             # tag it
+            print(f'Tagging {v} with {tags}...')
             s3.put_object_tagging(Bucket=input_s3.netloc, Key=f'{target_prefix}', Tagging={'TagSet': tags})
         except Exception as error:
             raise error
