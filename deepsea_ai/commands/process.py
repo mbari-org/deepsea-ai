@@ -20,8 +20,12 @@ import boto3
 import json
 from datetime import datetime
 from pathlib import Path
+
+import pandas as pd
+
 from deepsea_ai.config import config as cfg
 from deepsea_ai.commands.upload_tag import get_prefix
+from deepsea_ai.logger import debug, info, err, warn, exception, keys, add_summary_row
 
 from sagemaker.processing import ScriptProcessor, ProcessingInput, ProcessingOutput
 
@@ -36,6 +40,7 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
     """
     user_name = custom_config.get_username()
     if tracker not in ['deepsort', 'strongsort']:
+        exception(f'{tracker} not currently supported')
         raise Exception(f'{tracker} not currently supported')
 
     ## TODO: check of config_s3 is a valid s3 bucket with a valid object
@@ -56,7 +61,7 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
             arguments.append(f"--config-s3={custom_config('aws','strongsort_track_config_s3')}")
     if save_vid:
         arguments.append('--save-vid')
-    print(arguments)
+    debug(arguments)
 
     # Construct the uri from the config, e.g.
     # mbari/deepsea-yolov5:1.1.2 => 872338704006.dkr.ecr.us-west-2.amazonaws.com/deepsea-yolov5:1.1.2
@@ -74,6 +79,14 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
                                        volume_size_in_gb=volume_size_gb,
                                        max_runtime_in_seconds=172800,
                                        tags=tags)
+
+    # log it
+    row = pd.Series(keys)
+    row['video'] = "N/A"
+    row['time'] = datetime.utcnow()
+    row['message'] = f"Start script processor for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}"
+    row['status'] = 'OK'
+    add_summary_row(row)
     script_processor.run(code=f'{code_path.parent.parent.parent}/deepsea_ai/pipeline/run_{tracker}.py',
                          arguments=arguments,
                          inputs=[ProcessingInput(
@@ -83,6 +96,24 @@ def script_processor_run(input_s3: tuple, output_s3: tuple, model_s3: tuple, mod
                                                    destination=f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}")]
                          )
 
+    # log success/failure
+    if script_processor.jobs[-1].describe()['ProcessingJobStatus'] == 'Failed':
+        row = pd.Series(keys)
+        row['video'] = "N/A"
+        row['time'] = datetime.utcnow()
+        row['message'] = f"Script processor failed for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}"
+        row['status'] = 'Failed'
+        add_summary_row(row)
+        exception(f"Script processor failed for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
+        raise Exception(f"Script processor failed for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
+    else:
+        row = pd.Series(keys)
+        row['video'] = "N/A"
+        row['time'] = datetime.utcnow()
+        row['message'] = f"Script processor succeeded for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}"
+        row['status'] = 'OK'
+        add_summary_row(row)
+        debug(f"Script processor succeeded for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
 
 def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, clean: bool, conf_thres: float, iou_thres: float):
     """
@@ -114,4 +145,12 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
 
     # create a new message
     response = queue.send_message(MessageBody=json_object, MessageGroupId=resources['CLUSTER'] + f"{group_id}")
-    print(f"Message queued to {queue_name}. MessageId: {response.get('MessageId')}")
+    info(f"Message queued to {queue_name}. MessageId: {response.get('MessageId')}")
+
+    # log the queue message
+    row = pd.Series(keys)
+    row['video'] = video_path.name
+    row['time'] = datetime.utcnow()
+    row['message'] = f'Message queued to {queue_name}. MessageId: {response.get("MessageId")}'
+    row['status'] = 'OK'
+    add_summary_row(row)

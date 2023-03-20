@@ -14,11 +14,12 @@ Main entry point for deepsea-ai
 @license: __license__
 '''
 
+from datetime import datetime
+
 import boto3
 import click
 import shutil
 import os
-from datetime import datetime
 from pathlib import Path
 from urllib.parse import urlparse
 
@@ -26,16 +27,22 @@ from deepsea_ai.commands import upload_tag, process, train, bucket, monitor
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config import setup
 from deepsea_ai.database import api, queries
+from deepsea_ai import logger
+from deepsea_ai.logger import info, err, debug, warn, critical, summarize, add_summary_row
 from deepsea_ai import __version__
 
 
-def get_session():
+def init(log_prefix: str = "deepsea_ai"):
+    # get the path that python is running from and use it for logging
+    python_path = Path(__file__).parent
+    logger.create_logger_file(python_path, log_prefix)
+
+    # get the AWS profile from the environment and use it for all AWS commands
     if 'AWS_PROFILE' in os.environ:
-        print(f'AWS_PROFILE is set to {os.environ["AWS_PROFILE"]} and will be used for all AWS commands')
+        info(f'AWS_PROFILE is set to {os.environ["AWS_PROFILE"]} and will be used for all AWS commands')
         profile = os.environ['AWS_PROFILE']
         boto3.setup_default_session(profile_name=profile)
 
-get_session()
 default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
 user_name = default_config.get_username()
@@ -67,6 +74,7 @@ def setup_command(config, mirror):
     """
      Setup your AWS environment. Only need to run this once unless running in a new AWS account.
     """
+    init(log_prefix="deepsea_ai_setup")
     custom_config = cfg.Config(config)
     account = custom_config.get_account()
     region = custom_config.get_region()
@@ -82,7 +90,7 @@ def setup_command(config, mirror):
     if config:
         shutil.copy2(config,  cfg.default_config_ini)
     else:
-        print(f'Using default config file {cfg.default_config_ini}')
+        info(f'Using default config file {cfg.default_config_ini}')
 
 @cli.command(name="ecsprocess")
 @click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
@@ -108,6 +116,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
     """
      (optional) upload, then batch process in an ECS cluster
     """
+    init(log_prefix="deepsea_ai_ecsprocess")
     custom_config = cfg.Config(config)
     database = None
     if check:
@@ -137,7 +146,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
         if not loaded:
             process.batch_run(resources, v, job, user_name, clean, conf_thres, iou_thres)
         else:
-            print(f'Video {v.name} has already been processed and loaded...skipping')
+            warn(f'Video {v.name} has already been processed and loaded...skipping')
 
 
 @cli.command(name="process")
@@ -172,6 +181,7 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
     """
      upload video(s) then process with a model
     """
+    init(log_prefix="deepsea_ai_process")
     custom_config = cfg.Config(config)
 
     # get tags to apply to the resources for cost monitoring
@@ -183,18 +193,19 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
     model_s3 = urlparse(model_s3.rstrip('/'))
 
     # create the buckets
-    print(f'Creating buckets')
+    info(f'Creating buckets')
 
-    if bucket.create(input_s3, tags) and bucket.create(output_s3, tags): 
-    
+    if bucket.create(input_s3, tags) and bucket.create(output_s3, tags):
+
         videos = custom_config.check_videos(input_path, exclude)
         input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
-     
+
         # insert the datetime prefix to make a unique key for the output
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
         output_unique_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/")
-    
+
+        # estimate the volume size needed for the job; make it 2x the size of the input if saving the video
         if save_vid:
             volume_size_gb = int(2*size_gb)
         else:
@@ -214,6 +225,7 @@ def upload_command(config, input, s3):
     """
     Upload videos
     """
+    init(log_prefix="deepsea_ai_upload")
     custom_config = cfg.Config(config)
     input_s3 = urlparse(s3.rstrip('/'))
     tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
@@ -249,9 +261,11 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     """
      (optional) upload training data, then train a YOLOv5 model
     """
+    init(log_prefix="deepsea_ai_train")
     custom_config = cfg.Config(config)
 
     if instance_type == 'ml.p2.xlarge':
+        critical(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
         raise Exception(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
 
     # get tags to apply to the resources for cost monitoring
@@ -272,6 +286,8 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
 
         # upload and return the final bucket prefix to the training data and its total size
         input_training, size_gb = upload_tag.training_data(data, input_s3, tags, cfg.default_training_prefix)
+
+        debug(f"Training data: {input_training} size: {size_gb} GB")
 
         # guess on how much volume is needed per each GB plus the size for the checkpoints
         volume_size_gb = int(2*size_gb + 50)
@@ -300,6 +316,7 @@ def package_command(s3):
     This is done at the end of the train command automatically and stored in a model.tar.gz file.
     This is added in case checkpoints were generated outside of the deepsea-ai-traing command, e.g. SageMaker Studio. Colab
     """
+    init(log_prefix="deepsea_ai_package")
     train.package(urlparse(s3.rstrip('/')))
 
 @cli.command(name="split")
@@ -311,6 +328,7 @@ def split_command(input:str, output:str):
     """
     Split data into train/val/test sets randomly per the following percentages 85%/10%/5%
     """
+    init(log_prefix="deepsea_ai_split")
     input_path = Path(input)
     output_path = Path(output)
 
@@ -321,7 +339,7 @@ def split_command(input:str, output:str):
 
     exists = [not p.exists() for p in paths]
     if any(exists):
-        print(f'Error: one or more {paths} missing')
+        err(f'Error: one or more {paths} missing')
         return
 
     train.split(Path(input), Path(output))
@@ -331,19 +349,33 @@ def split_command(input:str, output:str):
               help='Name of the cluster to query.  This must correspond to an available Elastic '
                    'Container Service cluster.')
 @click.option('--autoscaling', type=bool, default=True, help='Display autoscaling information')
+@click.option('--queue', type=bool, default=True, help='Display queue information')
 @click.option('--records', type=int, default=10, help='Number of records to report. Default 10.')
-def monitor_command(cluster:str, autoscaling:bool, records:int):
+def monitor_command(cluster:str, autoscaling:bool, queue:bool, records:int):
     """
     Print monitoring information for the cluster
     """
+    init(log_prefix="deepsea_ai_monitor")
     custom_config = cfg.Config()
     resources = custom_config.get_resources(cluster)
     if resources:
         if autoscaling:
-            print(f' Last {records} records from autoscaling of cluster {cluster}')
+            info(f' Last {records} records from autoscaling of cluster {cluster}')
             monitor.print_scaling_activities(resources, records)
+        if queue:
+            info(f' Printing queue status of cluster {cluster}')
+            monitor.print_queue_status(resources, records)
     else:
-        print(f'No resources found for cluster {cluster}. Try another cluster with --cluster <cluster_name>')
+        warn(f'No resources found for cluster {cluster}. Try another cluster with --cluster <cluster_name>')
 
 if __name__ == '__main__':
-    cli()
+    try:
+        start = datetime.utcnow()
+        cli()
+        end = datetime.utcnow()
+        info(f'Done. Elapsed time: {end - start} seconds')
+    except Exception as e:
+        err(f'Exiting. Error: {e}')
+        exit(-1)
+    finally:
+        summarize()
