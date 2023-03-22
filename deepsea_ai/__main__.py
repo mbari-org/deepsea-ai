@@ -132,13 +132,16 @@ def setup_command(config, mirror):
               help='Name of the job, e.g. DiveV4361 benthic outline')
 @click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
 @click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
-def batchprocess_command(config, check, upload, clean, cluster, job, input, exclude, conf_thres, iou_thres):
+@click.option('--dry-run', is_flag=True, default=False, help='Run the command without actually submitting the job.')
+def batchprocess_command(config, check, upload, clean, cluster, job, input, exclude, conf_thres, iou_thres, dry_run):
     """
      (optional) upload, then batch process in an ECS cluster
     """
     custom_config = init(log_prefix="deepsea_ai_ecsprocess", config=config)
     database = None
     if check:
+        warn('Checking if video has been processed and loaded before sending off a job.'
+             ' Requires a deepsea-ai GraphQL endpoint')
         database = api.DeepSeaAIClient(custom_config('database', 'gql'))
 
     input_path = Path(input)
@@ -150,20 +153,30 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
     for v in videos:
         loaded = False
         if database:
+            info(f'Checking if {v.name} has already been processed and loaded into the database...')
             # Check if the video has already been loaded by looking it up by the media name per this job name
             medias = database.execute(queries.GET_MEDIA_IN_JOB,
-                                      processing_job_name=f"{resources['PROCESSOR']}-“{job}”",
+                                      processing_job_name=f"{resources['PROCESSOR']}-{job}",
                                       media_name=v.name)
 
             # Found a media in the job as keyed by the processing name, so assume that this was already processed
             if len(medias['data']['mediaInJob']) > 0:
+                info(f'Video {v.name} has already been processed and loaded...skipping')
                 loaded = True
 
+                exit(0)
+
         if upload and not loaded:
-            upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags)
+            if dry_run:
+                info(f'Dry run: Uploading {v.name} to S3 bucket {resources["VIDEO_BUCKET"]}')
+            else:
+                upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags, dry_run)
 
         if not loaded:
-            process.batch_run(resources, v, job, user_name, clean, conf_thres, iou_thres)
+            if dry_run:
+                info(f'Dry run: Submitting {v.name} to {resources["PROCESSOR"]} for processing')
+            else:
+                process.batch_run(resources, v, job, user_name, clean, conf_thres, iou_thres)
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
 
