@@ -23,18 +23,21 @@ import os
 from pathlib import Path
 from urllib.parse import urlparse
 
+from deepsea_ai.config.config import Config
 from deepsea_ai.commands import upload_tag, process, train, bucket, monitor
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config import setup
 from deepsea_ai.database import api, queries
 from deepsea_ai import logger
-from deepsea_ai.logger import info, err, debug, warn, critical, summarize, add_summary_row
+from deepsea_ai.logger import info, err, debug, warn, critical
 from deepsea_ai import __version__
+from deepsea_ai.logger.job_cache import JobCache
 
+default_config = cfg.Config(quiet=True)
+default_config_ini = cfg.default_config_ini
 
-def init(log_prefix: str = "deepsea_ai"):
-    # get the path that python is running from and use it for logging
-    python_path = Path(__file__).parent
+def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Config:
+    python_path = Path('logs')
     logger.create_logger_file(python_path, log_prefix)
 
     # get the AWS profile from the environment and use it for all AWS commands
@@ -43,8 +46,21 @@ def init(log_prefix: str = "deepsea_ai"):
         profile = os.environ['AWS_PROFILE']
         boto3.setup_default_session(profile_name=profile)
 
-default_config = cfg.Config(quiet=True)
-default_config_ini = cfg.default_config_ini
+    # initialize the config file either from the default or a custom location
+    if config:
+        custom_config = cfg.Config(config)
+    else:
+        custom_config = cfg.Config()
+
+    # create a job cache for tracking jobs
+    JobCache(python_path)
+
+    # set the database for the job cache if it is defined in the config
+    if custom_config('database', 'gql'):
+        JobCache().set_database(custom_config('database', 'gql'))
+    return custom_config
+
+
 user_name = default_config.get_username()
 
 # example s3 buckets for help
@@ -52,6 +68,7 @@ example_input_process_s3 = f's3://{user_name}-video-in-dev'
 example_output_process_s3 = f's3://{user_name}-tracks-out-dev'
 example_input_train_s3 = f's3://{user_name}-training-dev'
 example_output_train_s3 = f's3://{user_name}-model-checkpoints-dev'
+
 
 @click.group(context_settings={'help_option_names': ['-h', '--help']})
 @click.version_option(
@@ -67,7 +84,8 @@ def cli():
 
 
 @cli.command(name="setup")
-@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--config', type=str, required=False,
+              help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('--mirror', is_flag=True, default=False, help='Mirror docker images from dockerhub into your Elastic '
                                                             'Container Registry (ECR)')
 def setup_command(config, mirror):
@@ -81,21 +99,23 @@ def setup_command(config, mirror):
     image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
     image_tags = [custom_config('aws', t) for t in image_cfg]
     if mirror:
-        setup.mirror_docker_hub_images_to_ecr( ecr_client=boto3.client("ecr"), account_id=account,
-                                               region=region, image_tags=image_tags)
+        setup.mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account,
+                                              region=region, image_tags=image_tags)
     setup.create_role(account_id=account)
     setup.store_role(default_config)
 
     # override the default config file with the custom one
     if config:
-        shutil.copy2(config,  cfg.default_config_ini)
+        shutil.copy2(config, cfg.default_config_ini)
     else:
         info(f'Using default config file {cfg.default_config_ini}')
 
+
 @cli.command(name="ecsprocess")
-@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
-@click.option('--check', is_flag=True, default=False,  help='Check if video has been processed and loaded before '
-                                                            'sending off a job. Requires a deepsea-ai GraphQL endpoint')
+@click.option('--config', type=str, default=default_config_ini,
+              help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--check', is_flag=True, default=False, help='Check if video has been processed and loaded before '
+                                                           'sending off a job. Requires a deepsea-ai GraphQL endpoint')
 @click.option('-u', '--upload', is_flag=True, default=False,
               help='Set option to upload local video files to S3 bucket')
 @click.option('--clean', is_flag=True, default=True,
@@ -116,8 +136,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
     """
      (optional) upload, then batch process in an ECS cluster
     """
-    init(log_prefix="deepsea_ai_ecsprocess")
-    custom_config = cfg.Config(config)
+    custom_config = init(log_prefix="deepsea_ai_ecsprocess", config=config)
     database = None
     if check:
         database = api.DeepSeaAIClient(custom_config('database', 'gql'))
@@ -150,8 +169,9 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
 
 
 @cli.command(name="process")
-@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
- # this might be cleaner as an enum but click does not support that fully yet
+@click.option('--config', type=str, default=default_config_ini,
+              help=f'Path to config file to override defaults in {default_config_ini}')
+# this might be cleaner as an enum but click does not support that fully yet
 @click.option('--tracker', default='deepsort',
               help='Tracking type: deepsort or strongsort')
 @click.option('-i', '--input', type=str, required=True,
@@ -161,7 +181,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
               help='Exclude directory or file. Excludes any directory or file that contains the given string')
 @click.option('--input-s3', type=str, required=True,
               help=f'Path to the s3 bucket with video files. These can be either mp4 or '
-                                               f'mov files that ffmpeg understands, e.g. s3://{example_input_process_s3}')
+                   f'mov files that ffmpeg understands, e.g. s3://{example_input_process_s3}')
 @click.option('--output-s3', type=str, required=True,
               help=f'Path to the s3 bucket to store the output, e.g. s3://{example_output_process_s3}')
 @click.option('-m', '--model-s3', type=str, default=default_config('aws', 'yolov5_model_s3'),
@@ -175,14 +195,15 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
 @click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
 @click.option('-s', '--save-vid', is_flag=True, default=False,
               help='Set option to output original video with detection boxes overlaid.')
-@click.option('--instance-type', type=str, default='ml.g4dn.xlarge', help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
-def process_command(config, tracker, input, exclude, input_s3, output_s3, model_s3, config_s3, model_size, reid_model_url,
+@click.option('--instance-type', type=str, default='ml.g4dn.xlarge',
+              help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
+def process_command(config, tracker, input, exclude, input_s3, output_s3, model_s3, config_s3, model_size,
+                    reid_model_url,
                     conf_thres, iou_thres, save_vid, job_description, instance_type):
     """
      upload video(s) then process with a model
     """
-    init(log_prefix="deepsea_ai_process")
-    custom_config = cfg.Config(config)
+    custom_config = init(log_prefix="deepsea_ai_process", config=config)
 
     # get tags to apply to the resources for cost monitoring
     tags = custom_config.get_tags(job_description)
@@ -207,16 +228,18 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
 
         # estimate the volume size needed for the job; make it 2x the size of the input if saving the video
         if save_vid:
-            volume_size_gb = int(2*size_gb)
+            volume_size_gb = int(2 * size_gb)
         else:
-            volume_size_gb = int(1.25*size_gb)
+            volume_size_gb = int(1.25 * size_gb)
 
         process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, reid_model_url,
                                      volume_size_gb, instance_type, config_s3, save_vid, conf_thres,
                                      iou_thres, tracker, custom_config, tags)
 
+
 @cli.command(name="upload")
-@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--config', type=str, default=default_config_ini,
+              help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('-i', '--input', type=click.Path(exists=True, file_okay=False, dir_okay=True), required=True,
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg understands.  This can also be a single video file.')
@@ -225,8 +248,7 @@ def upload_command(config, input, s3):
     """
     Upload videos
     """
-    init(log_prefix="deepsea_ai_upload")
-    custom_config = cfg.Config(config)
+    custom_config = init(log_prefix="deepsea_ai_upload", config=config)
     input_s3 = urlparse(s3.rstrip('/'))
     tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
     bucket.create(input_s3, tags)
@@ -235,7 +257,8 @@ def upload_command(config, input, s3):
 
 
 @cli.command(name="train")
-@click.option('--config', type=str, required=False, help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--config', type=str, default=default_config_ini,
+              help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('--images', type=str, required=True,
               help='Path to compressed training images. Images should be put into a tar.gz file '
                    'that decompress into images/train images/val and optionally images/test. This compressed file should not include any archive artifacts,'
@@ -253,16 +276,17 @@ def upload_command(config, input, s3):
 @click.option('--output-s3', type=str, required=True,
               help=f'Path to the s3 bucket to store the output, e.g. {example_output_train_s3} or {example_output_train_s3}')
 @click.option('--resume', type=bool, default=False, help="Resume training from previous run")
-@click.option('--model', type=str, default='yolov5x', help=f"Model choice: {','.join(train.models)} " )
+@click.option('--model', type=str, default='yolov5x', help=f"Model choice: {','.join(train.models)} ")
 @click.option('--epochs', type=int, default=2, help='Number of epochs. Default 2.')
 @click.option('--batch-size', type=int, default=2, help='Batch size. Default 2.')
-@click.option('--instance-type', type=str, default='ml.p3.2xlarge', help='AWS instance type, e.g. ml.p3.2xlarge, ml.p3.8xlarge, ml.p3.16xlarge, ml.p4d.24xlarge')
-def train_command(config, images, labels, label_map, input_s3, output_s3, resume, model, epochs, batch_size, instance_type):
+@click.option('--instance-type', type=str, default='ml.p3.2xlarge',
+              help='AWS instance type, e.g. ml.p3.2xlarge, ml.p3.8xlarge, ml.p3.16xlarge, ml.p4d.24xlarge')
+def train_command(config, images, labels, label_map, input_s3, output_s3, resume, model, epochs, batch_size,
+                  instance_type):
     """
      (optional) upload training data, then train a YOLOv5 model
     """
-    init(log_prefix="deepsea_ai_train")
-    custom_config = cfg.Config(config)
+    custom_config = init(log_prefix="deepsea_ai_train", config=config)
 
     if instance_type == 'ml.p2.xlarge':
         critical(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
@@ -290,41 +314,43 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
         debug(f"Training data: {input_training} size: {size_gb} GB")
 
         # guess on how much volume is needed per each GB plus the size for the checkpoints
-        volume_size_gb = int(2*size_gb + 50)
+        volume_size_gb = int(2 * size_gb + 50)
 
         # insert the datetime prefix to make a unique key for the outputs
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
 
-        if resume: # resuming from previous bucket, so no need to set prefix
+        if resume:  # resuming from previous bucket, so no need to set prefix
             ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}")
         else:
             ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/checkpoints/")
         model_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/models/")
 
         # train
-        train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb,  model, instance_type, custom_config)
+        train.yolov5(data, input_training, ckpts_s3, model_s3, epochs, batch_size, volume_size_gb, model, instance_type,
+                     custom_config)
 
 
 @cli.command(name="package")
-@click.option('--s3', type=str,  required=True,
+@click.option('--s3', type=str, required=True,
               help=f"Bucket with the model checkpoints, e.g. s3://{example_output_train_s3}/20220821T005204Z"
               )
 def package_command(s3):
     """
     Package a YOLOv5 model into a format that the deepsea-ai can use in its pipelines.
     This is done at the end of the train command automatically and stored in a model.tar.gz file.
-    This is added in case checkpoints were generated outside of the deepsea-ai-traing command, e.g. SageMaker Studio. Colab
+    This is added in case checkpoints were generated outside the deepsea-ai-traing command, e.g. SageMaker Studio. Colab
     """
     init(log_prefix="deepsea_ai_package")
     train.package(urlparse(s3.rstrip('/')))
+
 
 @cli.command(name="split")
 @click.option('-i', '--input', type=str, required=True,
               help='Path to the root folder with images and labels, organized into labels/ and images/ folders files to split')
 @click.option('-o', '--output', type=str, required=True,
               help='Path to the root folder to save the split, compressed files. If it does not exist, it will be created.')
-def split_command(input:str, output:str):
+def split_command(input: str, output: str):
     """
     Split data into train/val/test sets randomly per the following percentages 85%/10%/5%
     """
@@ -344,29 +370,46 @@ def split_command(input:str, output:str):
 
     train.split(Path(input), Path(output))
 
+
 @cli.command(name="monitor")
 @click.option('--cluster', type=str, required=True,
               help='Name of the cluster to query.  This must correspond to an available Elastic '
                    'Container Service cluster.')
+@click.option('--config', type=str, required=False,
+              help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('--autoscaling', type=bool, default=True, help='Display autoscaling information')
 @click.option('--queue', type=bool, default=True, help='Display queue information')
 @click.option('--records', type=int, default=10, help='Number of records to report. Default 10.')
-def monitor_command(cluster:str, autoscaling:bool, queue:bool, records:int):
+@click.option('--update-period', type=int, default=10, help='Update period to monitor a job; default is every 60 '
+                                                            'seconds. Ignored if --job is not specified.')
+@click.option('--report-update-period', type=int, default=10, help='Reporting period, default is every 120 seconds. '
+                                                                   'Ignored if --job is not specified. Generates a '
+                                                                   'new report file in the reports/ folder')
+@click.option('--records', type=int, default=10, help='Number of records to report. Default 10.')
+@click.option('--job', type=str, required=True,
+              help='Name of the job, e.g. DiveV4361 benthic outline')
+def monitor_command(cluster: str, config, autoscaling: bool, queue: bool, records: int, job: str, update_period: int, report_update_period: int):
     """
     Print monitoring information for the cluster
     """
-    init(log_prefix="deepsea_ai_monitor")
-    custom_config = cfg.Config()
+    custom_config = init(log_prefix="deepsea_ai_monitor", config=config)
     resources = custom_config.get_resources(cluster)
     if resources:
         if autoscaling:
-            info(f' Last {records} records from autoscaling of cluster {cluster}')
-            monitor.print_scaling_activities(resources, records)
+            info(f'Last {records} records from autoscaling of cluster {cluster}')
+            monitor.log_scaling_activities(resources, records)
         if queue:
-            info(f' Printing queue status of cluster {cluster}')
-            monitor.print_queue_status(resources, records)
+            info(f'Printing queue status of cluster {cluster}')
+            monitor.log_queue_status(resources)
+        # if monitoring a job and the job is a string, then it is a job name
+        if job and isinstance(job, str):
+            info(f'Monitoring job status of cluster {cluster}')
+            m = monitor.Monitor(job, resources, update_period, report_update_period)
+            m.start()
+            m.join()
     else:
         warn(f'No resources found for cluster {cluster}. Try another cluster with --cluster <cluster_name>')
+
 
 if __name__ == '__main__':
     try:
@@ -377,5 +420,3 @@ if __name__ == '__main__':
     except Exception as e:
         err(f'Exiting. Error: {e}')
         exit(-1)
-    finally:
-        summarize()

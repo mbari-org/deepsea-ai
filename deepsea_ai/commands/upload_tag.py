@@ -21,10 +21,7 @@ import boto3
 import time
 from pathlib import Path
 from urllib.parse import urlparse
-
-import pandas as pd
-
-from deepsea_ai.logger import info, err, debug, critical, exception, keys, add_summary_row
+from deepsea_ai.logger import info, err, debug, critical, exception, keys
 
 from . import bucket
 
@@ -124,27 +121,15 @@ def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
         try:
             s3_resource.Object(input.netloc, target_prefix).load()
         except botocore.exceptions.ClientError as e:
-            exception(e)
+            info(f'{e} {d} does not exist in s3://{input.netloc}/{target_prefix}. Uploading...')
             if e.response['Error']['Code'] == "404":
                 # The data does not exist so upload
                 try:
                     with open(d.as_posix(), "rb") as f:
                         info(f'Uploading {d} to s3://{input.netloc}/{target_prefix}...')
                         s3.upload_fileobj(f, input.netloc, target_prefix)
-                        # log it
-                        row = pd.Series(keys)
-                        row['video'] = d.as_posix()
-                        row['time'] = datetime.utcnow()
-                        row['message'] = f"Upload ts s3://{input.netloc}/{target_prefix}"
-                        row['status'] = 'OK'
-                        add_summary_row(row)
                 except Exception as error:
-                    error(f"Error {error} uploading to s3") # log it
-                    row['video'] = d.as_posix()
-                    row['time'] = datetime.utcnow()
-                    row['message'] = f"Upload ts s3://{input.netloc}/{target_prefix}"
-                    row['status'] = 'ERROR'
-                    add_summary_row(row)
+                    error(f"Error {error} uploading to s3")
             else:
                 raise
         else:

@@ -18,3 +18,20 @@ query getMediaInJob($processing_job_name: String!, $media_name: String!) {
     }
 }
 """
+
+GET_JOB_SUMMARY = """
+query getJobSummary($job_uuid: String!) {
+  jobs(where: {
+    uuid: {
+      equals: $job_uuid
+    }
+  })
+  {
+    id
+    detail
+    medias {
+      id
+    }
+  }
+}
+"""

@@ -24,7 +24,7 @@ import pandas as pd
 
 LOGGER_NAME = "DSEAAI"
 DEBUG = True
-keys = ["video", "time", "status", "message"]
+keys = ["job", "video", "time", "status", "message"]
 
 
 class _Singleton(type):
@@ -60,7 +60,7 @@ class CustomLogger(Singleton):
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
         # default log file date to today
-        now = dt.now()
+        now = dt.utcnow()
 
         # log to file
         self.log_filename = output_path / f"{output_prefix}_{now:%Y%m%d}.log"
@@ -77,53 +77,16 @@ class CustomLogger(Singleton):
 
         self.logger.info(f"Logging to {self.log_filename}")
 
-    def summarize(self):
-        """
-        Summarize the results
-        """
-
-        # if there are no rows in the summary data frame, indicate that by writing a single row
-        if self.summary_df.empty:
-            self.summary_df = pd.DataFrame({"No results": [f"See log file {self.log_filename} for details."]})
-
-        # write the summary data frame to a file with the same name as the log file, but with a .csv extension
-        self.summary_df.to_csv(self.log_filename.with_suffix(".csv"), index=False)
-
     def loggers(self) -> logging.Logger:
         return self.logger
-
-    def add_summary(self, row: pd.Series):
-        # make sure the row has the same keys as the summary data frame
-        if not set(row.keys()) == set(self.keys):
-            # an exception if the words 'No results' are in the row keys
-            if "No results" in row.keys():
-                self.summary_df.append(row, ignore_index=True)
-            else:
-                raise ValueError(f"Row keys must be {self.keys}")
-
-        self.summary_df.append(row, ignore_index=True)
-
-
-def summarize():
-    """
-    Create a new file with the summary data frame and the contents of the log file
-    """
-    CustomLogger().summarize()
-
-
-def add_summary_row(row: pd.Series):
-    """
-    Add a row to the summary data frame
-    :param row: pandas series
-    """
-    CustomLogger().add_summary(row)
-
 
 def create_logger_file(log_path: Path, prefix: str = "deepsea_ai"):
     """
     Create a logger file
     :param log_path: Path to the log file
     """
+    # create the log directory if it doesn't exist
+    log_path.mkdir(parents=True, exist_ok=True)
     return CustomLogger(log_path, prefix)
 
 
