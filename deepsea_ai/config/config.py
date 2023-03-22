@@ -14,6 +14,8 @@ Configuration helper to setup defaults and fetch cloud configuration
 @license: __license__
 '''
 
+import string
+
 import boto3
 from configparser import ConfigParser
 import datetime as dt
@@ -140,12 +142,17 @@ class Config:
         # iterate over the tag dictionary and check the key and value
         for tag in tag_dict:
             info(f'Checking tag {tag}')
-            # it the value has any special characters, it is not valid, e.g. key=!@#
-            if not tag['Value'].isalnum():
+            #  The allowed characters across services are: letters (a-z, A-Z), numbers (0-9),
+            #  and spaces representable in UTF-8, and the following characters: + - = . _ : / @.
+            allowed_chars = ['+', '-', '=', '.', '_', ':', '/', '@']
+            allowed_letters = list(string.ascii_letters)
+            allowed_numbers = list(string.digits)
+            allowed = allowed_chars + allowed_letters + allowed_numbers
+            if not any(char in tag['Value'] for char in allowed):
                 msg = f'Tag {tag} has a value with special characters. Check your config.ini file. ' \
                         f'Special characters are not allowed in AWS tags, e.g. dots, etc.'
                 err(msg)
-                assert (msg)
+                raise (msg)
 
         return tag_dict
 
