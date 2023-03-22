@@ -58,7 +58,6 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
                     try:
                         with open(v.as_posix(), "rb") as f:
                             info(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
-                            start = datetime.utcnow()
                             s3.upload_fileobj(f, input_s3.netloc, target_prefix)
                             upload_success = True
                             break
