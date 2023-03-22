@@ -67,7 +67,9 @@ class JobCache(logger.Singleton):
         # create the output path if it doesn't exist
         output_path.mkdir(parents=True, exist_ok=True)
 
-        output_path = output_path / f'job_report_{dt.utcnow().strftime("%Y%m%dT%H%M%S")}.txt'
+        # create a file name that replaces spaces with underscores and adds a timestamp
+        job_report_name = f"{job_name.replace(' ', '_')}_{dt.utcnow().strftime('%Y%m%dT%H%M%S')}.txt"
+        output_path = output_path / job_report_name
         info(f"JobCache: Creating job report for {job_name} in {output_path}")
 
         # fetch the job id if available
