@@ -7,7 +7,7 @@ Each cluster is assigned a unique name, e.g. *public33k*. This name is used to i
 and is used here to identify the cluster with the --cluster option.
 
 This is useful to monitor the progress of a job, e.g. how many videos are processing, how many are left, and how many have failed.
-This also generates a simple report of the job status by default every 30 minutes. 
+This also generates a simple report of the job status by default every 30 minutes (1800 seconds).
 This is configurable using the --update-period option.
 
 For example, to monitor and generate a report for the job "Dive1377" in the cluster public33k, run

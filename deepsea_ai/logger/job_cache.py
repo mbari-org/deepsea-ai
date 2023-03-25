@@ -35,6 +35,18 @@ class JobStatus:
     RUNNING = "RUNNING"
     UNKNOWN = "UNKNOWN"
 
+class MediaIndex:
+    NAME = 0
+    UUID = 1
+    UPDATE_TIME = 2
+    STATUS = 3
+class JobIndex:
+    NAME = 0
+    CLUSTER = 1
+    VIDEO_FILES = 2
+    CREATED_TIME = 3
+    UPDATE_TIME = 4
+    STATUS = 5
 
 def job_hash(job: str) -> str:
     """
@@ -53,6 +65,9 @@ class JobCache(logger.Singleton):
         # get the AWS account number
         account_number = boto3.client('sts').get_caller_identity().get('Account')
 
+        # create the output path if it doesn't exist
+        output_path.mkdir(parents=True, exist_ok=True)
+
         info(f"Initializing job cache in {output_path}")
         db_file = output_path / f'job_cache_account{account_number}.db'
         if not db_file.exists():
@@ -67,7 +82,7 @@ class JobCache(logger.Singleton):
         Create a report of the jobs that were run
         :param job_name: Name of the job
         :param output_path: Path to write the report to
-        :param processor: Name of the processor
+        :param processor: (optional) Name of the processor
         """
         # create the output path if it doesn't exist
         output_path.mkdir(parents=True, exist_ok=True)
@@ -82,11 +97,12 @@ class JobCache(logger.Singleton):
         if not self.db.get(job_uuid):
             warn(f"Unable to find job {job_name} in cache")
             return
-        created_time = self.db.get(job_uuid)[3]
-        last_update = self.db.get(job_uuid)[4]
+
+        created_time = self.db.get(job_uuid)[JobIndex.CREATED_TIME]
+        last_update = self.db.get(job_uuid)[JobIndex.UPDATE_TIME]
         num_media = len(self.get_all_media_names(job_name))
         job_report_name = f"{job_name}, Total media: {num_media}, Created at: {created_time}, Last update: {last_update} "
-        if self.db.get('deepsea_ai_db'):
+        if self.db.get('deepsea_ai_db') and processor:
             from deepsea_ai.database import api, queries
             try:
                 database = api.DeepSeaAIClient(self.db.get('deepsea_ai_db'))
@@ -109,14 +125,14 @@ class JobCache(logger.Singleton):
             media_names = self.get_all_media_names(job_name)
             for idx, name in enumerate(sorted(media_names)):
                 media = self.get_media(name, job_name)
-                f.write(f"{idx}, {name}, {media[2]}, {media[3]}\n")
+                f.write(f"{idx}, {name}, {media[MediaIndex.UPDATE_TIME]}, {media[MediaIndex.STATUS]}\n")
 
     def get_all_media_names(self, job_name: str) -> List[str]:
         """
         Get all the media file names associated with a job
         """
         job_uuid = job_hash(job_name)
-        return [self.db.get(key)[0] for key in self.db.getall() if self.db.get(key)[1] == job_uuid]
+        return [self.db.get(key)[JobIndex.NAME] for key in self.db.getall() if self.db.get(key)[MediaIndex.UUID] == job_uuid]
 
     def set_media(self, job_name: str, media_file: str, status: str = JobStatus.RUNNING, update_dt: str = None):
         """
@@ -147,14 +163,11 @@ class JobCache(logger.Singleton):
         :param video_files: The video files associated with the job
         :param status: The status of the job
         """
-        # default to current time
-        timestamp = dt.utcnow()
-
         job_uuid = job_hash(job_name)
         j = self.db.get(job_uuid)
         if j:
             # get the video files and add the new video files if they are not already in the list
-            new_video_files = j[2]
+            new_video_files = j[JobIndex.VIDEO_FILES]
             for v in new_video_files:
                 if v not in video_files:
                     video_files.append(v)
@@ -168,7 +181,7 @@ class JobCache(logger.Singleton):
         job = self.db.get(job_uuid)
         updated_timestamp = dt.utcnow().strftime("%Y%m%dT%H%M%S")
         if job: # if the job exists, keep the created timestamp
-            created_timestamp = job[3]
+            created_timestamp = job[JobIndex.CREATED_TIME]
         else:
             created_timestamp = dt.utcnow().strftime("%Y%m%dT%H%M%S")
         self.db.set(job_uuid, [job_name, cluster, video_files,
@@ -190,6 +203,7 @@ class JobCache(logger.Singleton):
         Get a media from the cache. A media is uniquely identified by the hash of the media name
         :param media_name: The name of the media file
         :param job_name: The name of the job
+        :return: The list of media file information
         """
         media_uuid = job_hash(media_name + job_name)
         return self.db.get(media_uuid)
@@ -202,8 +216,8 @@ class JobCache(logger.Singleton):
         job_uuid = job_hash(job_name)
         completed = 0
         for video_uuid in self.db.getall():
-            if self.db.get(video_uuid)[1] == job_uuid:
-                if self.db.get(video_uuid)[3] == JobStatus.SUCCESS:
+            if self.db.get(video_uuid)[MediaIndex.UUID] == job_uuid:
+                if self.db.get(video_uuid)[MediaIndex.STATUS] == JobStatus.SUCCESS:
                     completed += 1
         return completed
 
@@ -215,8 +229,8 @@ class JobCache(logger.Singleton):
         job_uuid = job_hash(job_name)
         failed = 0
         for video_uuid in self.db.getall():
-            if self.db.get(video_uuid)[1] == job_uuid:
-                if self.db.get(video_uuid)[3] == JobStatus.FAIL:
+            if self.db.get(video_uuid)[MediaIndex.UUID] == job_uuid:
+                if self.db.get(video_uuid)[MediaIndex.STATUS] == JobStatus.FAIL:
                     failed += 1
         return failed
 
@@ -230,7 +244,7 @@ class JobCache(logger.Singleton):
         # get all the video files associated with the job and remove them from the cache
         to_remove = []
         for video_uuid in self.db.getall():
-            if self.db.get(video_uuid)[1] == job_uuid:
+            if self.db.get(video_uuid)[MediaIndex.UUID] == job_uuid:
                 to_remove.append(video_uuid)
 
         for video_uuid in to_remove:
