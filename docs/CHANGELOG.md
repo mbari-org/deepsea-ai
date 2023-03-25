@@ -1,5 +1,20 @@
 # DeepSeaAI Changelog
 
+# [1.21.0](https://github.com/mbari-org/deepsea-ai/compare/v1.20.0...v1.21.0) (2023-03-25)
+
+
+### Features
+
+* added dry-run and fix to video check (removed quotes) ([9bf5509](https://github.com/mbari-org/deepsea-ai/commit/9bf55095f56da554137ce0070c2a3ffa5ff5a098))
+* added simple job caching and job report to monitor command ([d048211](https://github.com/mbari-org/deepsea-ai/commit/d048211674fa92dd31d90ad4144757ca0d09f7ba))
+* initial commit of log; more work to add reporting. Includes more detail on monitoring command and four logging levels ([617c8a2](https://github.com/mbari-org/deepsea-ai/commit/617c8a212063d283fe0fec7807b86d85cf325fa6))
+
+
+### Performance Improvements
+
+* add tagging check ([2f5a4ea](https://github.com/mbari-org/deepsea-ai/commit/2f5a4ead3b8053fca5c4555c7f524ab50b54d2c5))
+* autodump and improved monitor state machine logic ([8bab569](https://github.com/mbari-org/deepsea-ai/commit/8bab56930da1b265ec6d526efe7b0b28026040ea))
+
 # [1.20.0](https://github.com/mbari-org/deepsea-ai/compare/v1.19.2...v1.20.0) (2023-03-18)
 
 
