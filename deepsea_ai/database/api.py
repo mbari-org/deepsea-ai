@@ -13,8 +13,8 @@ Deepsea-ai database connection and query largely based on the boxjelly api conne
 @status: __status__
 @license: __license__
 '''
-from typing import Optional
 
+from deepsea_ai.logger import debug, info, err, exception
 import requests
 
 class GraphQLError(requests.HTTPError):
@@ -29,7 +29,9 @@ class GraphQLError(requests.HTTPError):
         """
         try:
             response_json = self.response.json()
+            debug(f"GraphQL response: {response_json}")
             message_str = response_json['error']['message']
+            debug(f"GraphQL error: {message_str}")
             return message_str
         except (requests.JSONDecodeError, KeyError):
             return self.response.text
@@ -73,6 +75,7 @@ class DeepSeaAIClient:
         try:
             response.raise_for_status()
         except requests.HTTPError as e:
+            exception(f'GraphQL query failed: {e}')
             raise GraphQLError(e) from e
 
         return response.json()

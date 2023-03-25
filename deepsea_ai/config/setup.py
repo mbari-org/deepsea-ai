@@ -10,6 +10,7 @@ import subprocess
 import boto3
 from botocore.exceptions import ClientError
 from deepsea_ai.config import config as cfg
+from deepsea_ai.logger import err, info, debug, warn, exception
 
 
 def get_ecr_repo_names_in_account(ecr_client, *, account_id):
@@ -65,6 +66,7 @@ def create_ecr_repository(ecr_client, *, name):
         ecr_client.create_repository(repositoryName=name)
     except ClientError as err:
         if err.response["Error"]["Code"] == "RepositoryAlreadyExistsException":
+            exception(err)
             pass
         else:
             raise
@@ -82,7 +84,7 @@ def mirror_docker_hub_images_to_ecr(ecr_client, *, account_id, region, image_tag
     Given the name/tag of images in Docker Hub, mirror those images to ECR.
     """
 
-    print(f"Creating all ECR repositories in account {account_id}...")
+    info(f"Creating all ECR repositories in account {account_id}...")
     existing_repos = get_ecr_repo_names_in_account(ecr_client, account_id=account_id)
 
     mirrored_repos = set(tag.split(":")[0] for tag in image_tags)
@@ -91,12 +93,12 @@ def mirror_docker_hub_images_to_ecr(ecr_client, *, account_id, region, image_tag
     for repo_name in missing_repos:
         ecr_client.create_repository(repositoryName=repo_name)
 
-    print(f"Authenticating Docker with ECR for account {account_id}...")
+    info(f"Authenticating Docker with ECR for account {account_id}...")
     docker_login_to_ecr(ecr_client, account_id=account_id)
 
     for hub_tag in image_tags:
         ecr_tag = f"{account_id}.dkr.ecr.{region}.amazonaws.com/{hub_tag}"
-        print(f"Mirroring {hub_tag} to {ecr_tag}")
+        info(f"Mirroring {hub_tag} to {ecr_tag}")
         docker("pull", hub_tag)
         docker("tag", hub_tag, ecr_tag)
         docker("push", ecr_tag)
@@ -191,7 +193,7 @@ def create_role(account_id: str):
 
     except ClientError as err:
         if err.response["Error"]["Code"] == "EntityAlreadyExists":
-            print(f"Role {role_name} already exists.")
+            warn(f"Role {role_name} already exists.")
             pass
         else:
             raise
@@ -205,7 +207,7 @@ def store_role(config: cfg):
     iam = session.client('iam')
     results = iam.get_role(RoleName="DeepSeaAI")
     role_arn = results['Role']['Arn']
-    print(f'Setting SageMaker Role ARN to {role_arn} in {config.path}')
+    info(f'Setting SageMaker Role ARN to {role_arn} in {config.path}')
     config.save('aws', 'sagemaker_arn', role_arn)
 
 

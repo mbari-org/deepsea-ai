@@ -14,11 +14,14 @@ Bucket upload and tagging utility
 @license: __license__
 '''
 
+from datetime import datetime
+
 import botocore
 import boto3
 import time
 from pathlib import Path
 from urllib.parse import urlparse
+from deepsea_ai.logger import info, err, debug, critical, exception, keys
 
 from . import bucket
 
@@ -53,25 +56,28 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
                 for retry in range(10):
                     try:
                         with open(v.as_posix(), "rb") as f:
-                            print(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
+                            info(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
                             s3.upload_fileobj(f, input_s3.netloc, target_prefix)
                             upload_success = True
                             break
-                    except:
-                        print(f"Error uploading {v} to s3. Retrying every 60 seconds...")
+                    except e:
+                        exception(e)
+                        exception(f"Error uploading {v} to s3. Retrying every 60 seconds...")
                         time.sleep(60)
 
                 if not upload_success:
+                    critical(f"Error uploading {v} to s3 after {retry} retries. Aborting.")
                     raise Exception(f"Error uploading {v} to s3 after {retry} retries. Aborting.")
             else:
+                exception(e)
                 raise
         else:
             # the video does exist.
-            print(f'Found s3://{input_s3.netloc}/{target_prefix} ...skipping upload')
+            info(f'Found s3://{input_s3.netloc}/{target_prefix} ...skipping upload')
 
         try:
             # tag it
-            print(f'Tagging {v} with {tags}...')
+            info(f'Tagging {v} with {tags}...')
             s3.put_object_tagging(Bucket=input_s3.netloc, Key=f'{target_prefix}', Tagging={'TagSet': tags})
         except Exception as error:
             raise error
@@ -99,7 +105,7 @@ def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
 
     for d in data:
         if not d.exists():
-            print(f"Error: {d} does not exist")
+            err(f"Error: {d} does not exist")
             exit(-1)
 
     for d in data:
@@ -114,24 +120,26 @@ def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
         try:
             s3_resource.Object(input.netloc, target_prefix).load()
         except botocore.exceptions.ClientError as e:
+            info(f'{e} {d} does not exist in s3://{input.netloc}/{target_prefix}. Uploading...')
             if e.response['Error']['Code'] == "404":
                 # The data does not exist so upload
                 try:
                     with open(d.as_posix(), "rb") as f:
-                        print(f'Uploading {d} to s3://{input.netloc}/{target_prefix}...')
+                        info(f'Uploading {d} to s3://{input.netloc}/{target_prefix}...')
                         s3.upload_fileobj(f, input.netloc, target_prefix)
                 except Exception as error:
-                    print(f"Error {error} uploading to s3")
+                    error(f"Error {error} uploading to s3")
             else:
                 raise
         else:
             # the data already exist so skip over it
-            print(f'Found s3://{input.path}/{target_prefix} ...skipping upload')
+            info(f'Found s3://{input.path}/{target_prefix} ...skipping upload')
 
         try:
             # tag it
             s3.put_object_tagging(Bucket=input.netloc, Key=target_prefix, Tagging={'TagSet': tags})
         except Exception as error:
+            exception(error)
             raise error
 
     output = urlparse(f"s3://{input.netloc}/{prefix_path.lstrip('/')}/{training_prefix}/")

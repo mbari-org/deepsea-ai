@@ -1,6 +1,6 @@
 # !/usr/bin/env python
 __author__ = "Danelle Cline, Duane Edgington"
-__copyright__ = "Copyright 2022, MBARI"
+__copyright__ = "Copyright 2023, MBARI"
 __credits__ = ["MBARI"]
 __license__ = "GPL"
 __maintainer__ = "Duane Edgington"
@@ -14,6 +14,8 @@ Configuration helper to setup defaults and fetch cloud configuration
 @license: __license__
 '''
 
+import string
+
 import boto3
 from configparser import ConfigParser
 import datetime as dt
@@ -21,6 +23,7 @@ import os
 from botocore.exceptions import ClientError
 from pathlib import Path
 from typing import List
+from deepsea_ai.logger import err, info, debug, warn, critical, exception
 
 default_training_prefix = 'training'
 default_config_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
@@ -43,12 +46,13 @@ class Config:
         self.parser.read(self.path)
         lines = open(self.path).readlines()
         if not quiet:
-            print(f"===============>Config file {self.path}<=================")
+            info(f"=============== Config file {self.path} =================")
             for l in lines:
-                print(l.strip())
+                info(l.strip())
 
             if not path:
-                print(f"============You can override these settings by creating a customconfig.ini file and pass that in with --config=customconfig.ini =====")
+                info(f"============ You can override these settings by creating a customconfig.ini file and pass that "
+                     f"in with --config=customconfig.ini =====")
 
     def __call__(self, *args, **kwargs):
         assert len(args) == 2
@@ -80,7 +84,7 @@ class Config:
         :return:
         """
         account_number = boto3.client('sts').get_caller_identity()['Account']
-        print(f'Found account {account_number}')
+        info(f'Found account {account_number}')
         return account_number
 
     staticmethod
@@ -91,7 +95,7 @@ class Config:
         """
         session = boto3.session.Session()
         region = session.region_name
-        print(f'Found region {region}')
+        info(f'Found region {region}')
         return region
 
     staticmethod
@@ -137,11 +141,18 @@ class Config:
         # check that the tags conform to the AWS tagging standard (no spaces, no special characters)
         # iterate over the tag dictionary and check the key and value
         for tag in tag_dict:
-            print(f'Checking tag {tag}')
-            # it the value has any special characters, it is not valid, e.g. key=!@#
-            if not tag['Value'].isalnum():
-                assert (f'Tag {tag} has a value with special characters. Check your config.ini file. '
-                                f'Special characters are not allowed in AWS tags, e.g. dots, etc.')
+            info(f'Checking tag {tag}')
+            #  The allowed characters across services are: letters (a-z, A-Z), numbers (0-9),
+            #  and spaces representable in UTF-8, and the following characters: + - = . _ : / @.
+            allowed_chars = ['+', '-', '=', '.', '_', ':', '/', '@']
+            allowed_letters = list(string.ascii_letters)
+            allowed_numbers = list(string.digits)
+            allowed = allowed_chars + allowed_letters + allowed_numbers
+            if not any(char in tag['Value'] for char in allowed):
+                msg = f'Tag {tag} has a value with special characters. Check your config.ini file. ' \
+                        f'Special characters are not allowed in AWS tags, e.g. dots, etc.'
+                err(msg)
+                raise (msg)
 
         return tag_dict
 
@@ -175,7 +186,13 @@ class Config:
                     resources['ASG'] = r['PhysicalResourceId']
             return resources
         except ClientError as ex:
-            print(ex)
+            exception(ex)
+            if 'AccessDenied' in ex.response['Error']['Code']:
+                critical('Access denied; verify you are using the correct AWS credentials')
+                raise Exception('Access denied')
+            if 'ExpiredToken' in ex.response['Error']['Code']:
+                critical('Token expired; you need to re-authenticate your AWS credentials')
+                raise Exception('Token expired')
         return None
 
     staticmethod
@@ -190,7 +207,10 @@ class Config:
 
         # convert exclude tuple to list
         excludes = list(exclude)
-        print(f'Excluding any file or directory that contains {excludes}')
+        if len(excludes) > 0:
+            info(f'Excluding any video file or directory that contains {excludes}')
+        else:
+            info(f'No video file exclusions specified')
 
         def search(x: Path):
             if excludes:
@@ -207,6 +227,9 @@ class Config:
             if search(input_path):
                 videos = [input_path]
         num_videos = len(videos)
+        info(f'Found {num_videos} videos to process')
+        if num_videos == 0:
+            err(f'No videos found in {input_path}')
         assert (num_videos > 0), "No videos to process"
         video_paths = [Path(x) for x in videos]
         return video_paths
