@@ -16,6 +16,7 @@ Can be used to generate a summary of jobs that have been run.
 @license: __license__
 '''
 
+import boto3
 import pickledb
 from pathlib import Path
 from typing import List
@@ -40,35 +41,39 @@ def job_hash(job: str) -> str:
     Hash the job name and cluster to create a unique identifier for the job
     """
     md5val = hashlib.md5(job.encode('latin')).hexdigest()
-    return f"{md5val[:8]}-{md5val[8:12]}-{md5val[12:16]}-{md5val[16:20]}-{md5val[20:]}"
+    return f"{md5val[:8]}-{md5val[8:12]}-{md5val[12:16]}-{md5val[16:20]}-{md5val[20:]}".upper()
 
 
 class JobCache(logger.Singleton):
 
     def __init__(self, output_path: Path):
         """
-        Initialize the cache
+        Initialize the cache with the account number we are running in
         """
+        # get the AWS account number
+        account_number = boto3.client('sts').get_caller_identity().get('Account')
+
         info(f"Initializing job cache in {output_path}")
-        db_file = output_path / 'deepse_ai_job_cache.db'
+        db_file = output_path / f'job_cache_account{account_number}.db'
         if not db_file.exists():
             info(f"Creating job cache database in {output_path}")
-            self.db = pickledb.PickleDB(location=(output_path / 'job_cache.db').as_posix(), auto_dump=True, sig=True)
+            self.db = pickledb.PickleDB(location=db_file.as_posix(), auto_dump=True, sig=True)
         else:
             info(f"Using existing job cache database in {output_path}")
-            self.db = pickledb.load((output_path / 'job_cache.db').as_posix(), False)
+            self.db = pickledb.load(db_file.as_posix(), True)
 
-    def create_report(self, job_name: str, output_path: Path):
+    def create_report(self, job_name: str, output_path: Path, processor:str=None):
         """
         Create a report of the jobs that were run
         :param job_name: Name of the job
         :param output_path: Path to write the report to
+        :param processor: Name of the processor
         """
         # create the output path if it doesn't exist
         output_path.mkdir(parents=True, exist_ok=True)
 
         # create a file name that replaces spaces with underscores and adds a timestamp
-        job_report_name = f"{job_name.replace(' ', '_')}_{dt.utcnow().strftime('%Y%m%dT%H%M%S')}.txt"
+        job_report_name = f"{job_name.replace(' ', '_')}_{dt.utcnow().strftime('%Y%m%d')}.txt"
         output_path = output_path / job_report_name
         info(f"JobCache: Creating job report for {job_name} in {output_path}")
 
@@ -85,7 +90,7 @@ class JobCache(logger.Singleton):
             from deepsea_ai.database import api, queries
             try:
                 database = api.DeepSeaAIClient(self.db.get('deepsea_ai_db'))
-                jobs = database.execute(queries.GET_JOB_SUMMARY, job_uuid=job_uuid)
+                jobs = database.execute(queries.GET_JOB_SUMMARY, job_uuid=job_hash(f'{processor}{job_name}'))
                 if len(jobs['data']['jobs']) > 0:
                     job_id = jobs['data']['jobs'][0]['id']
                     job_detail = jobs['data']['jobs'][0]['detail']
@@ -133,7 +138,6 @@ class JobCache(logger.Singleton):
             info(f"Updating video file {media_file} to job {job_name} in cache with status {status}")
 
         self.db.set(media_uuid, [media_file, job_uuid, update_dt, status])
-        self.db.dump()
 
     def set_job(self, job_name: str, cluster: str, video_files: List[str], status: JobStatus):
         """
@@ -157,29 +161,21 @@ class JobCache(logger.Singleton):
                     info(f"JobCache: Added video file {v} to job {job_name} running on {cluster}")
 
         # update the job
-        if status != JobStatus.UNKNOWN:
-            if status == JobStatus.FAIL:
-                err(f"Updating job {job_name} running on {cluster} in cache status to {status}")
-            else:
-                info(f"Updating job {job_name} running on {cluster} in cache status to {status}")
-            job = self.db.get(job_uuid)
-            updated_timestamp = dt.utcnow().strftime("%Y%m%dT%H%M%S")
-            if job: # if the job exists, keep the created timestamp
-                created_timestamp = job[3]
-            else:
-                created_timestamp = dt.utcnow().strftime("%Y%m%dT%H%M%S")
-            self.db.set(job_uuid, [job_name, cluster, video_files,
-                                   created_timestamp,
-                                   updated_timestamp,
-                                   status])
-        else: # this is a special case where the job is not running, but we don't know why
-            err(f"JobCache: Updating job {job_name} running on {cluster} in cache")
-            self.db.set(job_uuid, [job_name, cluster, video_files,
-                                   timestamp,
-                                   timestamp,
-                                   status])
+        if status == JobStatus.FAIL:
+            err(f"Updating job {job_name} running on {cluster} in cache status to {status}")
+        else:
+            info(f"Updating job {job_name} running on {cluster} in cache status to {status}")
+        job = self.db.get(job_uuid)
+        updated_timestamp = dt.utcnow().strftime("%Y%m%dT%H%M%S")
+        if job: # if the job exists, keep the created timestamp
+            created_timestamp = job[3]
+        else:
+            created_timestamp = dt.utcnow().strftime("%Y%m%dT%H%M%S")
+        self.db.set(job_uuid, [job_name, cluster, video_files,
+                               created_timestamp,
+                               updated_timestamp,
+                               status])
 
-        self.db.dump()
         info(f"Added job {job_name} running on {cluster} to cache")
 
     def get_job(self, job_name: str) -> List[str]:
@@ -230,7 +226,6 @@ class JobCache(logger.Singleton):
         """
         job_uuid = job_hash(job_name)
         self.db.rem(job_uuid)
-        self.db.dump()
 
         # get all the video files associated with the job and remove them from the cache
         to_remove = []
@@ -240,7 +235,6 @@ class JobCache(logger.Singleton):
 
         for video_uuid in to_remove:
             self.db.rem(video_uuid)
-            self.db.dump()
         info(f"JobCache: Removed job {job_name} from cache")
 
     def get_all(self) -> List[List[str]]:

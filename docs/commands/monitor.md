@@ -1,70 +1,66 @@
-## Monitor the ECS cluster
+## Monitor your jobs in the ECS cluster
 
-### Scaling
-The Elastic Cluster scales up and down based on the number of videos in the queue. 
-You can monitor the cluster scaling by name using the ``deepsea-ai monitor`` command
-with your cluster name.
+## Continuous monitoring
+The monitor command can be used to continuously monitor and generate a report of a job status in an ECS cluster.
 
-**Please ask if you need to increase the number of videos that can be processed in parallel.**
-The default is 6 videos.
+Each cluster is assigned a unique name, e.g. *public33k*. This name is used to identify the cluster in the AWS console,
+and is used here to identify the cluster with the --cluster option.
 
-To see the last autoscaling 10 logs from the cluster public33k, run
+This is useful to monitor the progress of a job, e.g. how many videos are processing, how many are left, and how many have failed.
+This also generates a simple report of the job status by default every 30 minutes. 
+This is configurable using the --update-period option.
 
-```
-deepsea-ai monitor --cluster public33k --autoscaling True --records 10 
-```
-
-### Queues
-The status of the queues can also be monitored to see how many videos are in the queue,
-and how many are being processed.
-
-To see the status of the cluster public33k queues, run
+For example, to monitor and generate a report for the job "Dive1377" in the cluster public33k, run
 
 ```
-deepsea-ai monitor --cluster public33k --queues True
+deepsea-ai monitor --cluster public33k --job "DocRicketts Dive D1377" 
 ```
 
-## Reporting
-The monitor command can also be used to monitor and generate a report of a job status in a cluster.
-The report is a simple .txt file generated in the reports/ directory.
-
-For example, to generate a report for the job "Dive1377" in the cluster public33k, run
+Multiple jobs can be monitored at the same time, e.g. to monitor the jobs "Dive1377" and "Dive1378" in the cluster public33k, run
 
 ```
-deepsea-ai monitor --cluster public33k --job "Dive1377" 
+deepsea-ai monitor --cluster public33k --job "DocRicketts Dive D1377" --job "DocRicketts Dive D1378"
 ```
 
-This will generate a report in the reports/ directory, e.g. reports/public33k_Dive1377_.txt
+This will generate a report in the reports/ directory, e.g. *reports/DocRicketts_Dive_D1377_20230323.txt*
+while continuously monitoring the job status.
+
+```text
+cat reports/DocRicketts_Dive_D1377_20230323.txt
+```
 
 ```text
 DeepSea-AI 1.20.0
 Job: Dive1377, Total media: 8, Created at: 20230321T232058, Last update: 20230321T234534 
 ==============================================================================================
 Index, Media, Last Updated, Status
-0, D232_20110526T093251.130Z_alt_h264.mp4, 20230321T214929, FAIL
-1, D232_20110526T093251.130Z_h264.mp4, 20230321T214929, FAIL
+0, D232_20110526T093251.130Z_alt_h264.mp4, 20230321T214929, QUEUED
+1, D232_20110526T093251.130Z_h264.mp4, 20230321T214929, QUEUED
 2, V4361_20211006T162656Z_h265_1min.mp4, 20230321T195956, SUCCESS
-3, V4361_20211006T162656Z_h265_1sec.mp4, 20230321T213437, FAIL
+3, V4361_20211006T162656Z_h265_1sec.mp4, 20230321T213437, SUCCESS
 4, V4361_20211006T163256Z_h265_1min.mp4, 20230321T195956, SUCCESS
-5, V4361_20211006T163256Z_h265_1sec.mp4, 20230321T213437, FAIL
+5, V4361_20211006T163256Z_h265_1sec.mp4, 20230321T213437, SUCCESS
 6, V4361_20211006T163856Z_h265_1min.mp4, 20230321T044540, SUCCESS
 7, V4361_20211006T163856Z_h265_1sec.mp4, 20230321T213437, FAIL
 ```
 
 !!! info inline end
-    To get more frequent updates, use the --update-period, e.g. to get updates every 60 seconds, run
+    Updates are printed to the console (and logs) every 30 minutes, and a report is generated in the reports/ directory.
+    By default, this update is every 30 minutes, or when the job starts.
+    To get more frequent updates, use the --update-period, e.g. to get updates every 2 minutes or 120 seconds, run
     ``` 
-        deepsea-ai monitor --cluster public33k --job Dive1377  --update-period 60
-    ```
+        deepsea-ai monitor --cluster public33k --job Dive1377  --update-period 120
+    ``` 
 
-    By default, reports are generated when the job is complete, or when the job is older than 4 days.
-    To generate reports during the job, use the --generate-report option, e.g. to generate a report every 300 seconds, run
-    ```
-        deepsea-ai monitor --cluster public33k --job Dive1377  --report-update-period 300
-    ```
+!!! alert inline end
+    The reporting uses a lightweight approach storing the data in a local file called *job_cache_{your aws acount#}.db*.
+    This file is used to store the job status and is updated every 30 minutes. Keep this file safe, as it is used to generate the reports.
 
+### Scaling
+The Elastic Cluster scales up and down based on the number of videos in the queue.  The default is 6 videos.
+
+**Please ask if you need to increase the number of videos that can be processed in parallel.** 
  
-
 
 ### Need more?
 If you want to see more detail with the monitor command, please submit a github issue with a request to add more detail to the monitor command.

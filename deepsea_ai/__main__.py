@@ -36,15 +36,22 @@ from deepsea_ai.logger.job_cache import JobCache
 default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
 
+
 def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Config:
     python_path = Path('logs')
     logger.create_logger_file(python_path, log_prefix)
 
     # get the AWS profile from the environment and use it for all AWS commands
-    if 'AWS_PROFILE' in os.environ:
-        info(f'AWS_PROFILE is set to {os.environ["AWS_PROFILE"]} and will be used for all AWS commands')
-        profile = os.environ['AWS_PROFILE']
-        boto3.setup_default_session(profile_name=profile)
+    if 'AWS_DEFAULT_PROFILE' in os.environ or 'AWS_PROFILE' in os.environ:
+        if 'AWS_DEFAULT_PROFILE' in os.environ:
+            info(
+                f'AWS_DEFAULT_PROFILE is set to {os.environ["AWS_DEFAULT_PROFILE"]} and will be used for all AWS commands')
+            profile = os.environ['AWS_DEFAULT_PROFILE']
+            boto3.setup_default_session(profile_name=profile)
+        if 'AWS_PROFILE' in os.environ:
+            info(f'AWS_PROFILE is set to {os.environ["AWS_PROFILE"]} and will be used for all AWS commands')
+            profile = os.environ['AWS_PROFILE']
+            boto3.setup_default_session(profile_name=profile)
 
     # initialize the config file either from the default or a custom location
     if config:
@@ -52,8 +59,8 @@ def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Co
     else:
         custom_config = cfg.Config()
 
-    # create a job cache for tracking jobs
-    JobCache(python_path)
+    # create a job cache for tracking jobs in the path the user is running in
+    JobCache(Path(os.getcwd()))
 
     # set the database for the job cache if it is defined in the config
     if custom_config('database', 'gql'):
@@ -150,6 +157,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
     videos = custom_config.check_videos(input_path, exclude)
     tags = custom_config.get_tags(f'Video uploaded from {input} by user {user_name} ')
 
+    total_submitted = 0
     for v in videos:
         loaded = False
         if database:
@@ -164,21 +172,22 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
                 info(f'Video {v.name} has already been processed and loaded...skipping')
                 loaded = True
 
-                exit(0)
-
         if upload and not loaded:
             if dry_run:
                 info(f'Dry run: Uploading {v.name} to S3 bucket {resources["VIDEO_BUCKET"]}')
             else:
-                upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags, dry_run)
+                upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags)
 
         if not loaded:
             if dry_run:
                 info(f'Dry run: Submitting {v.name} to {resources["PROCESSOR"]} for processing')
             else:
                 process.batch_run(resources, v, job, user_name, clean, conf_thres, iou_thres)
+            total_submitted += 1
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
+
+    info(f'==== Submitted {total_submitted} videos to {resources["PROCESSOR"]} for processing =====')
 
 
 @cli.command(name="process")
@@ -390,36 +399,22 @@ def split_command(input: str, output: str):
                    'Container Service cluster.')
 @click.option('--config', type=str, required=False,
               help=f'Path to config file to override defaults in {default_config_ini}')
-@click.option('--autoscaling', type=bool, default=True, help='Display autoscaling information')
-@click.option('--queue', type=bool, default=True, help='Display queue information')
-@click.option('--records', type=int, default=10, help='Number of records to report. Default 10.')
 @click.option('--update-period', type=int, default=10, help='Update period to monitor a job; default is every 60 '
-                                                            'seconds. Ignored if --job is not specified.')
-@click.option('--report-update-period', type=int, default=10, help='Reporting period, default is every 120 seconds. '
-                                                                   'Ignored if --job is not specified. Generates a '
-                                                                   'new report file in the reports/ folder')
-@click.option('--records', type=int, default=10, help='Number of records to report. Default 10.')
-@click.option('--job', type=str, required=True,
+                                                            'seconds. Ignored if --job is not specified.Generates a '
+                                                            'new report file in the reports/ folder')
+@click.option('--job', type=str, required=True, multiple=True,
               help='Name of the job, e.g. DiveV4361 benthic outline')
-def monitor_command(cluster: str, config, autoscaling: bool, queue: bool, records: int, job: str, update_period: int, report_update_period: int):
+def monitor_command(cluster: str, config, job: str, update_period: int):
     """
     Print monitoring information for the cluster
     """
     custom_config = init(log_prefix="deepsea_ai_monitor", config=config)
     resources = custom_config.get_resources(cluster)
     if resources:
-        if autoscaling:
-            info(f'Last {records} records from autoscaling of cluster {cluster}')
-            monitor.log_scaling_activities(resources, records)
-        if queue:
-            info(f'Printing queue status of cluster {cluster}')
-            monitor.log_queue_status(resources)
-        # if monitoring a job and the job is a string, then it is a job name
-        if job and isinstance(job, str):
-            info(f'Monitoring job status of cluster {cluster}')
-            m = monitor.Monitor(job, resources, update_period, report_update_period)
-            m.start()
-            m.join()
+        info(f'Monitoring job status of cluster {cluster}')
+        m = monitor.Monitor(job, resources, update_period)
+        m.start()
+        m.join()
     else:
         warn(f'No resources found for cluster {cluster}. Try another cluster with --cluster <cluster_name>')
 
