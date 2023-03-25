@@ -50,7 +50,6 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
         try:
             s3_resource.Object(input_s3.netloc, target_prefix).load()
         except botocore.exceptions.ClientError as e:
-            exception(e)
             if e.response['Error']['Code'] == "404":
                 upload_success = False
                 # The video does not exist so upload and retry
@@ -70,6 +69,7 @@ def video_data(videos: [], input_s3: tuple, tags: dict):
                     critical(f"Error uploading {v} to s3 after {retry} retries. Aborting.")
                     raise Exception(f"Error uploading {v} to s3 after {retry} retries. Aborting.")
             else:
+                exception(e)
                 raise
         else:
             # the video does exist.
