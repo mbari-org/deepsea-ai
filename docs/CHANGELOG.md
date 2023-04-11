@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.21.1](https://github.com/mbari-org/deepsea-ai/compare/v1.21.0...v1.21.1) (2023-04-11)
+
+
+### Bug Fixes
+
+* added missing img2label_paths for split ([a1147a3](https://github.com/mbari-org/deepsea-ai/commit/a1147a360bcab0af0046cd2bc0ead9776d203441))
+
 # [1.21.0](https://github.com/mbari-org/deepsea-ai/compare/v1.20.0...v1.21.0) (2023-03-25)
 
 
