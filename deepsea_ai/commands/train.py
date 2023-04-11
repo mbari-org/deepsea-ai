@@ -17,6 +17,7 @@ Train a YOLOv5 model
 import boto3
 import random
 from tqdm import tqdm
+import os
 import sagemaker
 import shutil
 import tempfile
@@ -196,8 +197,13 @@ def split(input_path: Path, output_path: Path):
             if (path.parent / x).exists():
                 (path.parent / x).unlink()
         info(f'Autosplitting images from {path}' + ', using *.txt labeled images only' * annotated_only)
+
+        def img2label_paths(img_paths):
+            # Define label paths as a function of image paths
+            sa, sb = f'{os.sep}images{os.sep}', f'{os.sep}labels{os.sep}'  # /images/, /labels/ substrings
+            return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
+
         for i, img in tqdm(zip(indices, files), total=n):
-            # TODO: where is img2label_paths defined?
             if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
                 with open(path.parent / txt[i], 'a') as f:
                     f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
