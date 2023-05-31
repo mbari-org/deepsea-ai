@@ -101,22 +101,15 @@ def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
     s3 = boto3.client('s3')
     s3_resource = boto3.resource('s3')
 
-    prefix_path = None
-
     for d in data:
         if not d.exists():
             err(f"Error: {d} does not exist")
             exit(-1)
 
     for d in data:
-        # arbitrarily pick the first element to form a prefix; it does not matter but can serve as an intuitive
-        # way to reference later.
-        if not prefix_path:
-            prefix_path = get_prefix(d)
-
         # check if the data exists in s3
         # all the data needs to be under the same prefix for training
-        target_prefix = f'{prefix_path}/{training_prefix}/{d.name}'
+        target_prefix = f'{training_prefix}/{d.name}'
         try:
             s3_resource.Object(input.netloc, target_prefix).load()
         except botocore.exceptions.ClientError as e:
@@ -142,7 +135,7 @@ def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
             exception(error)
             raise error
 
-    output = urlparse(f"s3://{input.netloc}/{prefix_path.lstrip('/')}/{training_prefix}/")
+    output = urlparse(f"s3://{input.netloc}/{training_prefix}/")
     size_gb = bucket.size(output)
 
     return output, size_gb
