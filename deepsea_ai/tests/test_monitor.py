@@ -66,7 +66,6 @@ def test_remove_job():
     # clean up
     c.clear()
 
-
 def test_monitor_thread():
     c = JobCache(Path.cwd() / "tests" / "data" / "job_cache")
     job_name = "Dive1334"
@@ -75,7 +74,8 @@ def test_monitor_thread():
     # set the media
     c.set_media(job_name, "video1.mp4", JobStatus.SUCCESS)
     # creat a fake resource dict
-    resources = {"CLUSTER": "yolov5-benthic33k"}
+    resources = {}
+    resources["CLUSTER"] = "yolov5-benthic33k"
     # create a monitoring thread
     m = Monitor([job_name], resources)
     m.start()
