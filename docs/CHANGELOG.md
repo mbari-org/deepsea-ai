@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.21.2](https://github.com/mbari-org/deepsea-ai/compare/v1.21.1...v1.21.2) (2023-05-31)
+
+
+### Bug Fixes
+
+* remove training prefix ([1ff51de](https://github.com/mbari-org/deepsea-ai/commit/1ff51de73cd02802b181056ad0987e7abee18cea))
+
 ## [1.21.1](https://github.com/mbari-org/deepsea-ai/compare/v1.21.0...v1.21.1) (2023-04-11)
 
 
