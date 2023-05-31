@@ -1,7 +1,7 @@
 from pathlib import Path
 from datetime import datetime as dt
 
-from commands.monitor import Monitor
+from deepsea_ai.commands.monitor import Monitor
 from deepsea_ai.logger.job_cache import JobCache, MediaIndex, JobStatus
 
 
