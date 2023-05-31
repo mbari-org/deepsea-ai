@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.21.3](https://github.com/mbari-org/deepsea-ai/compare/v1.21.2...v1.21.3) (2023-05-31)
+
+
+### Bug Fixes
+
+* correct imports on monitor test ([c9b4d95](https://github.com/mbari-org/deepsea-ai/commit/c9b4d95864df30c9e2a2c994644ecc7410a255fb))
+
 ## [1.21.2](https://github.com/mbari-org/deepsea-ai/compare/v1.21.1...v1.21.2) (2023-05-31)
 
 
