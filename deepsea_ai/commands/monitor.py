@@ -183,10 +183,11 @@ default_update_period = 60 * 30  # 30 minutes
 
 
 class Monitor(Thread):
-    def __init__(self, jobs: [str], resources: dict, update_period: int = default_update_period):
+    def __init__(self, jobs: [str], resources: dict, update_period: int = default_update_period, sim : bool = False):
         Thread.__init__(self)
         self.resources = resources
         self.update_period = update_period
+        self.sim = sim
         # reporting update_period must be >= update_period
         if self.update_period < self.update_period:
             warn(f'update_period must be >= update_period. Setting update_period to {self.update_period}')
@@ -236,6 +237,9 @@ class Monitor(Thread):
 
     def run(self):
         init = True
+        if self.sim:
+            return
+
         while True:
 
             num_activities = log_scaling_activities(self.resources, num_records=10)

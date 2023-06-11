@@ -77,7 +77,7 @@ def test_monitor_thread():
     resources = {}
     resources["CLUSTER"] = "yolov5-benthic33k"
     # create a monitoring thread
-    m = Monitor([job_name], resources)
+    m = Monitor([job_name], resources, sim=True)
     m.start()
     # wait for the thread to finish
     m.join()
