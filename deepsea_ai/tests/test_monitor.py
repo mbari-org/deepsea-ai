@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from datetime import datetime as dt
 
@@ -6,7 +7,7 @@ from deepsea_ai.logger.job_cache import JobCache, MediaIndex, JobStatus
 
 
 def test_set_job():
-    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache")
+    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache", True)
     # write a fake job with a few fake videos
     c.set_job("Dive1334", "yolov5-benthic33k", ["video1.mp4", "video2,mp4"], JobStatus.RUNNING)
     # check that the job is there
@@ -16,7 +17,7 @@ def test_set_job():
 
 
 def test_set_media():
-    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache")
+    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache", True)
     # write a fake job with a few fake videos
     c.set_job("Dive1334", "yolov5-benthic33k", ["video1.mp4"], JobStatus.RUNNING)
     # set the media
@@ -29,7 +30,7 @@ def test_set_media():
 
 
 def test_success_count():
-    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache")
+    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache", True)
     # write a fake job with a few fake videos
     c.set_job("Dive1334", "yolov5-benthic33k", ["video1.mp4", "video2,mp4"], JobStatus.RUNNING)
     # set the media
@@ -42,7 +43,7 @@ def test_success_count():
 
 
 def test_failed_count():
-    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache")
+    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache", True)
     # write a fake job with a few fake videos
     c.set_job("Dive1334", "yolov5-benthic33k", ["video1.mp4", "video2,mp4"], JobStatus.RUNNING)
     # set the media
@@ -55,7 +56,7 @@ def test_failed_count():
 
 
 def test_remove_job():
-    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache")
+    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache", True)
     # write a fake job with a few fake videos
     c.set_job("Dive1334", "yolov5-benthic33k", ["video1.mp4"], JobStatus.RUNNING)
     # set the media
@@ -67,15 +68,14 @@ def test_remove_job():
     c.clear()
 
 def test_monitor_thread():
-    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache")
+    c = JobCache(Path.cwd() / "tests" / "data" / "job_cache", True)
     job_name = "Dive1334"
     # write a fake job with a few fake videos
     c.set_job(job_name, "yolov5-benthic33k", ["video1.mp4"], JobStatus.RUNNING)
     # set the media
     c.set_media(job_name, "video1.mp4", JobStatus.SUCCESS)
     # creat a fake resource dict
-    resources = {}
-    resources["CLUSTER"] = "yolov5-benthic33k"
+    resources = {"CLUSTER": "yolov5-benthic33k"}
     # create a monitoring thread
     m = Monitor([job_name], resources, sim=True)
     m.start()

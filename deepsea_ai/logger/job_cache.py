@@ -58,12 +58,15 @@ def job_hash(job: str) -> str:
 
 class JobCache(logger.Singleton):
 
-    def __init__(self, output_path: Path):
+    def __init__(self, output_path: Path, sim: bool = False):
         """
         Initialize the cache with the account number we are running in
         """
-        # get the AWS account number
-        account_number = boto3.client('sts').get_caller_identity().get('Account')
+        if not sim:
+            # get the AWS account number
+            account_number = boto3.client('sts').get_caller_identity().get('Account')
+        else:
+            account_number = 'SIM'
 
         # create the output path if it doesn't exist
         output_path.mkdir(parents=True, exist_ok=True)
