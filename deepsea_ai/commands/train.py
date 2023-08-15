@@ -111,6 +111,7 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
                               'img-size': img_size,
                               'batch-size': batch_size,
                               'lr': .08,
+                              'clean': True,
                               'images': f'/opt/ml/input/data/training/{data[0].name}',
                               'labels': f'/opt/ml/input/data/training/{data[1].name}',
                               'label-map': f'/opt/ml/input/data/training/{data[2].name}'
