@@ -150,7 +150,7 @@ class Config:
             allowed = allowed_chars + allowed_letters + allowed_numbers
             if not any(char in tag['Value'] for char in allowed):
                 msg = f'Tag {tag} has a value with special characters. Check your config.ini file. ' \
-                        f'Special characters are not allowed in AWS tags, e.g. dots, etc.'
+                      f'Special characters are not allowed in AWS tags, e.g. dots, etc.'
                 err(msg)
                 raise (msg)
 

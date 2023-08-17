@@ -31,10 +31,13 @@ from deepsea_ai.database import api, queries
 from deepsea_ai import logger
 from deepsea_ai.logger import info, err, debug, warn, critical
 from deepsea_ai import __version__
+from deepsea_ai import common_args
 from deepsea_ai.logger.job_cache import JobCache
 
 default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
+cfg_option = click.option('--config', type=str, default=default_config_ini,
+                          help=f'Path to config file to override defaults in {default_config_ini}')
 
 
 def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Config:
@@ -103,7 +106,7 @@ def setup_command(config, mirror):
     custom_config = cfg.Config(config)
     account = custom_config.get_account()
     region = custom_config.get_region()
-    image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
+    image_cfg = ['yolov5_ecr', 'strongsort_ecr']
     image_tags = [custom_config('aws', t) for t in image_cfg]
     if mirror:
         setup.mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account,
@@ -119,8 +122,6 @@ def setup_command(config, mirror):
 
 
 @cli.command(name="ecsprocess")
-@click.option('--config', type=str, default=default_config_ini,
-              help=f'Path to config file to override defaults in {default_config_ini}')
 @click.option('--check', is_flag=True, default=False, help='Check if video has been processed and loaded before '
                                                            'sending off a job. Requires a deepsea-ai GraphQL endpoint')
 @click.option('-u', '--upload', is_flag=True, default=False,
@@ -132,15 +133,12 @@ def setup_command(config, mirror):
                    'ffmpeg understands. This can also be a single video file.')
 @click.option('-e', '--exclude', type=str, multiple=True,
               help='Exclude directory or file. Excludes any directory or file that contains the given string')
-@click.option('--cluster', type=str, required=True,
-              help='Name of the cluster to use to batch process.  This must correspond to an available Elastic '
-                   'Container Service cluster.')
-@click.option('--job', type=str, required=True,
-              help='Name of the job, e.g. DiveV4361 benthic outline')
-@click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
-@click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
-@click.option('--dry-run', is_flag=True, default=False, help='Run the command without actually submitting the job.')
-def batchprocess_command(config, check, upload, clean, cluster, job, input, exclude, conf_thres, iou_thres, dry_run):
+@common_args.job_option
+@common_args.cluster_option
+@common_args.dry_run_option
+@cfg_option
+@common_args.args
+def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_run, args):
     """
      (optional) upload, then batch process in an ECS cluster
     """
@@ -152,7 +150,13 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
         database = api.DeepSeaAIClient(custom_config('database', 'gql'))
 
     input_path = Path(input)
-    resources = custom_config.get_resources(cluster)
+    processor = cluster
+    video_bucket = 'Unknown'
+    if not dry_run:
+        resources = custom_config.get_resources(cluster)
+        video_bucket = resources['VIDEO_BUCKET']
+        processor = resources['PROCESSOR']
+
     user_name = custom_config.get_username()
     videos = custom_config.check_videos(input_path, exclude)
     tags = custom_config.get_tags(f'Video uploaded from {input} by user {user_name} ')
@@ -164,7 +168,7 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
             info(f'Checking if {v.name} has already been processed and loaded into the database...')
             # Check if the video has already been loaded by looking it up by the media name per this job name
             medias = database.execute(queries.GET_MEDIA_IN_JOB,
-                                      processing_job_name=f"{resources['PROCESSOR']}-{job}",
+                                      processing_job_name=f"{processor}-{job}",
                                       media_name=v.name)
 
             # Found a media in the job as keyed by the processing name, so assume that this was already processed
@@ -174,28 +178,24 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
 
         if upload and not loaded:
             if dry_run:
-                info(f'Dry run: Uploading {v.name} to S3 bucket {resources["VIDEO_BUCKET"]}')
+                info(f'Dry run: Uploading {v.name} to S3 bucket {video_bucket}')
             else:
-                upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags)
+                upload_tag.video_data([v], urlparse(f's3://{video_bucket}'), tags)
 
         if not loaded:
             if dry_run:
-                info(f'Dry run: Submitting {v.name} to {resources["PROCESSOR"]} for processing')
+                info(f'Dry run: Submitting {v.name} to cluster for processing with job {job}, cluster {cluster},processor {processor}, user {user_name}, clean {clean}, args {args}')
             else:
-                process.batch_run(resources, v, job, user_name, clean, conf_thres, iou_thres)
+                process.batch_run(dry_run, resources, v, job, user_name, clean, args)
             total_submitted += 1
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
 
-    info(f'==== Submitted {total_submitted} videos to {resources["PROCESSOR"]} for processing =====')
+    info(f'==== Submitted {total_submitted} videos to {processor} for processing =====')
 
 
 @cli.command(name="process")
-@click.option('--config', type=str, default=default_config_ini,
-              help=f'Path to config file to override defaults in {default_config_ini}')
 # this might be cleaner as an enum but click does not support that fully yet
-@click.option('--tracker', default='deepsort',
-              help='Tracking type: deepsort or strongsort')
 @click.option('-i', '--input', type=str, required=True,
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg understands. This can also be a single video file.')
@@ -209,26 +209,21 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
 @click.option('-m', '--model-s3', type=str, default=default_config('aws', 'yolov5_model_s3'),
               help='S3 location of the trained model tar gz file - must contain a model.tar.gz file with a valid YOLOv5 '
                    'Pytorch model.')
-@click.option('-j', '--job-description', type=str, help='The job description to use for the processing')
-@click.option('-c', '--config-s3', type=str, help='S3 location of tracking algorithm config yaml file')
-@click.option('--reid-model-url', type=click.STRING, help='Location of the reid model')
-@click.option('--model-size', type=click.INT, default=640, help='Size of the model, e.g. 640 or 1280')
-@click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
-@click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
-@click.option('-s', '--save-vid', is_flag=True, default=False,
-              help='Set option to output original video with detection boxes overlaid.')
 @click.option('--instance-type', type=str, default='ml.g4dn.xlarge',
               help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
-def process_command(config, tracker, input, exclude, input_s3, output_s3, model_s3, config_s3, model_size,
-                    reid_model_url,
-                    conf_thres, iou_thres, save_vid, job_description, instance_type):
+@common_args.dry_run_option
+@common_args.args
+@common_args.job_option
+@common_args.config_s3_option
+@cfg_option
+def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_s3, config_s3, job, instance_type, args):
     """
      upload video(s) then process with a model
     """
     custom_config = init(log_prefix="deepsea_ai_process", config=config)
 
     # get tags to apply to the resources for cost monitoring
-    tags = custom_config.get_tags(job_description)
+    tags = custom_config.get_tags(job)
 
     input_path = Path(input)
     input_s3 = urlparse(input_s3.rstrip('/'))
@@ -238,15 +233,20 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
     # create the buckets
     info(f'Creating buckets')
 
-    if bucket.create(input_s3, tags) and bucket.create(output_s3, tags):
+    if bucket.create(input_s3, tags, dry_run) and bucket.create(output_s3, tags, dry_run):
 
         videos = custom_config.check_videos(input_path, exclude)
-        input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
+        input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags, dry_run)
 
         # insert the datetime prefix to make a unique key for the output
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
         output_unique_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/")
+
+        # Check if the --save-vid flag is set in the args
+        save_vid = False
+        if args and 'save_vid' in args:
+            save_vid = True
 
         # estimate the volume size needed for the job; make it 2x the size of the input if saving the video
         if save_vid:
@@ -254,9 +254,17 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
         else:
             volume_size_gb = int(1.25 * size_gb)
 
-        process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, reid_model_url,
-                                     volume_size_gb, instance_type, config_s3, save_vid, conf_thres,
-                                     iou_thres, tracker, custom_config, tags)
+        # create the arguments for the process script
+        process.script_processor_run(input_s3=input_s3,
+                                     output_s3=output_unique_s3,
+                                     model_s3=model_s3,
+                                     config_s3=config_s3,
+                                     volume_size_gb=volume_size_gb,
+                                     instance_type=instance_type,
+                                     tags=tags,
+                                     dry_run=dry_run,
+                                     custom_config=custom_config,
+                                     args=args)
 
 
 @cli.command(name="upload")

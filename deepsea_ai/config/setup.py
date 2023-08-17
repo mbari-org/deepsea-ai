@@ -216,7 +216,7 @@ if __name__ == "__main__":
     default_config_ini = cfg.default_config_ini
     account = default_config.get_account()
     region = default_config.get_region()
-    image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
+    image_cfg = ['yolov5_ecr', 'strongsort_ecr']
     image_tags = [default_config('aws', t) for t in image_cfg]
     mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account, region=region, image_tags=image_tags)
     create_role(account_id=account)

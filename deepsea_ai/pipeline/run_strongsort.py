@@ -70,15 +70,11 @@ def cli():
                                 help='Path to video files. These can be either mp4 or mov files that ffmpeg understands.')
 @click.option('-o', '--output', type=click.STRING, default=default_output,
                                 help='Path to the output to save the results')
-@click.option('--conf-thres', type=float, default=0.01, help='object confidence threshold')
-@click.option('--iou-thres', type=float, default=0.5, help='IOU threshold for NMS')
-@click.option('--save-vid', is_flag=True, help='save video_path tracking results')
-@click.option('--max-det', type=int, default=1000, help='maximum detections per image')
 @click.option('-m', '--model-s3', type=str, default=default_model_s3,
               help='S3 path to the trained model tar gz file - must contain a valid YOLOv5 Pytorch model. ')
-@click.option('--model-size', type=click.INT, default=640, help='Size of the model, e.g. 640 or 1280')
 @click.option('--debug', is_flag=True, help='Debugging flag. Skips processing and downloading of the model.')
-def process_command(config_s3, reid_weights, conf_thres, iou_thres, input, output, model_size, model_s3, save_vid, max_det, debug):
+@click.option('--args', type=str, help='Additional arguments to pass to strong sort track.py script')
+def process_command(config_s3, reid_weights, input, output, model_s3, debug, args):
     """
     Process a collection of videos either from an input folder, or from a sqs queue
     """
@@ -124,30 +120,28 @@ def process_command(config_s3, reid_weights, conf_thres, iou_thres, input, outpu
                         start_utc = datetime.datetime.utcnow()
 
                         # override the defaults if the video message has them
-                        if video.conf_thres:
-                            conf_thres = video.conf_thres
-                        if video.iou_thres:
-                            iou_thres = video.iou_thres
+                        if video.args:
+                            print(f'Overriding strong sort args with {video.args}')
+                            args = video.args
 
                         if not debug:
                             cmd_track = f'python3 track.py ' \
                                         f'--source {video.input_path} ' \
                                         f'--project {in_tmp_path} ' \
                                         f'--name {video.input_path.stem} ' \
-                                        f'--imgsz {model_size} ' \
-                                        f'--conf-thres {conf_thres} ' \
-                                        f'--iou-thres {iou_thres} ' \
-                                        f'--max-det {max_det} ' \
-                                        f'--save-txt ' \
-                                        f'--agnostic-nms '
+                                        f'--save-txt '
+
+                            if args:
+                                # Strip off any quotes
+                                args = args.replace('"', '')
+                                cmd_track += f'{args} '
+
                             if model_path:
                                 cmd_track += f'--yolo-weights {model_path} '
                             if reid_weights:
                                 cmd_track += f'--strong-sort-weights {reid_weights} '
                             if config_path:
                                 cmd_track += f'--config-strongsort {config_path} '
-                            if save_vid:
-                                cmd_track += '--save-vid '
                         else:
                             cmd_track = [f"echo track {input_path} && sleep 60"]
 
@@ -295,7 +289,16 @@ def download_config(model_uri: str, track_uri: str, output_dir: Path):
         tarfile.open(f'{output_dir}/model.tar.gz').extractall(output_dir)
 
         # assuming yolov5 model is version 1, read in the model name from the custom_config.yaml
-        if (output_dir / 'custom_config.yaml').exists():
+        if (output_dir / '1' / 'custom_config.yaml').exists():
+            found_config = True
+            output_dir = output_dir / '1'
+            config_path = output_dir / 'custom_config.yaml'
+            with open(config_path) as f:
+                config = yaml.safe_load(f)
+                model_name = config['model']
+
+        # check for yolov5 model with no version
+        elif (output_dir / 'custom_config.yaml').exists():
             found_config = True
             config_path = output_dir / 'custom_config.yaml'
             with open(config_path) as f:

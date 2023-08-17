@@ -21,12 +21,15 @@ from botocore.exceptions import ClientError
 from deepsea_ai.logger import info
 
 
-def create(bucket: tuple, tags: dict):
+def create(bucket: tuple, tags: dict, dry_run: bool = False):
     """Create an S3 bucket
     :param bucket: Bucket to create
     :param tags: Tags to assign to the bucket
     :return: True if bucket created, or it already exists, else False
     """
+    if dry_run:
+        info(f'dry-run: Would have created bucket {bucket.netloc} with tags {tags}')
+        return True
 
     # Create bucket
     try:

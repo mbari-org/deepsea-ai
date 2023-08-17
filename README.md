@@ -10,8 +10,7 @@ It includes reasonable defaults that have been optimized for deep sea video. The
 DeepSea-AI currently supports:
 
  - *Training [YOLOv5](http://github.com/ultralytics/yolov5) object detection* models
- - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipelines* using either:
-     * [DeepSort](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch) tracking
+ - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipeline using 
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) tracking
 
 ## Install
