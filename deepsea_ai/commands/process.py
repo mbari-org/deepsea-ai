@@ -139,9 +139,7 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
 
     # If args are provided, add them to the message dict
     if args:
-        # args needs to be quoted
-        args_quoted = f'"{args}"'
-        message_dict["args"] = args_quoted
+        message_dict["args"] = args
 
     queue = sqs.get_queue_by_name(QueueName=queue_name)
     json_object = json.dumps(message_dict, indent=4)
