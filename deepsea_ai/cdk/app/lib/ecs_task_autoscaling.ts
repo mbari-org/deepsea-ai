@@ -154,7 +154,6 @@ export class AutoScalingTaskStack extends cdk.Stack {
       },
       command: [
         "dettrack",
-        "--model-size", `${config.model_size}`,
         "-c", `${config.track_config}`,
         "--model-s3", `${config.model_location}`
       ]
