@@ -18,5 +18,5 @@ def test_process_args():
                                  '--model-s3', 's3://902005-dev-models/mbari-mb-benthic-315k/model.tar.gz',
                                  '--output-s3', 's3://902005-dev-benchmarks-out/',
                                  '--dry-run', '--args', args])
-    # assert result.exit_code == 0
-    assert args in result.output
+    assert result.exit_code == 0
+    assert 'max-det' in result.output

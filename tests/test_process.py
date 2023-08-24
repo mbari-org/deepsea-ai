@@ -9,8 +9,7 @@ from deepsea_ai.__main__ import cli
 video_path = Path(__file__).parent / 'data'
 
 
-## @pytest.mark.exclude
-
+@pytest.mark.skip(reason="This test is excluded because it requires a valid AWS account")
 def test_process_args():
     runner = CliRunner()
     """Test that the process command works when passing arguments"""

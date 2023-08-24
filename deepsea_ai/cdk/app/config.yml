@@ -1,7 +1,7 @@
 Comment: A note about this stack. This comment must not start with a number
-StackName: model33k
+StackName: public33k 
 TaskDefinition: strongsort-yolov5
-ContainerImage: mbari/strongsort-yolov5:3b34e07
+ContainerImage: mbari/strongsort-yolov5:e64dc04
 FleetSize: 1
 track_config: s3://902005-public/models/yolov5x_mbay_benthic.yaml
 model_location: s3://902005-public/models/yolov5x_mbay_benthic_model.tar.gz
