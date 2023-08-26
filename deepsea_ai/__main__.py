@@ -152,6 +152,7 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
     input_path = Path(input)
     processor = cluster
     video_bucket = 'Unknown'
+    resources = None
     if not dry_run:
         resources = custom_config.get_resources(cluster)
         video_bucket = resources['VIDEO_BUCKET']
@@ -186,7 +187,7 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
             if dry_run:
                 info(f'Dry run: Submitting {v.name} to cluster for processing with job {job}, cluster {cluster},processor {processor}, user {user_name}, clean {clean}, args {args}')
             else:
-                process.batch_run(dry_run, resources, v, job, user_name, clean, args)
+                process.batch_run(resources, v, job, user_name, clean, args)
             total_submitted += 1
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
@@ -343,17 +344,16 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
 
         debug(f"Training data: {input_training} size: {size_gb} GB")
 
-        # guess on how much volume is needed per each GB plus the size for the checkpoints
-        volume_size_gb = int(2 * size_gb + 50)
-
         # insert the datetime prefix to make a unique key for the outputs
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
 
         if resume:  # resuming from previous bucket, so no need to set prefix
             ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}")
+            volume_size_gb = int(4 * size_gb + 50)
         else:
             ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/checkpoints/")
+            volume_size_gb = int(2 * size_gb + 50)
         model_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/models/")
 
         # train
