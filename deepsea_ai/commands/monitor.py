@@ -98,7 +98,7 @@ def log_queue_status(resources: dict) -> dict:
                 # fetch all the messages
                 while True:
                     for response in queue.receive_messages(MaxNumberOfMessages=10):
-                        if response and 'Messages' in response:
+                        if response and 'Messages' in response and len(response['Messages']) > 0:
                             for m in response['Messages']:
                                 message = parse_message(m)
                                 # get the video name which is the video id split from the .tracks.tar.gz
@@ -117,7 +117,7 @@ def log_queue_status(resources: dict) -> dict:
                 # fetch all the messages
                 while True:
                     for response in queue.receive_messages(MaxNumberOfMessages=10):
-                        if response and 'Messages' in response:
+                        if response and 'Messages' in response and len(response['Messages']) > 0:
                             for m in response['Messages']:
                                 message = parse_message(m)
                                 video = Path(message['video']).name
@@ -134,12 +134,12 @@ def log_queue_status(resources: dict) -> dict:
                 # fetch all the messages
                 while True:
                     for response in queue.receive_messages(MaxNumberOfMessages=10):
-                        if response and 'Messages' in response:
+                        if response and 'Messages' in response and len(response['Messages']) > 0:
                             for m in response['Messages']:
                                 message = parse_message(m)
                                 video = Path(message['video']).name
                                 JobCache().set_job(message['job'], resources['CLUSTER'], [video], JobStatus.RUNNING)
-                                JobCache().set_media(message['job'], video, JobStatus.FAIL, message['timestamp'])
+                                JobCache().set_media(message['job'], video, JobStatus.FAILED, message['timestamp'])
                         else:
                             break
                     break
@@ -214,7 +214,7 @@ class Monitor(Thread):
 
             # if there are failed videos, then set the job status to failed
             if num_failed > 0:
-                JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.FAIL)
+                JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.FAILED)
             else:
                 if num_found == self.num_videos and num_found > 0:
                     JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.SUCCESS)
@@ -223,7 +223,7 @@ class Monitor(Thread):
 
         else:
             if num_failed > 0:
-                JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.FAIL)
+                JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.FAILED)
                 info(
                     f'Job {job}: Found {num_found} completed videos and {num_failed} failed videos.')
             else:
