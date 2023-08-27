@@ -44,12 +44,20 @@ def video_data(videos: list[Path], input_s3: tuple, tags: dict, dry_run: bool = 
     s3_resource = boto3.resource('s3')
 
     # upload and tag the video objects individually
+    uploaded_videos = []
+    size_gb = 1
     for v in videos:
+        # add the size of the video to the total
+        size_gb += v.stat().st_size /(1024**3)
         prefix_path = get_prefix(v)
+
         if input_s3.path:
             target_prefix = f"{input_s3.path}/{prefix_path.lstrip('/')}/{v.name}"
         else:
             target_prefix = f"{prefix_path.lstrip('/')}/{v.name}"
+
+        info(f'Checking {v} in s3://{input_s3.netloc}/{target_prefix}...')
+        uploaded_videos.append(f"s3://{input_s3.netloc}/{target_prefix}")
 
         # check if the video exists in s3
         try:
@@ -87,9 +95,12 @@ def video_data(videos: list[Path], input_s3: tuple, tags: dict, dry_run: bool = 
         except Exception as error:
             raise error
 
-        output = urlparse(f's3://{input_s3.netloc}/{prefix_path}/', allow_fragments=True)
-        size_gb = bucket.size(output)
-        return output, size_gb
+    # If only one video was uploaded, return the video path
+    if len(uploaded_videos) == 1:
+        return urlparse(uploaded_videos[0], allow_fragments=True), size_gb
+    else:
+        # Otherwise, return the prefix path
+        return urlparse(f"s3://{input_s3.netloc}/{get_prefix(videos[0])}/", allow_fragments=True), size_gb
 
 
 def training_data(data: [Path], input: tuple, tags: dict, training_prefix: str):
