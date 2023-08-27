@@ -38,7 +38,6 @@ nav:
   - Configuration: 'config.md'
   - Prepare your data: 'data.md'
   - Change Log: CHANGELOG.md
-  - License: LICENSE.md
 
 
 copyright: Maintained by <a href="https://www.mbari.org/cline-danelle-e/">Danelle Cline</a>.

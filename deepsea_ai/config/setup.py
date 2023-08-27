@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+# deepsea-ai, Apache-2.0 license
+# Filename: config/setup.py
+# Description: Setup utility for mirror docker images to ECR, create role, and setup default data
 ###########################################################################################################
 # Credit to Alex for his blog: https://alexwlchan.net/2020/11/copying-images-from-docker-hub-to-amazon-ecr/
 # and code detailing how to mirror repositories below
@@ -14,7 +16,7 @@ import boto3
 from botocore.exceptions import ClientError
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config.config import Config
-from deepsea_ai.logger import err, info, debug, warn, exception
+from deepsea_ai.logger import err, info, warn, exception
 
 
 def get_ecr_repo_names_in_account(ecr_client, *, account_id):

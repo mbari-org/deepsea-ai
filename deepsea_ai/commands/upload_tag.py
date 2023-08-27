@@ -1,27 +1,13 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline, Duane Edgington"
-__copyright__ = "Copyright 2022, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Bucket upload and tagging utility
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
-
-from datetime import datetime
+# deepsea-ai, Apache-2.0 license
+# Filename: commands/upload_tag.py
+# Description: Bucket upload and tagging utility
 
 import botocore
 import boto3
 import time
 from pathlib import Path
 from urllib.parse import urlparse
-from deepsea_ai.logger import info, err, debug, critical, exception, keys
+from deepsea_ai.logger import info, err, critical, exception
 
 from . import bucket
 

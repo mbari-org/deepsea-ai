@@ -1,20 +1,7 @@
-# Path: deepsea_ai/logger/job_cache.py
-# !/usr/bin/env python
-__author__ = "Danelle Cline"
-__copyright__ = "Copyright 2023, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Danelle Cline"
-__email__ = "dcline at mbari.org"
-__doc__ = '''
-
-Simple, lightweight job cache to keep track of jobs that have been run.
-Can be used to generate a summary of jobs that have been run.
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# Deepsea-ai, Apache-2.0 license
+# Filename: logger/job_cache.py
+# Description: Simple, lightweight job cache to keep track of jobs that have been run.
+# Can be used to generate a summary of jobs that have been run.
 
 import boto3
 import pickledb

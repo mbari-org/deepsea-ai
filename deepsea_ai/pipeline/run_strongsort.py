@@ -1,18 +1,6 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline"
-__copyright__ = "Copyright 2022, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Danelle Cline"
-__email__ = "dcline at mbari.org"
-__doc__ = '''
-
-Runs strongsort tracking algorithm on YOLOv5 models
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: pipline/run_strongsort.py
+# Description: Runs strongsort tracking algorithm on YOLOv5 models using AWS SageMaker
 
 import click
 import datetime

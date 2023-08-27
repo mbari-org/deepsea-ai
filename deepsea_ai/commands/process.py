@@ -1,18 +1,6 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline, Duane Edgington"
-__copyright__ = "Copyright 2022, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Process a collection of videos; assumes videos have previously been uploaded with the upload command
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: commands/process.py
+# Description: Process a collection of videos with the SageMaker ScriptProcessor
 
 import os
 import inspect
@@ -152,8 +140,8 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
 
     now = datetime.utcnow()
 
-    # create a message group based on the time and the job_name to avoid collisions
-    group_id = now.strftime('%Y%m%dT%H%M')
+    # create a message group based on the time, the video name
+    group_id = f"{now.strftime('%Y%m%dT%H%M')}_{video_path.name}"
 
     # create a new message
     response = queue.send_message(MessageBody=json_object, MessageGroupId=resources['CLUSTER'] + f"{group_id}")

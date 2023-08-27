@@ -1,18 +1,6 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline"
-__copyright__ = "Copyright 2022, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Train a YOLOv5 model
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: commands/train.py
+# Description: Train a YOLOv5 model with SageMaker
 
 import boto3
 import random
@@ -85,7 +73,7 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
 
     img_size = 640
     if '6' in model: img_size = 1280  # all larger (1280x1280) models have the number 6 in them, e.g. yolov5n6
-    image_uri = f"{custom_config.get_account()}.dkr.ecr.{custom_config.get_region()}.amazonaws.com/{custom_config('aws', 'yolov5_container')}"
+    image_uri = f"{custom_config.get_account()}.dkr.ecr.{custom_config.get_region()}.amazonaws.com/{custom_config('docker', 'yolov5_container')}"
     user_name = custom_config.get_username()
     output_ckpts_s3 = f"s3://{ckpts_s3.netloc}/{ckpts_s3.path.lstrip('/')}"
     output_model_s3 = f"s3://{model_s3.netloc}/{model_s3.path.lstrip('/')}"
@@ -154,7 +142,7 @@ def package(bucket_s3: tuple):
         for obj in b.objects.filter(Prefix=bucket_s3.path.lstrip('/')):
             if 'best.pt' in obj.key:
                 best_checkpoint = out_tmp_path / 'best.pt'
-                info(f'Dowloading {obj.key} to {best_checkpoint.as_posix()}...')
+                info(f'Downloading {obj.key} to {best_checkpoint.as_posix()}...')
                 s3.download_file(bucket_s3.netloc, obj.key,  best_checkpoint.as_posix())
             if '.yaml' in obj.key:
                 yaml = out_tmp_path / Path(obj.key).name

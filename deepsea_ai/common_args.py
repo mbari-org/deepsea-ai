@@ -1,3 +1,7 @@
+# deepsea-ai, Apache-2.0 license
+# Filename: common_args.py
+# Description: Common arguments for processing commands
+
 import click
 
 # Common arguments for processing commands
