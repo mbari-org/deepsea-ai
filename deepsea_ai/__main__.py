@@ -1,24 +1,11 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline"
-__copyright__ = "Copyright 2022, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Main entry point for deepsea-ai
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: __main__
+# Description: Main entry point for the deepsea_ai command line interface
 
 from datetime import datetime
 
 import boto3
 import click
-import shutil
 import os
 from pathlib import Path
 from urllib.parse import urlparse
@@ -106,19 +93,15 @@ def setup_command(config, mirror):
     custom_config = cfg.Config(config)
     account = custom_config.get_account()
     region = custom_config.get_region()
-    image_cfg = ['yolov5_ecr', 'strongsort_ecr']
-    image_tags = [custom_config('aws', t) for t in image_cfg]
+    image_cfg = ['yolov5_container', 'strongsort_container']
+    image_tags = [custom_config('docker', t) for t in image_cfg]
     if mirror:
         setup.mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account,
                                               region=region, image_tags=image_tags)
     setup.create_role(account_id=account)
-    setup.store_role(default_config)
+    setup.store_role(custom_config)
 
-    # override the default config file with the custom one
-    if config:
-        shutil.copy2(config, cfg.default_config_ini)
-    else:
-        info(f'Using default config file {cfg.default_config_ini}')
+    setup.setup_default_data(custom_config)
 
 
 @cli.command(name="ecsprocess")
@@ -207,7 +190,7 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
                    f'mov files that ffmpeg understands, e.g. s3://{example_input_process_s3}')
 @click.option('--output-s3', type=str, required=True,
               help=f'Path to the s3 bucket to store the output, e.g. s3://{example_output_process_s3}')
-@click.option('-m', '--model-s3', type=str, default=default_config('aws', 'yolov5_model_s3'),
+@click.option('-m', '--model-s3', type=str, default=default_config('aws', 'model'),
               help='S3 location of the trained model tar gz file - must contain a model.tar.gz file with a valid YOLOv5 '
                    'Pytorch model.')
 @click.option('--instance-type', type=str, default='ml.g4dn.xlarge',
@@ -238,6 +221,10 @@ def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_
 
         videos = custom_config.check_videos(input_path, exclude)
         input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags, dry_run)
+
+        # size in GB of the input data should never be < 1
+        if size_gb < 1:
+            size_gb = 1
 
         # insert the datetime prefix to make a unique key for the output
         now = datetime.utcnow()
