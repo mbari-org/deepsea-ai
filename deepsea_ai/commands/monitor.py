@@ -7,7 +7,8 @@ __maintainer__ = "Duane Edgington"
 __email__ = "duane at mbari.org"
 __doc__ = '''
 
-Various commands for monitoring the status of processing or training jobs
+Various commands for monitoring the status of processing or training jobs in SQS queues
+that are being consumed by an ECS cluster.
 
 @author: __author__
 @status: __status__

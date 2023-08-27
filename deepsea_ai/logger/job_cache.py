@@ -30,7 +30,7 @@ from deepsea_ai import __version__
 # Enum for the status of a job
 class JobStatus:
     SUCCESS = "SUCCESS"
-    FAIL = "FAIL"
+    FAILED = "FAILED"
     QUEUED = "QUEUED"
     RUNNING = "RUNNING"
     UNKNOWN = "UNKNOWN"
@@ -58,15 +58,16 @@ def job_hash(job: str) -> str:
 
 class JobCache(logger.Singleton):
 
-    def __init__(self, output_path: Path, sim: bool = False):
+    def __init__(self, output_path: Path):
         """
         Initialize the cache with the account number we are running in
         """
-        if not sim:
+        try:
             # get the AWS account number
             account_number = boto3.client('sts').get_caller_identity().get('Account')
-        else:
+        except Exception as e:
             account_number = 'SIM'
+            warn(f"Unable to get AWS account number: {e}. Using SIM as account number")
 
         # create the output path if it doesn't exist
         output_path.mkdir(parents=True, exist_ok=True)
@@ -151,7 +152,7 @@ class JobCache(logger.Singleton):
             update_dt = dt.utcnow().strftime("%Y%m%dT%H%M%S")
         else:
             update_dt = datetime.strptime(update_dt, "%Y%m%dT%H%M%S").strftime("%Y%m%dT%H%M%S")
-        if status == JobStatus.FAIL or status == JobStatus.UNKNOWN:
+        if status == JobStatus.FAILED or status == JobStatus.UNKNOWN:
             err(f"Updating video file {media_file} to job {job_name} in cache with status {status}")
         else:
             info(f"Updating video file {media_file} to job {job_name} in cache with status {status}")
@@ -177,7 +178,7 @@ class JobCache(logger.Singleton):
                     info(f"JobCache: Added video file {v} to job {job_name} running on {cluster}")
 
         # update the job
-        if status == JobStatus.FAIL:
+        if status == JobStatus.FAILED:
             err(f"Updating job {job_name} running on {cluster} in cache status to {status}")
         else:
             info(f"Updating job {job_name} running on {cluster} in cache status to {status}")
@@ -233,7 +234,7 @@ class JobCache(logger.Singleton):
         failed = 0
         for video_uuid in self.db.getall():
             if self.db.get(video_uuid)[MediaIndex.UUID] == job_uuid:
-                if self.db.get(video_uuid)[MediaIndex.STATUS] == JobStatus.FAIL:
+                if self.db.get(video_uuid)[MediaIndex.STATUS] == JobStatus.FAILED:
                     failed += 1
         return failed
 
@@ -303,7 +304,7 @@ if __name__ == '__main__':
     jc.set_media(name, "vid1.mp4", JobStatus.SUCCESS)
 
     # update the status of the video to FAIL
-    jc.set_media(name, "vid1.mp4", JobStatus.FAIL)
+    jc.set_media(name, "vid1.mp4", JobStatus.FAILED)
 
     # update the status of the video to INFO
     jc.set_media(name, "vid1.mp4", JobStatus.QUEUED)
@@ -316,7 +317,7 @@ if __name__ == '__main__':
     jc.set_media(name, "vid2.mp4", JobStatus.SUCCESS)
     jc.set_media(name, "vid3.mp4", JobStatus.SUCCESS)
     jc.set_media(name, "vid4.mp4", JobStatus.SUCCESS)
-    jc.set_media(name, "vid5.mp4", JobStatus.FAIL)
+    jc.set_media(name, "vid5.mp4", JobStatus.FAILED)
 
     # get all media files for the job
     medias = jc.get_all_media_names(name)

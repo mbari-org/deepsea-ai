@@ -22,11 +22,12 @@ import datetime as dt
 import os
 from botocore.exceptions import ClientError
 from pathlib import Path
-from typing import List
+from typing import List, Any
 from deepsea_ai.logger import err, info, debug, warn, critical, exception
 
 default_training_prefix = 'training'
 default_config_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+
 
 class Config:
 
@@ -77,18 +78,25 @@ class Config:
             raise Exception('Run deepsea-ai setup or set the SAGEMAKER_ROLE environment variable')
         return sagemaker_arn
 
-    staticmethod
-    def get_account(self) -> str:
+    @staticmethod
+    def get_account() -> str:
         """
         Get the account number associated with this user
         :return:
         """
-        account_number = boto3.client('sts').get_caller_identity()['Account']
-        info(f'Found account {account_number}')
-        return account_number
+        try:
+            account_number = boto3.client('sts').get_caller_identity()['Account']
+            info(f'Found account {account_number}')
+            return account_number
+        except ClientError as e:
+            err(e)
+            msg = f'Could not get account number from AWS. Check your config.ini file. ' \
+                  f'Account number is not set in the config.ini file and AWS credentials are not configured.'
+            err(msg)
+            return None
 
-    staticmethod
-    def get_region(self) -> str:
+    @staticmethod
+    def get_region() -> str:
         """
         Get the region associated with this user
         :return:
@@ -98,8 +106,8 @@ class Config:
         info(f'Found region {region}')
         return region
 
-    staticmethod
-    def get_username(self) -> str:
+    @staticmethod
+    def get_username() -> str:
         """
         Get the user name using IAM; if IAM is not configured, this will default to the root user which may be the case
         for a new AWS account
@@ -115,8 +123,6 @@ class Config:
 
         return user_name
 
-
-    staticmethod
     def get_tags(self, description: str) -> dict:
         """
         Configure tag dictionary to associate with any AWS resource.
@@ -156,10 +162,10 @@ class Config:
 
         return tag_dict
 
-    staticmethod
-    def get_resources(self, stack_name: str) -> dict:
+    @staticmethod
+    def get_resources(stack_name: str) -> dict:
         """
-        Get resources relevant to the pipeline from the stack name; see deepsea-ai/cluster/stacks
+        Get resources relevant to the pipeline from the stack name
         :param stack_name: name of the stack to query in the ECS cluster
         :return: dictionary with resource names
         """
@@ -195,8 +201,8 @@ class Config:
                 raise Exception('Token expired')
         return None
 
-    staticmethod
-    def check_videos(self, input_path: Path, exclude: tuple) -> List[Path]:
+    @staticmethod
+    def check_videos(input_path: Path, exclude: tuple) -> List[Path]:
         """
          Check for videos with acceptable suffixes and return the Paths to them
         :param input_path: input path to search (non-recursively) or a single video file

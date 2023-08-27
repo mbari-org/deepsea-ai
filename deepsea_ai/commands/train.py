@@ -85,7 +85,7 @@ def yolov5(data: [Path], input_s3: tuple, ckpts_s3: tuple, model_s3: tuple, epoc
 
     img_size = 640
     if '6' in model: img_size = 1280  # all larger (1280x1280) models have the number 6 in them, e.g. yolov5n6
-    image_uri = f"{custom_config.get_account()}.dkr.ecr.{custom_config.get_region()}.amazonaws.com/{custom_config('aws', 'yolov5_ecr')}"
+    image_uri = f"{custom_config.get_account()}.dkr.ecr.{custom_config.get_region()}.amazonaws.com/{custom_config('aws', 'yolov5_container')}"
     user_name = custom_config.get_username()
     output_ckpts_s3 = f"s3://{ckpts_s3.netloc}/{ckpts_s3.path.lstrip('/')}"
     output_model_s3 = f"s3://{model_s3.netloc}/{model_s3.path.lstrip('/')}"

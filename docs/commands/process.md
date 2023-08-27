@@ -49,15 +49,15 @@ option. This is the most cost-effective way to process data in bulk.
 To process videos in a directory with the job name *"DocRickets 2022/02"* in your cluster called *benthic33k* : 
 
 ```
-deepsea-ai ecsprocess -u -c benthic33k -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640"
+deepsea-ai ecsprocess -u -c yolov5x-mbay-benthic -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640"
 ```
 
 To process videos in a directory with the job name "DocRicketts 2021/08 with a cluster called mbari315k model", excluding any dives with the name D1371, D1374, or D1375
 
 ```
 deepsea-ai ecsprocess -u \
-        --job "DocRicketts 2021/08 with mbari315k model" \
-        --cluster strongsort-yolov5-mbari315k  \
+        --job "DocRicketts 2021/08 with benthic model" \
+        --cluster yolov5x-mbay-benthic  \
         --config 902005prod.ini \
         --input /Volumes/M3/mezzanine/DocRicketts/2021/08/ \
         --exclude D1371 --exclude D1374 --exclude D1375 \

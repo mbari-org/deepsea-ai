@@ -47,33 +47,32 @@ def script_processor_run(dry_run: bool, input_s3: tuple, output_s3: tuple, model
     if config_s3:
         arguments.append(f'--config-s3={config_s3}')
 
-    info(arguments)
+    info(f'Running with args {arguments}')
+
     # Construct the uri from the config, e.g.
     # mbari/deepsea-yolov5:1.1.2 => 872338704006.dkr.ecr.us-west-2.amazonaws.com/deepsea-yolov5:1.1.2
     account = custom_config.get_account()
     region = custom_config.get_region()
-    image_uri_docker = custom_config('aws', 'strongsort_ecr')
+    image_uri_docker = custom_config('docker', 'strongsort_container')
     image_uri_ecr = f"{account}.dkr.ecr.{region}.amazonaws.com/{image_uri_docker}"
-
+    # log the video as running; the processor is the docker image
+    processor = image_uri_ecr.split('/')[-1]
     base_job_name = f'strongsort-yolov5-{user_name}'
 
-    if not dry_run:
-        script_processor = ScriptProcessor(command=['python3'],
-                                           image_uri=image_uri_ecr,
-                                           role=custom_config.get_role(),
-                                           instance_count=1,
-                                           base_job_name=base_job_name,
-                                           instance_type=instance_type,
-                                           volume_size_in_gb=volume_size_gb,
-                                           max_runtime_in_seconds=172800,
-                                           tags=tags)
+    script_processor = ScriptProcessor(command=['python3'],
+                                       image_uri=image_uri_ecr,
+                                       role=custom_config.get_role(),
+                                       instance_count=1,
+                                       base_job_name=base_job_name,
+                                       instance_type=instance_type,
+                                       volume_size_in_gb=volume_size_gb,
+                                       max_runtime_in_seconds=172800,
+                                       tags=tags)
 
     # log it
     info(f"Start script processor for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
 
     videos = []
-    # log the video as running; the processor is the docker image
-    processor = image_uri_ecr.split('/')[-1]
 
     if not dry_run:
         # get a list of videos in the input bucket
@@ -81,6 +80,13 @@ def script_processor_run(dry_run: bool, input_s3: tuple, output_s3: tuple, model
         bucket = s3.Bucket(input_s3.netloc)
         videos = [obj.key for obj in bucket.objects.filter(Prefix=input_s3.path.lstrip('/'))]
         debug(videos)
+
+        # Don't continue if there are no videos
+        if len(videos) == 0:
+            msg = f"No videos found in s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}"
+            err(msg)
+            return
+
         # strip off the prefix
         videos = [video.replace(input_s3.path.lstrip('/'), '') for video in videos]
 
@@ -146,9 +152,8 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
 
     now = datetime.utcnow()
 
-    # create a message group based on the time; somewhat arbitrary; maybe refine to the hour to avoid collisions
-    # from multiple users submitting the same kind of job
-    group_id = now.strftime("%Y%m%dT%H%M%SZ")
+    # create a message group based on the time and the job_name to avoid collisions
+    group_id = now.strftime('%Y%m%dT%H%M')
 
     # create a new message
     response = queue.send_message(MessageBody=json_object, MessageGroupId=resources['CLUSTER'] + f"{group_id}")
