@@ -1,19 +1,7 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline, Duane Edgington"
-__copyright__ = "Copyright 2023, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Various commands for monitoring the status of processing or training jobs in SQS queues
-that are being consumed by an ECS cluster.
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: commands/monitor.py
+# Description: Various commands for monitoring the status of processing or training jobs in SQS queues
+# that are being consumed by an ECS cluster.
 
 import json
 import time
