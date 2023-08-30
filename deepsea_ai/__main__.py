@@ -201,7 +201,7 @@ def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_
      upload video(s) then process with a model
     """
     custom_config = init(log_prefix="dsai_process", config=config)
-    init_db(custom_config)
+    db, _ = init_db(custom_config)
 
     # get tags to apply to the resources for cost monitoring
     tags = custom_config.get_tags(job)
@@ -240,7 +240,8 @@ def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_
             volume_size_gb = int(1.25 * size_gb)
 
         # create the arguments for the process script
-        process.script_processor_run(input_s3=input_s3,
+        process.script_processor_run(db=db,
+                                     input_s3=input_s3,
                                      output_s3=output_unique_s3,
                                      model_s3=model_s3,
                                      config_s3=config_s3,
