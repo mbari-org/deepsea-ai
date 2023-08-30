@@ -184,7 +184,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
         { upper: 0, change: -1 },
         { lower: 1, change: 1 }
       ],
-      cooldown: cdk.Duration.minutes(5),
+      cooldown: cdk.Duration.minutes(1),
       adjustmentType: appautoscaling.AdjustmentType.CHANGE_IN_CAPACITY
     })
 
