@@ -1,7 +1,7 @@
-Comment: A note about this stack. This comment must not start with a number
-StackName: public33k 
+Comment: This stack deploys the StrongSort YOLOv5 model to the MBARI Benthic dataset in FathomNet.
+StackName: yolov5x-mbay-benthic
 TaskDefinition: strongsort-yolov5
-ContainerImage: mbari/strongsort-yolov5:e64dc04
-FleetSize: 1
-track_config: s3://902005-public/models/yolov5x_mbay_benthic.yaml
-model_location: s3://902005-public/models/yolov5x_mbay_benthic_model.tar.gz
+ContainerImage: mbari/strongsort-yolov5:6f35769
+FleetSize: 2
+track_config: s3://deepsea-ai-548531997526-track-conf/strong_sort_benthic.yaml
+model_location: s3://deepsea-ai-548531997526-models/yolov5x_mbay_benthic_model.tar.gz

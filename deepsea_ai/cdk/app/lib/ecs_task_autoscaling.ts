@@ -50,8 +50,9 @@ export class AutoScalingTaskStack extends cdk.Stack {
     // Set the video processing visibility timeout to the maximum time that it takes to process a video once the message is dequeued
     const videoTimeout = cdk.Duration.hours(2)
 
-    // Set the track processing visibility timeout to the maximum time that it takes to ingest the track once the message is dequeued
-    const trackTimeout = cdk.Duration.minutes(30)
+    // Set the track processing visibility timeeout to the maximum time that it takes to ingest the track once the message is dequeued
+    // or the maximum time that it takes to monitor the status of the job
+    const trackTimeout = cdk.Duration.hours(12)
 
     const deadLetterQueue = new sqs.Queue(this, 'dead', {
       retentionPeriod: cdk.Duration.days(10),
@@ -159,9 +160,14 @@ export class AutoScalingTaskStack extends cdk.Stack {
       ]
     })
 
-    const scaleQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
-      period: cdk.Duration.minutes(5),
+    const scaleOutQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
+      period: cdk.Duration.minutes(1),
       statistic: "Average"
+    })
+
+    const scaleInQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
+      period: cdk.Duration.minutes(5),
+      statistic: "Minimum"
     })
 
     // Spin-up one service, one task per instance
@@ -179,7 +185,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     // Task scaling steps
     const serviceOutScaling = service.autoScaleTaskCount({minCapacity: 0, maxCapacity: config.FleetSize});
     serviceOutScaling.scaleOnMetric(`scaling-${config}`, {
-      metric: scaleQueueMetric,
+      metric: scaleOutQueueMetric,
       scalingSteps: [
         { upper: 0, change: -1 },
         { lower: 1, change: 1 }
@@ -189,7 +195,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     })
 
     // Alarm to scale out the cluster
-    const scaleOut = scaleQueueMetric.createAlarm(this, 'scale-out', {
+    const scaleOut = scaleOutQueueMetric.createAlarm(this, 'scale-out', {
       threshold: 1,
       evaluationPeriods: 1,
       comparisonOperator: cw.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
@@ -205,7 +211,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     scaleOut.addAlarmAction(new actions.AutoScalingAction(scalingOutAction))
 
     // Alarm to scale in the cluster
-    const scaleIn = scaleQueueMetric.createAlarm(this, 'scale-in', {
+    const scaleIn = scaleInQueueMetric.createAlarm(this, 'scale-in', {
       threshold: 0,
       evaluationPeriods: 1,
       comparisonOperator: cw.ComparisonOperator.LESS_THAN_OR_EQUAL_TO_THRESHOLD,
