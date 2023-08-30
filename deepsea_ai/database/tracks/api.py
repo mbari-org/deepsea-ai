@@ -1,6 +1,6 @@
 # deepsea-ai, Apache-2.0 license
 # Filename: database/api.py
-# Description: Database connection and query API
+# Description: Track database connection and query API
 
 from deepsea_ai.logger import debug, exception
 import requests

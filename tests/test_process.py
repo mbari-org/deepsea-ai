@@ -5,6 +5,9 @@ import pytest
 
 from click.testing import CliRunner
 from pathlib import Path
+
+from deepsea_ai.config.config import Config
+from deepsea_ai.database.job.database import reset_local_db
 from deepsea_ai.__main__ import cli
 from deepsea_ai.config import config as cfg
 
@@ -22,6 +25,13 @@ AWS_AVAILABLE = False
 if default_config.get_account():
     AWS_AVAILABLE = True
 
+global db
+
+def setup():
+    global db
+    cfg = Config()
+    # Reset the database
+    db = reset_local_db(cfg)
 
 @pytest.mark.skipif(not AWS_AVAILABLE, reason="This test is excluded because it requires a valid AWS account")
 def test_process_multiple_videos():

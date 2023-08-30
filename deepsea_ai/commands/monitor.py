@@ -12,8 +12,11 @@ from threading import Thread
 import boto3
 from botocore.exceptions import ClientError
 
+from deepsea_ai.database.job.misc import Status
+from deepsea_ai.database.report_generator import create_report
 from deepsea_ai.logger import info, warn, debug, exception, err
-from deepsea_ai.logger.job_cache import JobStatus, JobCache
+from deepsea_ai.database.job.database import Job
+from deepsea_ai.database.job.database_helper import get_num_completed, get_num_failed, update_media
 
 
 def log_scaling_activities(resources: dict, num_records: int = 10) -> int:
@@ -60,7 +63,7 @@ def parse_message(message: dict, embed: bool = False) -> dict:
 
 def log_queue_status(resources: dict) -> dict:
     """
-    Logs the status of the queue
+    Logs the status of the queues
     :param resources: Dictionary of resources
     :return: Dictionary of the number of messages in each queue
     """
@@ -69,6 +72,18 @@ def log_queue_status(resources: dict) -> dict:
     processor = resources['PROCESSOR']
     num_messages_visible = {}
     num_messages_invisible = {}
+
+    def update_job(sqs_message:dict, video_name: str, status: str):
+        """Helper function to update the media status in a given job in the database"""
+        job = Job.query.filter_by(name=sqs_message['job'], cluster=resources['CLUSTER']).first()
+
+        if job is None:
+            err(f'Job {message["job"]} not found in database.')
+            return
+        else:
+            update_media(db, job, video_name, status)
+            info(f"Updated job {job.name} running on {resources['CLUSTER']} in cache. {video_name} {status}")
+
     try:
         for q in queues:
             response = client.get_queue_attributes(
@@ -86,18 +101,17 @@ def log_queue_status(resources: dict) -> dict:
 
                 # fetch all the messages
                 while True:
-                    for response in queue.receive_messages(MaxNumberOfMessages=10):
-                        if response and 'Messages' in response and len(response['Messages']) > 0:
-                            for m in response['Messages']:
-                                message = parse_message(m)
-                                # get the video name which is the video id split from the .tracks.tar.gz
-                                # assume this is a mp4 video
-                                video = Path(message['video']).name.split('.tracks.tar.gz')[0] + '.mp4'
-                                JobCache().set_job(message['job'], resources['CLUSTER'], [video], JobStatus.RUNNING)
-                                JobCache().set_media(message['job'], video, JobStatus.SUCCESS, message['timestamp'])
-                        else:
-                            break
-                    break
+                    response = queue.receive_messages(MaxNumberOfMessages=10)
+                    if 'Messages' in response:
+                        messages = response['Messages']
+                        for m in messages:
+                            message = parse_message(m)
+                            # get the video name which is the video id split from the .tracks.tar.gz
+                            # assume this is a mp4 video
+                            video = Path(message['video']).name.split('.tracks.tar.gz')[0] + '.mp4'
+                            update_job(message, video, Status.SUCCESS)
+                    else:
+                        break
 
             if q == 'VIDEO_QUEUE':
                 info(
@@ -105,16 +119,15 @@ def log_queue_status(resources: dict) -> dict:
                     f' number of videos in progress: {response["Attributes"]["ApproximateNumberOfMessagesNotVisible"]}')
                 # fetch all the messages
                 while True:
-                    for response in queue.receive_messages(MaxNumberOfMessages=10):
-                        if response and 'Messages' in response and len(response['Messages']) > 0:
-                            for m in response['Messages']:
-                                message = parse_message(m)
-                                video = Path(message['video']).name
-                                JobCache().set_job(message['job'], resources['CLUSTER'], [video], JobStatus.RUNNING)
-                                JobCache().set_media(message['job'], video, JobStatus.QUEUED, message['timestamp'])
-                        else:
-                            break
-                    break
+                    response = queue.receive_messages(MaxNumberOfMessages=10)
+                    if 'Messages' in response:
+                        messages = response['Messages']
+                        for m in messages:
+                            message = parse_message(m)
+                            video = Path(message['video']).name
+                            update_job(message, video, Status.QUEUED)
+                    else:
+                        break
 
             if q == 'DEAD_QUEUE':
                 info(
@@ -122,16 +135,15 @@ def log_queue_status(resources: dict) -> dict:
 
                 # fetch all the messages
                 while True:
-                    for response in queue.receive_messages(MaxNumberOfMessages=10):
-                        if response and 'Messages' in response and len(response['Messages']) > 0:
-                            for m in response['Messages']:
-                                message = parse_message(m)
-                                video = Path(message['video']).name
-                                JobCache().set_job(message['job'], resources['CLUSTER'], [video], JobStatus.RUNNING)
-                                JobCache().set_media(message['job'], video, JobStatus.FAILED, message['timestamp'])
-                        else:
-                            break
-                    break
+                    response = queue.receive_messages(MaxNumberOfMessages=10)
+                    if 'Messages' in response:
+                        messages = response['Messages']
+                        for m in messages:
+                            message = parse_message(m)
+                            video = Path(message['video']).name
+                            update_job(message, video, Status.FAILED)
+                    else:
+                        break
     except ClientError as e:
         exception(e)
     return num_messages_visible
@@ -172,56 +184,31 @@ default_update_period = 60 * 30  # 30 minutes
 
 
 class Monitor(Thread):
-    def __init__(self, jobs: [str], resources: dict, update_period: int = default_update_period, sim : bool = False):
+    def __init__(self, resources: dict, update_period: int = default_update_period, sim: bool = False):
         Thread.__init__(self)
         self.resources = resources
         self.update_period = update_period
         self.sim = sim
+
         # reporting update_period must be >= update_period
         if self.update_period < self.update_period:
             warn(f'update_period must be >= update_period. Setting update_period to {self.update_period}')
             self.update_period = self.update_period
 
-        # Get the number of videos to process from the job description
-        self.num_videos = 0
-        for j in jobs:
-            media = JobCache().get_all_media_names(j)
-            self.num_videos += len(media)
-        self.jobs = jobs
+    def check_job_status(self, job: Job) -> (int, int):
+        """
+        Check the status of the job
+        :param job: Job to check
+        :return: Number of completed videos, number of failed videos
+        """
 
-    def check_job_status(self, job):
         # get the number of completed videos
-        num_found = JobCache().get_num_completed(job)
+        num_found = get_num_completed(job)
 
         # get the number of failed videos
-        num_failed = JobCache().get_num_failed(job)
+        num_failed = get_num_failed(job)
 
-        # if the total completed videos plus the number of failed videos equals the number
-        # of videos to process, then stop monitoring
-        if num_found + num_failed == self.num_videos:
-            info(f'Job {job} found {num_found} completed videos and {num_failed} failed videos. ')
-
-            # if there are failed videos, then set the job status to failed
-            if num_failed > 0:
-                JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.FAILED)
-            else:
-                if num_found == self.num_videos and num_found > 0:
-                    JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.SUCCESS)
-                else:
-                    JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.UNKNOWN)
-
-        else:
-            if num_failed > 0:
-                JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.FAILED)
-                info(
-                    f'Job {job}: Found {num_found} completed videos and {num_failed} failed videos.')
-            else:
-                if num_found == self.num_videos and num_found > 0:
-                    JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.SUCCESS)
-                else:
-                    JobCache().set_job(job, self.resources['CLUSTER'], [], JobStatus.UNKNOWN)
-                info(f'Job {job}: found {num_found} completed videos. ')
-
+        f'Job {job}: Found {num_found} completed videos and {num_failed} failed videos.'
         return num_found, num_failed
 
     def run(self):
@@ -230,32 +217,33 @@ class Monitor(Thread):
             return
 
         while True:
+            # check the status of the job in the database
+            job = db.query(Job).filter(Job.name == self.name).first()
+            if job is None:
+                err(f'Job {self.name} not found in database. Cannot monitor. Trying again in {self.update_period} seconds.')
 
             num_activities = log_scaling_activities(self.resources, num_records=10)
             queue_dict = log_queue_status(self.resources)
             queue_activity = sum([int(i) for i in queue_dict.values()])
 
-            if num_activities > 0 or queue_activity:
-
-                # check the status of the job
-                for j in self.jobs:
-                    num_found, num_failed = self.check_job_status(j)
-
-                    # generate a report every update_period, or if we are just starting
-                    if num_found % self.update_period == 0 or init:
-                        JobCache().create_report(j, Path('reports'), self.resources['PROCESSOR'])
-
-                init = False
-
+            if num_activities == 0 and queue_activity == 0:
+                info(f'No activity for {self.resources["PROCESSOR"]}.')
             else:
-                # if there is no activity, then stop monitoring
-                info(f'No activity for {self.resources["PROCESSOR"]}. Stopping monitor.')
-                break
+                # generate a report every update_period, or if we are just starting
+                if self.update_period == 0 or init:
+                    info(f"Getting jobs for cluster {self.resources['CLUSTER']}")
+                    jobs = db.query(Job).filter(Job.cluster == self.resources['CLUSTER']).all()
+                    info(f"Found {len(jobs)} jobs for cluster {self.resources['CLUSTER']}")
+                    for job in jobs:
+                        create_report(job, Path('reports'), self.resources)
+                        init = False
 
-            # if there is activity, then continue to monitor
             info(f'Checking again in {self.update_period} seconds. Ctrl-C to stop.')
             time.sleep(self.update_period)
 
         # generate a report
-        for j in self.jobs:
-            JobCache().create_report(j, Path('reports'), self.resources['PROCESSOR'])
+        job = db.query(Job).filter(Job.name == self.name).first()
+        if job is None:
+            err(f'Job {self.name} not found in database.')
+        else:
+            create_report(job, Path('reports'), self.resources)

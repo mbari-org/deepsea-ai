@@ -8,17 +8,20 @@ import boto3
 import json
 from datetime import datetime
 from pathlib import Path
-
+from sqlalchemy.orm import Session
 from deepsea_ai.config import config as cfg
 from deepsea_ai.commands.upload_tag import get_prefix
-from deepsea_ai.logger import debug, info, err, warn, exception, keys
-from deepsea_ai.logger.job_cache import JobStatus, JobCache
+from deepsea_ai.database.job.database import Job, Media, PydanticJobWithMedias
+from deepsea_ai.database.job.database_helper import update_media
+from deepsea_ai.database.job.misc import Status, JobType
+from deepsea_ai.logger import debug, info, err
 
 from sagemaker.processing import ScriptProcessor, ProcessingInput, ProcessingOutput
 
 code_path = Path(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
-def script_processor_run(dry_run: bool, input_s3: tuple, output_s3: tuple, model_s3: tuple,
+
+def script_processor_run(db: Session, dry_run: bool, input_s3: tuple, output_s3: tuple, model_s3: tuple,
                          volume_size_gb: int, instance_type: str, custom_config: cfg.Config,
                          tags: dict, config_s3: str, args: str):
     """
@@ -60,7 +63,13 @@ def script_processor_run(dry_run: bool, input_s3: tuple, output_s3: tuple, model
     # log it
     info(f"Start script processor for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
 
-    videos = []
+    def log_fini():
+        debug(f"Script processor dry run for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
+        # Get the job from the database and set the status to SUCCESS for each video
+        j = db.query(Job).filter(Job.name == base_job_name).first()
+        j_p = PydanticJobWithMedias.from_orm(job)
+        for m in j_p.medias:
+            update_media(db, j, m.name, Status.SUCCESS)
 
     if not dry_run:
         # get a list of videos in the input bucket
@@ -75,14 +84,20 @@ def script_processor_run(dry_run: bool, input_s3: tuple, output_s3: tuple, model
             err(msg)
             return
 
-        # strip off the prefix
+        # Strip off the prefix
         videos = [video.replace(input_s3.path.lstrip('/'), '') for video in videos]
 
-        JobCache().set_job(base_job_name, processor, videos, JobStatus.RUNNING)
-        for v in videos:
-            JobCache().set_media(base_job_name, v, JobStatus.RUNNING)
+        # Add the job to the database
+        name = base_job_name
+        job = Job(cluster=processor, name=name, job_type=JobType.SAGEMAKER)
+        db.add(job)
 
-        # run the script processor
+        for v in videos:
+            m = Media(name=v, status=Status.QUEUED, updatedAt=datetime.now(), job=job)
+            db.add(m)
+        db.commit()
+
+        # Run the script processor
         script_processor.run(code=f'{code_path.parent.parent.parent}/deepsea_ai/pipeline/run_strongsort.py',
                              arguments=arguments,
                              inputs=[ProcessingInput(
@@ -96,24 +111,23 @@ def script_processor_run(dry_run: bool, input_s3: tuple, output_s3: tuple, model
         if script_processor.jobs[-1].describe()['ProcessingJobStatus'] == 'Failed':
             reason = script_processor.jobs[-1].describe()['FailureReason']
             msg = f"Script processor failed for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}: {reason}"
-            JobCache().set_job(base_job_name, processor, videos, JobStatus.FAILED)
+
+            # Get the job from the database and set the status to FAILED for each video
+            job = db.query(Job).filter(Job.name == base_job_name).first()
             for v in videos:
-                JobCache().set_media(base_job_name, v, JobStatus.FAILED)
+                update_media(db, job, v, Status.FAILED)
+
             err(msg)
             raise Exception(msg)
         else:
             debug(f"Script processor succeeded for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
-            JobCache().set_job(base_job_name, processor, videos, JobStatus.SUCCESS)
-            for v in videos:
-                JobCache().set_media(base_job_name, v, JobStatus.SUCCESS)
+            log_fini()
     else:
         debug(f"Script processor dry run for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
-        JobCache().set_job(base_job_name, processor, videos, JobStatus.SUCCESS)
-        for v in videos:
-            JobCache().set_media(base_job_name, v, JobStatus.SUCCESS)
+        log_fini()
 
 
-def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, clean: bool, args: str):
+def batch_run(db: Session, resources: dict, video_path: Path, job_name: str, user_name: str, clean: bool, args: str):
     """
     Process a collection of videos in with a cluster in the Elastic Container Service [ECS]
     """
@@ -133,6 +147,8 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
 
     # If args are provided, add them to the message dict
     if args:
+        # Strip off the quotes
+        args = args.strip('"')
         message_dict["args"] = args
 
     queue = sqs.get_queue_by_name(QueueName=queue_name)
@@ -140,13 +156,23 @@ def batch_run(resources: dict, video_path: Path, job_name: str, user_name: str, 
 
     now = datetime.utcnow()
 
-    # create a message group based on the time, the video name
-    group_id = f"{now.strftime('%Y%m%dT%H%M')}_{video_path.name}"
+    # Create a message group based on the time and the video name
+    group_id = f"{now.strftime('%Y%m%dT%H%M%S')}-{video_path.name}"
 
-    # create a new message
+    # Create a new message
     response = queue.send_message(MessageBody=json_object, MessageGroupId=resources['CLUSTER'] + f"{group_id}")
     info(f"Message queued to {queue_name}. MessageId: {response.get('MessageId')}")
 
-    # log the video to the job cache
-    JobCache().set_job(job_name, resources['CLUSTER'], [video_path.name], JobStatus.QUEUED)
-    JobCache().set_media(job_name, video_path.name, JobStatus.QUEUED)
+    # Add the job to the database if it doesn't exist
+    job = db.query(Job).filter(Job.name == job_name).first()
+    try:
+        if job is None:
+            job = Job(name=job_name, cluster=resources['CLUSTER'])
+            db.add(job)
+            db.commit()
+            info(f"Added job {job.name} running on {resources['CLUSTER']} to cache.")
+
+        update_media(db, job, video_path.name, Status.RUNNING)
+    except Exception as ex:
+        err(f"Failed to add job {job_name} to cache: {ex}")
+        raise ex

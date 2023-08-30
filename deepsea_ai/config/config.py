@@ -23,6 +23,8 @@ class Config:
         """
         Read the .ini file and parse it
         """
+        # set the default output path of the sqllite job database to the same directory as the config.ini file
+        self.job_db_path = Path(os.path.dirname(os.path.abspath(__file__)))
         self.parser = ConfigParser()
         if path:
             self.path = path
@@ -46,6 +48,13 @@ class Config:
     def __call__(self, *args, **kwargs):
         assert len(args) == 2
         return self.parser.get(args[0], args[1])
+
+    def get_db_path(self) -> Path:
+        """
+        Get the path to the job database
+        :return:
+        """
+        return self.job_db_path
 
     def save(self, *args, **kwargs):
         assert len(args) == 3
@@ -187,6 +196,9 @@ class Config:
             if 'ExpiredToken' in ex.response['Error']['Code']:
                 critical('Token expired; you need to re-authenticate your AWS credentials')
                 raise Exception('Token expired')
+            else:
+                critical(f'Unknown error: {ex}')
+                raise Exception(f'Unknown error: {ex}')
         return None
 
     @staticmethod
@@ -226,4 +238,10 @@ class Config:
             err(f'No videos found in {input_path}')
         assert (num_videos > 0), "No videos to process"
         video_paths = [Path(x) for x in videos]
+
+        keep = ['D1423_20220221T143050Z_h265.mp4',
+                'D1423_20220221T151850Z_h265.mp4',
+                'D1423_20220221T154850Z_h265.mp4',
+                'D1423_20220221T164851Z_h265.mp4']
+        video_paths = [x for x in video_paths if x.name in keep]
         return video_paths

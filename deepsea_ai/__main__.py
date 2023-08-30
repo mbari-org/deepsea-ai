@@ -1,7 +1,7 @@
 # deepsea-ai, Apache-2.0 license
 # Filename: __main__
 # Description: Main entry point for the deepsea_ai command line interface
-
+import time
 from datetime import datetime
 
 import boto3
@@ -14,12 +14,12 @@ from deepsea_ai.config.config import Config
 from deepsea_ai.commands import upload_tag, process, train, bucket, monitor
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config import setup
-from deepsea_ai.database import api, queries
+from deepsea_ai.database.tracks import api, queries
+from deepsea_ai.database.job.database import Job, init_db
 from deepsea_ai import logger
 from deepsea_ai.logger import info, err, debug, warn, critical
 from deepsea_ai import __version__
 from deepsea_ai import common_args
-from deepsea_ai.logger.job_cache import JobCache
 
 default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
@@ -49,12 +49,6 @@ def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Co
     else:
         custom_config = cfg.Config()
 
-    # create a job cache for tracking jobs in the path the user is running in
-    JobCache(Path(os.getcwd()))
-
-    # set the database for the job cache if it is defined in the config
-    if custom_config('database', 'gql'):
-        JobCache().set_database(custom_config('database', 'gql'))
     return custom_config
 
 
@@ -91,6 +85,7 @@ def setup_command(config, mirror):
     """
     init(log_prefix="deepsea_ai_setup")
     custom_config = cfg.Config(config)
+    init_db(custom_config)
     account = custom_config.get_account()
     region = custom_config.get_region()
     image_cfg = ['yolov5_container', 'strongsort_container']
@@ -125,13 +120,14 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
     """
      (optional) upload, then batch process in an ECS cluster
     """
-    custom_config = init(log_prefix="deepsea_ai_ecsprocess", config=config)
-    database = None
+    custom_config = init(log_prefix="dsai_ecsprocess", config=config)
+    track_db = None
     if check:
         warn('Checking if video has been processed and loaded before sending off a job.'
              ' Requires a deepsea-ai GraphQL endpoint')
-        database = api.DeepSeaAIClient(custom_config('database', 'gql'))
+        track_db = api.DeepSeaAIClient(custom_config('database', 'gql'))
 
+    db, _ = init_db(custom_config)
     input_path = Path(input)
     processor = cluster
     video_bucket = 'Unknown'
@@ -148,10 +144,10 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
     total_submitted = 0
     for v in videos:
         loaded = False
-        if database:
+        if track_db:
             info(f'Checking if {v.name} has already been processed and loaded into the database...')
             # Check if the video has already been loaded by looking it up by the media name per this job name
-            medias = database.execute(queries.GET_MEDIA_IN_JOB,
+            medias = track_db.execute(queries.GET_MEDIA_IN_JOB,
                                       processing_job_name=f"{processor}-{job}",
                                       media_name=v.name)
 
@@ -170,7 +166,7 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
             if dry_run:
                 info(f'Dry run: Submitting {v.name} to cluster for processing with job {job}, cluster {cluster},processor {processor}, user {user_name}, clean {clean}, args {args}')
             else:
-                process.batch_run(resources, v, job, user_name, clean, args)
+                process.batch_run(db, resources, v, job, user_name, clean, args)
             total_submitted += 1
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
@@ -204,7 +200,8 @@ def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_
     """
      upload video(s) then process with a model
     """
-    custom_config = init(log_prefix="deepsea_ai_process", config=config)
+    custom_config = init(log_prefix="dsai_process", config=config)
+    init_db(custom_config)
 
     # get tags to apply to the resources for cost monitoring
     tags = custom_config.get_tags(job)
@@ -266,7 +263,8 @@ def upload_command(config, input, s3):
     """
     Upload videos
     """
-    custom_config = init(log_prefix="deepsea_ai_upload", config=config)
+    custom_config = init(log_prefix="dsai_upload", config=config)
+    init_db(custom_config)
     input_s3 = urlparse(s3.rstrip('/'))
     tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
     bucket.create(input_s3, tags)
@@ -304,7 +302,8 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     """
      (optional) upload training data, then train a YOLOv5 model
     """
-    custom_config = init(log_prefix="deepsea_ai_train", config=config)
+    custom_config = init(log_prefix="dsai_train", config=config)
+    init_db(custom_config)
 
     if instance_type == 'ml.p2.xlarge':
         critical(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
@@ -356,9 +355,9 @@ def package_command(s3):
     """
     Package a YOLOv5 model into a format that the deepsea-ai can use in its pipelines.
     This is done at the end of the train command automatically and stored in a model.tar.gz file.
-    This is added in case checkpoints were generated outside the deepsea-ai-traing command, e.g. SageMaker Studio. Colab
+    This is added in case checkpoints were generated outside the training command, e.g. SageMaker Studio. Colab
     """
-    init(log_prefix="deepsea_ai_package")
+    init(log_prefix="dsai_package")
     train.package(urlparse(s3.rstrip('/')))
 
 
@@ -371,7 +370,7 @@ def split_command(input: str, output: str):
     """
     Split data into train/val/test sets randomly per the following percentages 85%/10%/5%
     """
-    init(log_prefix="deepsea_ai_split")
+    init(log_prefix="dsai_split")
     input_path = Path(input)
     output_path = Path(output)
 
@@ -397,21 +396,38 @@ def split_command(input: str, output: str):
 @click.option('--update-period', type=int, default=10, help='Update period to monitor a job; default is every 60 '
                                                             'seconds. Ignored if --job is not specified.Generates a '
                                                             'new report file in the reports/ folder')
-@click.option('--job', type=str, required=True, multiple=True,
-              help='Name of the job, e.g. DiveV4361 benthic outline')
-def monitor_command(cluster: str, config, job: str, update_period: int):
+def monitor_command(cluster: str, config,update_period: int):
     """
     Print monitoring information for the cluster
     """
-    custom_config = init(log_prefix="deepsea_ai_monitor", config=config)
+    custom_config = init(log_prefix="dsai_monitor", config=config)
+    db, _ = init_db(custom_config)
     resources = custom_config.get_resources(cluster)
-    if resources:
-        info(f'Monitoring job status of cluster {cluster}')
-        m = monitor.Monitor(job, resources, update_period)
-        m.start()
-        m.join()
-    else:
-        warn(f'No resources found for cluster {cluster}. Try another cluster with --cluster <cluster_name>')
+    if not resources:
+        err(f'No resources found for cluster {cluster}')
+        return
+    init_db(custom_config)
+
+    while True:
+        # Get all the jobs
+        jobs_all = db.query(Job).all()
+        info(f'Found {len(jobs_all)} jobs in the database')
+        for job in jobs_all:
+            info(f'Job {job.name} status {job.cluster}')
+
+        # Get all the Jobs that have a populated cluster name
+        info(f"Getting jobs for cluster {resources['CLUSTER']}")
+        jobs = db.query(Job).filter(Job.cluster == cluster).all()
+        info(f'Found {len(jobs)} jobs for cluster {cluster}')
+
+        if len(jobs) == 0:
+            warn(f'No jobs found for cluster {cluster}. Retrying in 60 seconds...')
+            time.sleep(60)
+        else:
+            info(f'Monitoring on cluster {cluster}')
+            m = monitor.Monitor(resources, update_period)
+            m.start()
+            m.join()
 
 
 if __name__ == '__main__':

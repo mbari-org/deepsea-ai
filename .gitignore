@@ -1,3 +1,6 @@
+# database files
+*.db
+
 # test data
 data/
 *.png
