@@ -238,10 +238,4 @@ class Config:
             err(f'No videos found in {input_path}')
         assert (num_videos > 0), "No videos to process"
         video_paths = [Path(x) for x in videos]
-
-        keep = ['D1423_20220221T143050Z_h265.mp4',
-                'D1423_20220221T151850Z_h265.mp4',
-                'D1423_20220221T154850Z_h265.mp4',
-                'D1423_20220221T164851Z_h265.mp4']
-        video_paths = [x for x in video_paths if x.name in keep]
         return video_paths
