@@ -4,6 +4,7 @@ import * as cw from 'aws-cdk-lib/aws-cloudwatch'
 import * as ecs from 'aws-cdk-lib/aws-ecs'
 import * as ec2 from 'aws-cdk-lib/aws-ec2'
 import * as iam from "aws-cdk-lib/aws-iam"
+import * as logs from 'aws-cdk-lib/aws-logs'
 import * as process from "process"
 import * as s3 from 'aws-cdk-lib/aws-s3'
 import * as sqs from 'aws-cdk-lib/aws-sqs'
@@ -52,7 +53,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
 
     // Set the track processing visibility timeeout to the maximum time that it takes to ingest the track once the message is dequeued
     // or the maximum time that it takes to monitor the status of the job
-    const trackTimeout = cdk.Duration.hours(12)
+    const trackTimeout = cdk.Duration.hours(2)
 
     const deadLetterQueue = new sqs.Queue(this, 'dead', {
       retentionPeriod: cdk.Duration.days(10),
@@ -110,15 +111,26 @@ export class AutoScalingTaskStack extends cdk.Stack {
     new cdk.CfnOutput(this, 'track-queue', { value: trackSqsQueue.queueName })
     new cdk.CfnOutput(this, 'track-queue-arn', { value: trackSqsQueue.queueArn })
 
-    // Remove the buckets upon destroying - this will fail if there is any seeddata in the buckets which is the desired behavior
+    // Remove the buckets upon destroying - this will fail if there is any data in the buckets which is the desired behavior
     const video_bucket_in = new s3.Bucket(this, 'video-', {removalPolicy: cdk.RemovalPolicy.DESTROY})
     const track_bucket_out = new s3.Bucket(this, 'tracks-', {removalPolicy: cdk.RemovalPolicy.DESTROY});
 
-    // Create a task definition with CloudWatch Logs
-    const logging = new ecs.AwsLogDriver({streamPrefix: `${config.StackName}` })
+    // Create a log group for the stack called dsai
+    const logGroup = new logs.LogGroup(this, 'dsai', {
+      logGroupName: `/dsai/ecs/${config.StackName}/`,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
+      retention: logs.RetentionDays.ONE_MONTH
+    })
 
-    // IAM role for EC2 to execute, pull from the ECR, S3 full access (to read and write), SQS (Queue) service full access
-    const role = new iam.Role( this, "DeepSeaAI-ecs-taskexec-sqs-s3", {
+    // Create a task definition with CloudWatch Logs to capture logs from containers and send them to CloudWatch
+    // Retain the logs for a month
+    const logging = new ecs.AwsLogDriver({
+      logGroup: logGroup,
+      streamPrefix: 'task',
+    })
+
+    // IAM role for EC2 to execute, pull from the ECR, S3 full access (to read and write), logging full access, and SQS (Queue) service full access
+    const role = new iam.Role( this, "DeepSeaAI-ecs-taskexec-sqs-s3-log", {
         assumedBy: new iam.ServicePrincipal("ecs-tasks.amazonaws.com"),
         managedPolicies: [
           iam.ManagedPolicy.fromAwsManagedPolicyName( "service-role/AmazonECSTaskExecutionRolePolicy" )
@@ -128,7 +140,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     // TODO: refine policy to the exact sqs and s3 buckets per best practice
     role.addToPolicy( new iam.PolicyStatement({
         resources: ["*"],
-        actions: ["sqs:*","s3:*"]
+        actions: ["sqs:*","s3:*","logs:*"]
       })
     )
 
@@ -161,13 +173,13 @@ export class AutoScalingTaskStack extends cdk.Stack {
     })
 
     const scaleOutQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
-      period: cdk.Duration.minutes(1),
+      period: cdk.Duration.minutes(5),
       statistic: "Average"
     })
 
     const scaleInQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
-      period: cdk.Duration.minutes(5),
-      statistic: "Minimum"
+      period: cdk.Duration.minutes(60),
+      statistic: "Average"
     })
 
     // Spin-up one service, one task per instance
@@ -190,7 +202,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
         { upper: 0, change: -1 },
         { lower: 1, change: 1 }
       ],
-      cooldown: cdk.Duration.minutes(1),
+      cooldown: cdk.Duration.minutes(5),
       adjustmentType: appautoscaling.AdjustmentType.CHANGE_IN_CAPACITY
     })
 
