@@ -16,6 +16,7 @@ class Status:
 class JobType:
     SAGEMAKER = "sagemaker"
     ECS = "ecs"
+    DOCKER = "docker"
 
 
 def job_hash(job: str) -> str:

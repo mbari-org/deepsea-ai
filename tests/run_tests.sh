@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 # Run with ./run_test.sh
 # Run all test
-# Prerequisites:
+# Prerequisites for running the tests:
 # 1. Install awscli, e.g. pip install awscli
 # 2. Configure awscli with a valid account (aws configure) or set the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables
-# 3. Install pytest, e.g. pip install pytest
+# 3. Run in poetry shell
+# poetry shell && poetry install
 # 4. Run deepsea-ai setup --mirror
+# 5. ./run_test.sh
+# Skip awscli installation if not running tests that require a valid AWS account
 set -x
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASE_DIR="$(cd "$(dirname "${SCRIPT_DIR}/.." )" && pwd )"

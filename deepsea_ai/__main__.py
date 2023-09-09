@@ -14,8 +14,8 @@ from deepsea_ai.config.config import Config
 from deepsea_ai.commands import upload_tag, process, train, bucket, monitor
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config import setup
-from deepsea_ai.database.tracks import api, queries
 from deepsea_ai.database.job.database import Job, init_db
+from deepsea_ai.database.job.misc import JobType
 from deepsea_ai import logger
 from deepsea_ai.logger import info, err, debug, warn, critical
 from deepsea_ai import __version__
@@ -100,11 +100,9 @@ def setup_command(config, mirror):
 
 
 @cli.command(name="ecsprocess")
-@click.option('--check', is_flag=True, default=False, help='Check if video has been processed and loaded before '
-                                                           'sending off a job. Requires a deepsea-ai GraphQL endpoint')
 @click.option('-u', '--upload', is_flag=True, default=False,
               help='Set option to upload local video files to S3 bucket')
-@click.option('--clean', is_flag=True, default=True,
+@click.option('--clean', is_flag=True, default=False,
               help='Clean up unused artifact (e.g. video) from s3 after processing')
 @click.option('-i', '--input', type=str, default="/Volumes/M3/mezzanine/DocRicketts/2022/02/1423/",
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
@@ -116,18 +114,12 @@ def setup_command(config, mirror):
 @common_args.dry_run_option
 @cfg_option
 @common_args.args
-def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_run, args):
+def ecs_process(config, upload, clean, cluster, job, input, exclude, dry_run, args):
     """
      (optional) upload, then batch process in an ECS cluster
     """
     custom_config = init(log_prefix="dsai_ecsprocess", config=config)
-    track_db = None
-    if check:
-        warn('Checking if video has been processed and loaded before sending off a job.'
-             ' Requires a deepsea-ai GraphQL endpoint')
-        track_db = api.DeepSeaAIClient(custom_config('database', 'gql'))
-
-    db, _ = init_db(custom_config)
+    session_maker = init_db(custom_config)
     input_path = Path(input)
     processor = cluster
     video_bucket = 'Unknown'
@@ -144,18 +136,6 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
     total_submitted = 0
     for v in videos:
         loaded = False
-        if track_db:
-            info(f'Checking if {v.name} has already been processed and loaded into the database...')
-            # Check if the video has already been loaded by looking it up by the media name per this job name
-            medias = track_db.execute(queries.GET_MEDIA_IN_JOB,
-                                      processing_job_name=f"{processor}-{job}",
-                                      media_name=v.name)
-
-            # Found a media in the job as keyed by the processing name, so assume that this was already processed
-            if len(medias['data']['mediaInJob']) > 0:
-                info(f'Video {v.name} has already been processed and loaded...skipping')
-                loaded = True
-
         if upload and not loaded:
             if dry_run:
                 info(f'Dry run: Uploading {v.name} to S3 bucket {video_bucket}')
@@ -166,7 +146,8 @@ def ecs_process(config, check, upload, clean, cluster, job, input, exclude, dry_
             if dry_run:
                 info(f'Dry run: Submitting {v.name} to cluster for processing with job {job}, cluster {cluster},processor {processor}, user {user_name}, clean {clean}, args {args}')
             else:
-                process.batch_run(db, resources, v, job, user_name, clean, args)
+                with session_maker.begin() as db:
+                    process.batch_run(db, resources, v, job, user_name, clean, args)
             total_submitted += 1
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
@@ -201,7 +182,7 @@ def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_
      upload video(s) then process with a model
     """
     custom_config = init(log_prefix="dsai_process", config=config)
-    db, _ = init_db(custom_config)
+    session_maker = init_db(custom_config)
 
     # get tags to apply to the resources for cost monitoring
     tags = custom_config.get_tags(job)
@@ -240,7 +221,7 @@ def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_
             volume_size_gb = int(1.25 * size_gb)
 
         # create the arguments for the process script
-        process.script_processor_run(db=db,
+        process.script_processor_run(session_maker=session_maker,
                                      input_s3=input_s3,
                                      output_s3=output_unique_s3,
                                      model_s3=model_s3,
@@ -402,33 +383,27 @@ def monitor_command(cluster: str, config,update_period: int):
     Print monitoring information for the cluster
     """
     custom_config = init(log_prefix="dsai_monitor", config=config)
-    db, _ = init_db(custom_config)
+    session_maker = init_db(custom_config)
     resources = custom_config.get_resources(cluster)
     if not resources:
         err(f'No resources found for cluster {cluster}')
         return
-    init_db(custom_config)
+    report_path = Path.cwd() / 'reports'
 
     while True:
-        # Get all the jobs
-        jobs_all = db.query(Job).all()
-        info(f'Found {len(jobs_all)} jobs in the database')
-        for job in jobs_all:
-            info(f'Job {job.name} status {job.cluster}')
+        with session_maker.begin() as db:
+            # Get all the jobs
+            jobs_all = db.query(Job).filter(Job.job_type == JobType.ECS).all()
+            info(f'Found {len(jobs_all)} jobs in the database with type {JobType.ECS}.')
 
-        # Get all the Jobs that have a populated cluster name
-        info(f"Getting jobs for cluster {resources['CLUSTER']}")
-        jobs = db.query(Job).filter(Job.cluster == cluster).all()
-        info(f'Found {len(jobs)} jobs for cluster {cluster}')
-
-        if len(jobs) == 0:
-            warn(f'No jobs found for cluster {cluster}. Retrying in 60 seconds...')
-            time.sleep(60)
-        else:
-            info(f'Monitoring on cluster {cluster}')
-            m = monitor.Monitor(resources, update_period)
-            m.start()
-            m.join()
+            if len(jobs_all) > 0:
+                info(f'Monitoring {len(jobs_all)} job')
+                m = monitor.Monitor(session_maker, report_path, resources, update_period)
+                m.start()
+                m.join()
+            else:
+                info(f'No jobs found in the database with type {JobType.ECS}. Checking again in 30 seconds. Ctrl-C to stop.')
+                time.sleep(30)
 
 
 if __name__ == '__main__':

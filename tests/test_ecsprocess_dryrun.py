@@ -3,18 +3,16 @@ from click.testing import CliRunner
 from pathlib import Path
 
 from deepsea_ai.config.config import Config
-from deepsea_ai.database.job.database import reset_local_db
+from deepsea_ai.database.job.database import init_db
 from deepsea_ai.__main__ import cli
 
 # Get the path of this file
 video_path = Path(__file__).parent / 'data'
-global db
 
 def setup():
-    global db
     cfg = Config()
     # Reset the database
-    db = reset_local_db(cfg)
+    db = init_db(cfg, reset=True)
 
 def test_process_args():
     runner = CliRunner()

@@ -1,5 +1,7 @@
 # Test the ecsprocess arguments
+import json
 import subprocess
+import tarfile
 import tempfile
 import pytest
 import time
@@ -7,7 +9,7 @@ from click.testing import CliRunner
 from pathlib import Path
 
 from deepsea_ai.config.config import Config
-from deepsea_ai.database.job.database import reset_local_db
+from deepsea_ai.database.job.database import init_db
 
 from deepsea_ai.__main__ import cli
 from deepsea_ai.config import config as cfg
@@ -26,40 +28,47 @@ AWS_AVAILABLE = False
 if default_config.get_account():
     AWS_AVAILABLE = True
 
-# Check if there is a valid ECS cluster
+# True if there is a valid ECS cluster
 ECS_AVAILABLE = False
 
-cluster = 'yolov5x-mbay-benthic'
+cluster = 'ssyv5'
 
 resources = default_config.get_resources(cluster)
 if resources:
+    # Check if the ECS cluster is available and get the full cluster name
+    result = subprocess.run("aws ecs list-clusters", shell=True, stdout=subprocess.PIPE, text=True)
+    output = json.loads(result.stdout)
+    cluster_name = [c.split("/")[1] for c in output["clusterArns"] if cluster in c]
+    if len(cluster_name) == 0:
+        print(f"Cluster {cluster} is not available")
+    else:
+        cluster_name = cluster_name[0]
+    print(f"Cluster name: {cluster_name}")
     ECS_AVAILABLE = True
     out_s3 = f"s3://{resources['TRACK_BUCKET']}"  # s3 uri to save the track to -this is setup automatically by the CDK stack
 
-# Delay to allow the ECS task (process 3 videos) to complete. This can be shortened if the ECS cluster has an active
-# task running, but it is set to 420 seconds to be safe, assuming the auto-scaling group is set to
-# scale up to 1 task every 300 seconds, and the task takes 200 seconds to complete.
-task_delay_secs = 500
-
-global db
-
 def setup():
-    global db
     cfg = Config()
     # Reset the database
-    db = reset_local_db(cfg)
+    init_db(cfg, reset=True)
     """Setup the test. Purges the s3 bucket and SQS queues"""
     if ECS_AVAILABLE and AWS_AVAILABLE and out_s3:
         subprocess.run(['aws', 's3', 'rm', '--recursive', out_s3])  # clean up the S3 bucket
         # Purge the SQS queues; this is only allowed once every 60 seconds
         print(f'Clearing {resources["VIDEO_QUEUE"]}')
         subprocess.run(['aws', 'sqs', 'purge-queue', '--queue-url', resources['VIDEO_QUEUE']])
-        time.sleep(65)
-        print(f'Clearing {resources["TRACK_QUEUE"]}')
-        subprocess.run(['aws', 'sqs', 'purge-queue', '--queue-url', resources['TRACK_QUEUE']])
-        time.sleep(65)
-        print(f'Clearing {resources["DEAD_QUEUE"]}')
-        subprocess.run(['aws', 'sqs', 'purge-queue', '--queue-url', resources['DEAD_QUEUE']])
+
+def check_task_up():
+    # Check for any running tasks
+    result = subprocess.run(f"aws ecs list-tasks --cluster {cluster_name}",
+                            shell=True,
+                            stdout=subprocess.PIPE,
+                            text=True)
+    output = json.loads(result.stdout)
+    print(f"Running tasks: {output}")
+    if output["taskArns"]:
+        return True
+    return False
 
 
 @pytest.mark.skipif(not AWS_AVAILABLE and not ECS_AVAILABLE,
@@ -77,8 +86,19 @@ def test_args():
                                  '--args', args])
     assert result.exit_code == 0
 
-    time.sleep(task_delay_secs)
-    # Check that the tracks were created
+    # Check for the auto-scaling to start and instance and run a task; when the cluster is first started,
+    # it takes a while to start the task
+    num_tries = 20
+    while not check_task_up() and num_tries > 0:
+        print(f'Waiting for the task to run in the ECS cluster {cluster}. {num_tries} tries remaining')
+        time.sleep(30)
+        num_tries -= 1
+
+    assert check_task_up()
+
+    print('ECS cluster is up. Waiting for processing to complete...')
+    time.sleep(90) # small delay to allow processing to complete
+    # Check that the tar.gz files were created
     with tempfile.TemporaryDirectory() as tmpdir:
         subprocess.run(['aws', 's3', 'sync', out_s3, tmpdir])
         assert len(list(Path(tmpdir).rglob('*.tracks.tar.gz'))) == 3  # There should be 3 tracks
@@ -96,7 +116,6 @@ def test_default():
                                  '--cluster', cluster])
     assert result.exit_code == 0
 
-    time.sleep(task_delay_secs)
     # Check that the tracks were created
     with tempfile.TemporaryDirectory() as tmpdir:
         subprocess.run(['aws', 's3', 'sync', out_s3, tmpdir])
@@ -119,12 +138,12 @@ def test_classes_49():
                                  '--args', args])
     assert result.exit_code == 0
 
-    time.sleep(task_delay_secs)
     with tempfile.TemporaryDirectory() as tmpdir:
         subprocess.run(['aws', 's3', 'sync', out_s3, tmpdir])  # Sync the S3 bucket to the local temp directory
         assert len(list(Path(tmpdir).rglob('*.tar.gz'))) == 1  # verify that one tar.gz file was saved
         assert Path(tmpdir).rglob('*.tar.gz').__next__().stat().st_size > 0  # check that the tar.gz file is not empty
-        # open the tar.gz file and verify that there are no tracks which means no JSON files
-        # Only including 49=Paragoria should result in 0 tracks saved because the model detects and tracks it as
-        # Paragorgia arborea, which is class 48
-        subprocess.run(['tar', '-xzf', Path(tmpdir).rglob('*.tar.gz').__next__().as_posix(), '-C', tmpdir])
+        # Open the tar and verify that no .json files have the name  Paragorgia arborea which is class 48
+        with tarfile.open(Path(tmpdir).rglob('*.tar.gz').__next__().as_posix(), 'r:gz') as tar:
+            tar.extractall(tmpdir, members=[member for member in tar.getmembers() if member.name.endswith('.json')])
+            for f in Path(tmpdir).rglob('f*.json'):
+                assert 'Paragorgia arborea' not in f.read_text()
