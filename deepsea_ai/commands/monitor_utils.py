@@ -41,7 +41,7 @@ def parse_message(message: dict) -> dict:
     """
     Parse the JSON formated message from the queue body
     :param message: Message from the queue
-    :return: Dictionary of the message with video, job, and timestamp or None if the message is invalid
+    :return: Dictionary of the message with the timestamp added
     """
     try:
         if 'Body' not in message:
@@ -51,9 +51,6 @@ def parse_message(message: dict) -> dict:
         utc_secs = int(message['Attributes']['ApproximateFirstReceiveTimestamp'])
         timestamp = datetime.utcfromtimestamp(utc_secs / 1000)
         b['timestamp'] = timestamp.strftime('%Y%m%dT%H%M%S')
-        # add the message id to the message if it does not exist; it is used to update the database
-        # if 'message_id' not in b:
-        #     b['message_id'] = message['MessageId']
         return b
     except Exception as e:
         exception(e)
@@ -71,7 +68,7 @@ def fetch_and_parse(client, q):
     messages = []
     response = client.receive_message(QueueUrl=q,
                                       MaxNumberOfMessages=10,
-                                      VisibilityTimeout=5, # Fetch both visible and invisible messages
+                                      VisibilityTimeout=5,
                                       WaitTimeSeconds=20,
                                       MessageAttributeNames=['All'],
                                       AttributeNames=['All'])
