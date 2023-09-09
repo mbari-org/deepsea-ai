@@ -8,6 +8,8 @@ import boto3
 from configparser import ConfigParser
 import datetime as dt
 import os
+
+import botocore
 from botocore.exceptions import ClientError
 from pathlib import Path
 from typing import List, Any
@@ -90,6 +92,9 @@ class Config:
             msg = f'Could not get account number from AWS. Check your config.ini file. ' \
                   f'Account number is not set in the config.ini file and AWS credentials are not configured.'
             err(msg)
+            return None
+        except botocore.exceptions.NoCredentialsError as e:
+            err(e)
             return None
 
     @staticmethod
@@ -199,6 +204,11 @@ class Config:
             else:
                 critical(f'Unknown error: {ex}')
                 raise Exception(f'Unknown error: {ex}')
+        except botocore.exceptions.NoCredentialsError as ex:
+            exception(ex)
+            critical('No credentials; verify you have AWS credentials configured')
+            return None
+
         return None
 
     @staticmethod
@@ -236,6 +246,16 @@ class Config:
         info(f'Found {num_videos} videos to process')
         if num_videos == 0:
             err(f'No videos found in {input_path}')
+
+        # Check that the videos are not empty and that they exist
+        for video in videos:
+            if video.stat().st_size == 0:
+                err(f'Video {video} is empty')
+                videos.remove(video)
+
+            if not video.exists():
+                err(f'Video {video} does not exist')
+                videos.remove(video)
+
         assert (num_videos > 0), "No videos to process"
-        video_paths = [Path(x) for x in videos]
-        return video_paths
+        return videos
