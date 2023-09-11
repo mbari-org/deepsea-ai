@@ -48,8 +48,7 @@ def test_monitor_docker():
         resources = {'PROCESSOR': 'test'}
         # Create a job
         name = "Dive 1377 with yolov5x-mbay-benthic"
-        job = Job(id=1,
-                  engine="yolov5x-mbay-benthic30dkfh2=1jt",
+        job = Job(engine="yolov5x-mbay-benthic30dkfh2=1jt",
                   name=name,
                   job_type=JobType.DOCKER)
         db.add(job)
@@ -63,8 +62,7 @@ def test_monitor_report():
     """
     with session_maker.begin() as db:
         name = "Dive 1377 with yolov5x-mbay-benthic"
-        job = Job(id=1,
-                  engine="yolov5x-mbay-benthic30dkfh2=1jt",
+        job = Job(engine="yolov5x-mbay-benthic30dkfh2=1jt",
                   name=name,
                   job_type=JobType.ECS)
         vid1 = Media(name="vid1.mp4", status=Status.QUEUED, updatedAt=dt.utcnow())
