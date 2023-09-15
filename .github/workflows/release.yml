@@ -41,3 +41,43 @@ jobs:
       - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
       - name: Publish package
         run: poetry publish --build
+  build:
+    name: docker build
+    needs: [ semantic_release ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code and all tags and branches
+        uses: actions/checkout@v2
+        id: version
+        with:
+          fetch-depth: 0
+
+      - name: Get docker tag
+        run: |
+          tag_v=$(git describe --tags $(git rev-list --tags --max-count=1))  
+          tag=$(echo $tag_v | sed 's/v//')  
+          if [[ $tag =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then  
+            tag="latest"  
+          else  
+            printf '#!/usr/bin/env python\n__version__ = \"%s\"\n' ${tag} > pipeline/__init__.py  
+          fi  
+          echo "Setting TAG=${tag}"  
+          echo "TAG=${tag}" >> $GITHUB_ENV
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          context: ./deepsea-ai/cdk
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            mbari/ecs-autoscale:${{ env.TAG }}  
+            mbari/ecs-autoscale:latest
+          labels: |
+            IMAGE_URI=mbari/ecs-autoscale:${{ env.TAG }}
