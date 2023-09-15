@@ -117,7 +117,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
 
     // Create a log group for the stack called dsai
     const logGroup = new logs.LogGroup(this, 'dsai', {
-      logGroupName: `/dsai/ecs/${config.StackName}/`,
+      logGroupName: `/ecs/${config.StackName}`,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
       retention: logs.RetentionDays.ONE_MONTH
     })
@@ -153,7 +153,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
       image: ecs.ContainerImage.fromRegistry(config.ContainerImage),
       memoryReservationMiB: 3072,
       gpuCount: 1,
-      stopTimeout: cdk.Duration.hours(2),
+      stopTimeout: cdk.Duration.seconds(60),
       logging,
       environment: {
         "PROCESSOR": `${config.StackName}`,
@@ -173,7 +173,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     })
 
     const scaleOutQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
-      period: cdk.Duration.minutes(5),
+      period: cdk.Duration.minutes(1),
       statistic: "Average"
     })
 
