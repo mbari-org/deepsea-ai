@@ -15,8 +15,19 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python -
+        env:
+          POETRY_HOME: ${{github.workspace}}/.poetry
+          POETRY_VERSION: 1.6.1
 
-      - name: Run pytest (excluding marked tests)
-        run: pytest -m "not exclude"
+      - name: Install project dependencies
+        run: |
+          cd ${{github.workspace}}
+          ${{env.POETRY_HOME}}/bin/poetry install
+
+      - name: Run pytest
+        run: |
+          cd ${{github.workspace}}
+          ${{env.POETRY_HOME}}/bin/poetry run pytest
