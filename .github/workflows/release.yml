@@ -70,7 +70,7 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push to Docker Hub
+      - name: Build and push ecs-autoscale to Docker Hub
         uses: docker/build-push-action@v3
         with:
           context: ./deepsea-ai/cdk

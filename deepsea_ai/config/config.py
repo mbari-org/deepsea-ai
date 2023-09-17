@@ -25,7 +25,7 @@ class Config:
         """
         Read the .ini file and parse it
         """
-        # set the default output path of the sqllite job database to the same directory as the config.ini file
+        # set the default output path of the sqlite job database to the same directory as the config.ini file
         self.job_db_path = Path(os.path.dirname(os.path.abspath(__file__)))
         self.parser = ConfigParser()
         if path:
@@ -120,7 +120,8 @@ class Config:
             response = sts.get_caller_identity()
             user_name = response['Arn'].split("/")[-1].split("@")[0]
         except ClientError as e:
-            # The user_name may be specified in the Access Denied message...
+            user_name = "Unknown"
+        except botocore.exceptions.NoCredentialsError as e:
             user_name = "Unknown"
 
         return user_name

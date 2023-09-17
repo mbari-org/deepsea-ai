@@ -69,7 +69,7 @@ def script_processor_run(session_maker: sessionmaker, dry_run: bool, input_s3: t
 
     def log_fini(db: Session, j: Job, status: str, **kwargs):
         j_p = PydanticJobWithMedias.from_orm(j)
-        for m in j_p.medias:
+        for m in j_p.media:
             update_media(db, j, m.name, status, **kwargs)
 
     if not dry_run:
@@ -107,7 +107,7 @@ def script_processor_run(session_maker: sessionmaker, dry_run: bool, input_s3: t
                           'processing_job_arn': '',
                           'error': ''
                       }))
-            job.medias.append(m)
+            job.media.append(m)
 
         with session_maker.begin() as db:
             db.add(job)
@@ -138,7 +138,7 @@ def script_processor_run(session_maker: sessionmaker, dry_run: bool, input_s3: t
         debug(f"Script processor dry run for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
 
 
-def batch_run(db: Session, resources: dict, video_path: Path, job_name: str, user_name: str, clean: bool, args: str):
+def batch_run(session_maker: sessionmaker, resources: dict, video_path: Path, job_name: str, user_name: str, clean: bool, args: str):
     """
     Process a collection of videos in with a cluster in the Elastic Container Service [ECS]
     """
@@ -175,18 +175,20 @@ def batch_run(db: Session, resources: dict, video_path: Path, job_name: str, use
     response = queue.send_message(MessageBody=json_object, MessageGroupId=group_id)
     info(f"Message queued to {queue_name}. MessageId: {response.get('MessageId')}")
 
-    # Add the job to the database if it doesn't exist
-    job = db.query(Job).filter(Job.name == job_name).first()
-    try:
-        if job is None:
-            job = Job(engine=resources['CLUSTER'],
-                      name=job_name,
-                      job_type=JobType.ECS)
-            db.add(job)
-            db.commit()
-            job = db.query(Job).filter(Job.name == job_name).first()
-            info(f"Added job {job.name} running on {resources['CLUSTER']} to cache.")
-        update_media(db, job, video_path.name, Status.QUEUED, message_uuid=message_uuid)
-    except Exception as ex:
-        err(f"Failed to add job {job_name} to cache: {ex}")
-        raise ex
+    with session_maker.begin() as db:
+        # Add the job to the database if it doesn't exist
+        job = db.query(Job).filter(Job.name == job_name).first()
+        try:
+            if job is None:
+                job = Job(engine=resources['CLUSTER'],
+                          name=job_name,
+                          job_type=JobType.ECS)
+                db.add(job)
+        except Exception as ex:
+            err(f"Failed to add job {job_name} to cache: {ex}")
+            raise ex
+
+    with session_maker.begin() as db:
+        job = db.query(Job).filter(Job.name == job_name).first()
+        info(f"Added job {job.name} running on {resources['CLUSTER']} to cache.")
+        update_media(db, job, f"{prefix_path}/{video_path.name}", Status.QUEUED, message_uuid=message_uuid)

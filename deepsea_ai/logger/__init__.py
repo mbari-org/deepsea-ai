@@ -29,18 +29,12 @@ class Singleton(_Singleton('SingletonMeta', (object,), {})): pass
 
 class CustomLogger(Singleton):
     logger = None
-    summary_df = None
     output_path = Path.cwd()
 
     def __init__(self, output_path: Path = Path.cwd(), output_prefix: str = "deepsea_ai"):
         """
         Initialize the logger
         """
-        global keys
-        # create a global data frame to store a summary of the results and constrain the header to
-        # the dictionary keys
-        self.keys = keys
-        self.summary_df = pd.DataFrame(columns=self.keys)
         self.logger = logging.getLogger(LOGGER_NAME)
         self.logger.setLevel(logging.DEBUG)
         self.output_path = output_path

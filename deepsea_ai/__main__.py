@@ -146,8 +146,7 @@ def ecs_process(config, upload, clean, cluster, job, input, exclude, dry_run, ar
             if dry_run:
                 info(f'Dry run: Submitting {v.name} to cluster for processing with job {job}, cluster {cluster},processor {processor}, user {user_name}, clean {clean}, args {args}')
             else:
-                with session_maker.begin() as db:
-                    process.batch_run(db, resources, v, job, user_name, clean, args)
+                process.batch_run(session_maker, resources, v, job, user_name, clean, args)
             total_submitted += 1
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
@@ -375,10 +374,11 @@ def split_command(input: str, output: str):
                    'Container Service cluster.')
 @click.option('--config', type=str, required=False,
               help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--timeout-period', type=int, help='Timeout for monitoring in seconds; default is never')
 @click.option('--update-period', type=int, default=10, help='Update period to monitor a job; default is every 60 '
                                                             'seconds. Ignored if --job is not specified.Generates a '
                                                             'new report file in the reports/ folder')
-def monitor_command(cluster: str, config,update_period: int):
+def monitor_command(cluster: str, config, update_period: int, timeout_period: int):
     """
     Print monitoring information for the cluster
     """
@@ -393,17 +393,17 @@ def monitor_command(cluster: str, config,update_period: int):
     while True:
         with session_maker.begin() as db:
             # Get all the jobs
-            jobs_all = db.query(Job).filter(Job.job_type == JobType.ECS).all()
-            info(f'Found {len(jobs_all)} jobs in the database with type {JobType.ECS}.')
+            num_jobs = len(db.query(Job).filter(Job.job_type == JobType.ECS).all())
+            info(f'Found {num_jobs} jobs in the database with type {JobType.ECS}.')
 
-            if len(jobs_all) > 0:
-                info(f'Monitoring {len(jobs_all)} job')
-                m = monitor.Monitor(session_maker, report_path, resources, update_period)
-                m.start()
-                m.join()
-            else:
-                info(f'No jobs found in the database with type {JobType.ECS}. Checking again in 30 seconds. Ctrl-C to stop.')
-                time.sleep(30)
+        if num_jobs > 0:
+            info(f'Monitoring {num_jobs} job')
+            m = monitor.Monitor(session_maker, report_path, resources, update_period)
+            m.start()
+            m.join(timeout_period)
+        else:
+            info(f'No jobs found in the database with type {JobType.ECS}. Checking again in 30 seconds. Ctrl-C to stop.')
+            time.sleep(30)
 
 
 if __name__ == '__main__':

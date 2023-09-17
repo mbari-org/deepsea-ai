@@ -5,6 +5,12 @@ from pathlib import Path
 
 from deepsea_ai.__main__ import cli
 from deepsea_ai.config import config as cfg
+from deepsea_ai.config.config import Config
+from deepsea_ai.database.job import init_db
+from deepsea_ai.logger import CustomLogger
+
+# Set up the logger
+CustomLogger(output_path=Path.cwd() / 'logs', output_prefix=__name__)
 
 # Get the path of this file
 video_path = Path(__file__).parent / 'data'
@@ -14,6 +20,11 @@ default_config = cfg.Config()
 test_model_s3 = default_config('aws', 'model')  # s3 uri to the model
 test_video_s3 = default_config('aws', 'videos')  # s3 uri to save the video to
 test_track_s3 = default_config('aws', 'tracks')  # s3 uri to save the track to
+
+def setup():
+    cfg = Config()
+    # Reset the database
+    init_db(cfg, reset=True)
 
 def test_save_video():
     runner = CliRunner()

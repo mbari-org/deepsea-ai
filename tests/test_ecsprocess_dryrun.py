@@ -5,14 +5,20 @@ from pathlib import Path
 from deepsea_ai.config.config import Config
 from deepsea_ai.database.job.database import init_db
 from deepsea_ai.__main__ import cli
+from deepsea_ai.logger import CustomLogger
+
+# Set up the logger
+CustomLogger(output_path=Path.cwd() / 'logs', output_prefix=__name__)
 
 # Get the path of this file
 video_path = Path(__file__).parent / 'data'
 
+
 def setup():
     cfg = Config()
     # Reset the database
-    db = init_db(cfg, reset=True)
+    init_db(cfg, reset=True)
+
 
 def test_process_args():
     runner = CliRunner()

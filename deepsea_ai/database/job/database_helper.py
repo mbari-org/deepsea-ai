@@ -40,10 +40,8 @@ def get_status(job: Job) -> bool:
     :return: The status of the job
     """
 
-    pydantic_job_with_medias = PydanticJobWithMedias.from_orm(job)
-
     # Get the status of all the medias
-    statuses = [m.status for m in pydantic_job_with_medias.medias]
+    statuses = [m.status for m in job.media]
 
     # if any of the medias are RUNNING, the job should be RUNNING
     if Status.RUNNING in statuses:
@@ -67,10 +65,8 @@ def get_num_failed(job: Job) -> int:
     :return: The number of failed medias in the job
     """
 
-    pydantic_job_with_medias = PydanticJobWithMedias.from_orm(job)
-
     # Get the status of all the medias
-    statuses = [m.status for m in pydantic_job_with_medias.medias]
+    statuses = [m.status for m in job.media]
 
     # Count the number of FAILED medias
     num_failed = statuses.count(Status.FAILED)
@@ -85,10 +81,8 @@ def get_num_completed(job: Job) -> int:
     :return: The number of completed medias in the job
     """
 
-    pydantic_job_with_medias = PydanticJobWithMedias.from_orm(job)
-
     # Get the status of all the medias
-    statuses = [m.status for m in pydantic_job_with_medias.medias]
+    statuses = [m.status for m in job.media]
 
     # Count the number of SUCCESS medias
     num_completed = statuses.count(Status.SUCCESS)
@@ -120,79 +114,64 @@ def update_media(db: Session, job: Job, video_name: str, status: str, **kwargs):
     :param video_name: The name of the video to update
     :param status: The status of the video
     """
-
     info(f'Updating media {video_name} to {status}')
-    # If the job has medias, get the media with the name
-    if job.medias:
-        job_p = PydanticJobWithMedias.from_orm(job)
 
-        # If there are additional kwargs, search by them
-        if kwargs:
+    # Set kwargs to empty dict if None
+    kwargs = kwargs or {}
+
+    # If there are additional kwargs, search by them and the name
+    media = None
+    if kwargs:
+        if 'metadata_b64' in kwargs:
+            # Find the media with the matching metadata
+            media = [m for m in job.media if m.metadata_b64 == kwargs['metadata_b64'] and m.name == video_name]
+        else:
             for key, value in kwargs.items():
-                media_p = [m for m in job_p.medias if json_b64_decode(m.metadata_b64)[key] == value and m.name == video_name]
-                info(f'Found {len(media_p)} media matching {video_name} and {key} {value} in job {job.name}')
-                if len(media_p) > 0:
-                    break
+                for m in job.media:
+                    if m.metadata_b64 and json_b64_decode(m.metadata_b64)[key] == value and m.name == video_name:
+                        info(f'Found media matching {video_name} and {key} {value} in job {job.name}')
+                        media = m
+                        break
+    if not media:  # can't find by metadata, try by name
+        media = [m for m in job.media if m.name == video_name]
+
+    if media:
+        if len(media) > 0:
+            media = media[0]
+
+        info(f'Found media {video_name} in job {job.name}')
+
+        if status == Status.QUEUED and media.status == Status.RUNNING or media.status == Status.SUCCESS or media.status == Status.FAILED:
+            info(f'Media {video_name} in job {job.name} is already {media.status}. Not updating to {status}')
+            return
+
+        # Update the media status, timestamp and any additional kwargs
+        media.status = status
+        media.updatedAt = datetime.utcnow()
+
+        # add metadata if there was one in the kwargs
+        if 'metadata_b64' in kwargs:
+            media.metadata_b64 = kwargs['metadata_b64']
         else:
-            # Get the media with the name
-            media_p = [m for m in job_p.medias if m.name == video_name]
+            media.metadata_b64 = json_b64_encode(kwargs)
 
-        if len(media_p) > 0:
-            media_p = [m for m in job_p.medias if m.name == video_name]
-            info(f'Found {len(media_p)} media matching {video_name} in job {job.name}')
+        # Update the metadata
+        metadata_json = json_b64_decode(media.metadata_b64)
+        for key, value in kwargs.items():
+            if key in metadata_json:
+                metadata_json[key] = value
+        media.metadata_b64 = json_b64_encode(metadata_json)
 
-            # pick the first one
-            media_id = media_p[0].id
+        db.merge(media)
+        db.commit()
 
-            info(f'Found media {video_name} in job {job.name}')
-            media = db.query(Media).filter(Media.id == media_id).first()
-
-            # Update the media status, timestamp and any additional kwargs
-            media.status = status
-            media.updatedAt = datetime.utcnow()
-
-            # Update the metadata
-            if media.metadata_b64 and kwargs:
-                metadata_json = json_b64_decode(media.metadata_b64)
-                for key, value in kwargs.items():
-                    if key in metadata_json:
-                        metadata_json[key] = value
-                media.metadata_b64 = json_b64_encode(metadata_json)
-            if kwargs and not media.metadata_b64: # add metadata if it doesn't exist
-                media.metadata_b64 = json_b64_encode(kwargs)
-
-            db.merge(media)
-            db.commit()
-        else:
-            info(f'A new media {video_name} was added to job {job.name} {kwargs}')
-            if kwargs:
-                new_media = Media(name=video_name,
-                                  status=Status.QUEUED,
-                                  job=job,
-                                  metadata_b64=json_b64_encode(kwargs),
-                                  updatedAt=datetime.utcnow())
-            else:
-                new_media = Media(name=video_name,
-                                  status=Status.QUEUED,
-                                  job=job,
-                                  updatedAt=datetime.utcnow())
-            db.add(new_media)
-            job.medias.append(new_media)
-            db.commit()
     else:
-        if kwargs:
-            info(f'A new media {video_name} was added to job {job.name} {kwargs}')
-            new_media = Media(name=video_name,
-                              status=Status.QUEUED,
-                              job=job,
-                              metadata_b64=json_b64_encode(kwargs),
-                              updatedAt=datetime.utcnow())
-        else:
-            info(f'A new media {video_name} was added to job {job.name}')
-            new_media = Media(name=video_name,
-                              status=Status.QUEUED,
-                              job=job,
-                              updatedAt=datetime.utcnow())
+        info(f'A new media {video_name} was added to job {job.name} kwargs {kwargs}')
+        new_media = Media(name=video_name,
+                          status=status,
+                          job=job,
+                          metadata_b64=json_b64_encode(kwargs),
+                          updatedAt=datetime.utcnow())
         db.add(new_media)
-        job.medias.append(new_media)
+        job.media.append(new_media)
         db.commit()

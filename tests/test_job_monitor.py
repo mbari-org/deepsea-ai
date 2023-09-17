@@ -7,8 +7,12 @@ from deepsea_ai.database.job.database import Job, Media, init_db
 from deepsea_ai.database.job.misc import Status, JobType
 from datetime import datetime as dt
 
+from deepsea_ai.logger import CustomLogger
+
 global session_maker
 
+# Set up the logger
+CustomLogger(output_path=Path.cwd() / 'logs', output_prefix=__name__)
 
 def setup():
     global session_maker
@@ -68,7 +72,7 @@ def test_monitor_report():
         vid1 = Media(name="vid1.mp4", status=Status.QUEUED, updatedAt=dt.utcnow())
         vid2 = Media(name="vid2.mp4", status=Status.QUEUED, updatedAt=dt.utcnow())
         vid3 = Media(name="vid3.mp4", status=Status.RUNNING, updatedAt=dt.utcnow())
-        job.medias = [vid1, vid2, vid3]
+        job.media = [vid1, vid2, vid3]
         db.add(job)
         db.commit()
         db.close()

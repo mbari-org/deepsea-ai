@@ -34,7 +34,7 @@ def create_report(job: Job, output_path: Path, resources: dict = None):
 
     jobs_p = PydanticJobWithMedias.from_orm(job)
     created_time = jobs_p.createdAt
-    num_media = len(jobs_p.medias)
+    num_media = len(jobs_p.media)
 
     job_report_name = f"{jobs_p.name}, Total media: {num_media}, Created at: {created_time} "
 
@@ -63,10 +63,10 @@ def create_report(job: Job, output_path: Path, resources: dict = None):
         f.write(f"Index, Media, Created, Last Updated, Status\n")
 
         # Write the status of each media file in the job
-        names = [m.name for m in jobs_p.medias]
+        names = [m.name for m in jobs_p.media]
         for idx, name in enumerate(sorted(names)):
             # Get the media with the name
-            media = [m for m in jobs_p.medias if m.name == name][0]
+            media = [m for m in jobs_p.media if m.name == name][0]
             f.write(f"{idx}, {name}, {media.createdAt}, {media.updatedAt}, {media.status}\n")
 
     # Write the report in a web-friendly table format, highlighting the status in red if it is not complete
@@ -76,7 +76,7 @@ def create_report(job: Job, output_path: Path, resources: dict = None):
     #     f.write(f"<table border=1><tr><th>Index</th><th>Media</th><th>Last Updated</th><th>Status</th></tr>")
     #     for idx, name in enumerate(sorted(names)):
     #         # Get the media with the name
-    #         media = [m for m in jobs_p.medias if m.name == name][0]
+    #         media = [m for m in jobs_p.media if m.name == name][0]
     #         if media.status != 'COMPLETE':
     #             f.write(f"<tr><td>{idx}</td><td>{name}</td><td>{media.updatedAt}</td><td><font color='red'>{media.status}</font></td></tr>")
     #         else:

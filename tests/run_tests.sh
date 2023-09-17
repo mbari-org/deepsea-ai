@@ -29,11 +29,13 @@ pytest -v test_ecsprocess_args_dryrun.py
 ### Run the tests that require a valid AWS account
 ### These tests take about 4-5 minutes each to run
 pytest -s -v test_process.py::test_process_multiple_videos
-pytest -s -v test_process_args.py::test_save_video
-pytest -s -v test_process_args.py::test_classes_49
+pytest -s -v test_process.py::test_save_video
+pytest -s -v test_process.py::test_classes_49
 
-# Run the tests that require a valid AWS account and ECS cluster called public33k
-# These tests take about 15 minutes each to run
-pytest -s -v test_ecsprocess_args.py::test_default
-pytest -s -v test_ecsprocess_args.py::test_args
-pytest -s -v test_ecsprocess_args.py::test_classes_49
+# Run the tests that require a valid AWS account and ECS clusters
+# These tests take about 5-10 minutes each to run
+pytest -s -v test_ecsprocess.py::test_default
+pytest -s -v test_ecsprocess.py::test_args
+pytest -s -v test_ecsprocess.py::test_classes_49
+pytest -s -v test_ecsprocess.py::test_1280
+pytest -s -v test_ecsprocess.py::test_remove_video_failure

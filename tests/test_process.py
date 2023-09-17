@@ -12,6 +12,7 @@ from deepsea_ai.database.job.database import init_db
 
 from deepsea_ai.__main__ import cli
 from deepsea_ai.config import config as cfg
+from deepsea_ai.logger import CustomLogger
 
 # Get the path of this file
 video_path = Path(__file__).parent / 'data'
@@ -27,6 +28,8 @@ AWS_AVAILABLE = False
 if default_config.get_account():
     AWS_AVAILABLE = True
 
+# Set up the logger
+CustomLogger(output_path=Path.cwd() / 'logs', output_prefix=__name__)
 
 def setup():
     cfg = Config()

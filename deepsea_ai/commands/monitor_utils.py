@@ -8,10 +8,10 @@ from pathlib import Path
 
 import boto3
 from botocore.exceptions import ClientError
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
 from deepsea_ai.database.job import Job, Status
-from deepsea_ai.database.job.database_helper import update_media
+from deepsea_ai.database.job.database_helper import update_media, json_b64_decode
 from deepsea_ai.logger import info, err, exception, debug
 
 
@@ -66,13 +66,15 @@ def fetch_and_parse(client, q):
     :return: List of parsed messages from the queue
     """
     messages = []
-    response = client.receive_message(QueueUrl=q,
-                                      MaxNumberOfMessages=10,
-                                      VisibilityTimeout=5,
-                                      WaitTimeSeconds=20,
-                                      MessageAttributeNames=['All'],
-                                      AttributeNames=['All'])
-    if 'Messages' in response:
+    while True:
+        response = client.receive_message(QueueUrl=q,
+                                          MaxNumberOfMessages=10,
+                                          WaitTimeSeconds=20,
+                                          MessageAttributeNames=['All'],
+                                          AttributeNames=['All'])
+        if 'Messages' not in response:
+            break
+
         for m in response['Messages']:
             message = parse_message(m)
             if message:
@@ -81,39 +83,43 @@ def fetch_and_parse(client, q):
     return messages
 
 
-def log_queue_status(db: Session, resources: dict) -> dict:
+def update_job(db: Session, sqs_message: dict, cluster: str, status: str):
+    """
+    Helper function to update the database
+    :param db: Database session
+    :param sqs_message: The message from the queue
+    :param cluster: The cluster the job is running on
+    :param status: The status of the video, either QUEUED, SUCCESS, or FAILED
+    """
+    job = db.query(Job).filter_by(name=sqs_message['job_name'], engine=cluster).first()
+
+    if job is None:
+        err(f'Job {sqs_message["job_name"]} not found in database.')
+        # Add the job to the database
+        job = Job(name=sqs_message['job_name'], engine=cluster, job_type='ECS')
+        db.add(job)
+    else:
+        info(f'Found job {job.name} running on {cluster} in cache.')
+
+    # pass through the metadata
+    update_media(db, job, sqs_message["video"], status, metadata_b64=sqs_message['metadata_b64'])
+
+
+def log_queue_status(session_maker: sessionmaker, resources: dict) -> dict:
     """
     Logs the status of the queues
     :param resources: Dictionary of resources
     :return: Dictionary of the number of messages in each queue
-    :param db: The database session
     :param resources: Dictionary of resources in the cluster
     :return: Dictionary of the number of messages visible in each queue
     """
     client = boto3.client('sqs')
-    queues = ['TRACK_QUEUE', 'VIDEO_QUEUE', 'DEAD_QUEUE']
+    # queues = ['VIDEO_QUEUE', 'TRACK_QUEUE', 'DEAD_QUEUE']
+    queues = ['DEAD_QUEUE']
+    cluster = resources['CLUSTER']
     processor = resources['PROCESSOR']
     num_messages_visible = {}
     num_messages_invisible = {}
-
-    def update_job(sqs_message: dict, video_name: str, status: str):
-        """
-        Helper function to update the database
-        :param sqs_message: The message from the queue
-        :param video_name: The name of the video
-        :param status: The status of the video, either QUEUED, SUCCESS, or FAILED
-        """
-        job = db.query(Job).filter_by(name=sqs_message['job_name'], engine=resources['CLUSTER']).first()
-
-        if job is None:
-            err(f'Job {message["job_name"]} not found in database.')
-            # Add the job to the database
-            job = Job(name=sqs_message['job_name'], engine=resources['CLUSTER'], job_type='ECS')
-            db.add(job)
-            db.commit()
-
-        update_media(db, job, video_name, status)
-        info(f"Updated job {job.name} running on {resources['CLUSTER']} in cache. {video_name} {status}")
 
     try:
         for q in queues:
@@ -127,11 +133,10 @@ def log_queue_status(db: Session, resources: dict) -> dict:
                 info(f'{processor}:{q} number of processed videos: '
                      f'{response["Attributes"]["ApproximateNumberOfMessages"]}')
                 messages = fetch_and_parse(client, resources[q])
-                for message in messages:
-                    # get the video name which is the video id split from the .tracks.tar.gz
-                    # assume this is a mp4 video
-                    video = Path(message['video']).name.split('.tracks.tar.gz')[0] + '.mp4'
-                    update_job(message, video, Status.SUCCESS)
+                if messages:
+                    with session_maker() as db:
+                        for message in messages:
+                            update_job(db, message, cluster, Status.SUCCESS)
 
             if q == 'VIDEO_QUEUE':
                 info(f'{processor}:{q} number of videos to process: '
@@ -139,21 +144,26 @@ def log_queue_status(db: Session, resources: dict) -> dict:
                 info(f' number of videos in progress: '
                      f'{response["Attributes"]["ApproximateNumberOfMessagesNotVisible"]}')
 
-                messages = fetch_and_parse(client, resources[q])
-                for message in messages:
-                    video = Path(message['video']).name
-                    update_job(message, video, Status.QUEUED)
+                # This needs to be tested in a multiple user scenario
+                # For now, assume single user, single command execution use-case only
+                # messages = fetch_and_parse(client, resources[q])
+                # if messages:
+                #     with session_maker() as db:
+                #         for message in messages:
+                #             update_job(db, message, cluster, Status.QUEUED)
 
             if q == 'DEAD_QUEUE':
                 info(f'{processor}:{q} number of failed videos: '
                      f'{response["Attributes"]["ApproximateNumberOfMessages"]}')
                 messages = fetch_and_parse(client, resources[q])
-                for message in messages:
-                    video = Path(message['video']).name
-                    update_job(message, video, Status.FAILED)
+                if messages:
+                    with session_maker() as db:
+                        for message in messages:
+                            update_job(db, message, cluster, Status.FAILED)
 
     except ClientError as e:
         exception(e)
+        raise e
 
     return num_messages_visible
 

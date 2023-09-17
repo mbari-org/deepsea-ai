@@ -40,18 +40,18 @@ class MediaBase(Base):
 
 
 class Job(JobBase):
-    __tablename__ = "jobs"
+    __tablename__ = "job"
 
-    medias = relationship(
-        "Media", back_populates="job", cascade="all, delete, delete-orphan"
-    )
+    # one-to-many relationship with the Media table
+    media = relationship("Media", back_populates="job", cascade="all, delete-orphan")
 
 
 class Media(MediaBase):
-    __tablename__ = "medias"
+    __tablename__ = "media"
 
-    job_id = Column(Integer, ForeignKey("jobs.id"))
-    job = relationship("Job", back_populates="medias")
+    job_id = Column(Integer, ForeignKey("job.id"))
+    # many-to-one relationship with the Job table
+    job = relationship("Job", back_populates="media")
 
 
 PydanticJob = sqlalchemy_to_pydantic(Job)
@@ -59,7 +59,7 @@ PydanticMedia = sqlalchemy_to_pydantic(Media)
 
 
 class PydanticJobWithMedias(PydanticJob):
-    medias: List[PydanticMedia] = []
+    media: List[PydanticMedia] = []
 
 
 def init_db(cfg: Config, reset: bool = False) -> sessionmaker:
@@ -82,6 +82,7 @@ def init_db(cfg: Config, reset: bool = False) -> sessionmaker:
 
     if reset:
         # Reset the database
+        info(f"Resetting job cache database in {job_db_path} as {db}")
         Base.metadata.drop_all(engine)
 
     Base.metadata.create_all(engine)
