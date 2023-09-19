@@ -1,20 +1,7 @@
-# Path: deepsea_ai/logger/__init__.py
-# !/usr/bin/env python
-__author__ = "Danelle Cline"
-__copyright__ = "Copyright 2023, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Danelle Cline"
-__email__ = "dcline at mbari.org"
-__doc__ = '''
-
-Logger for deepsea-ai. Logs to both a file and the console.
-Creates a global data frame to store a summary of the results.
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: logger/__init__.py
+# Description: Logger for deepsea-ai. Logs to both a file and the console.
+# Creates a global data frame to store a summary of the results.
 
 import logging
 from pathlib import Path
@@ -42,18 +29,12 @@ class Singleton(_Singleton('SingletonMeta', (object,), {})): pass
 
 class CustomLogger(Singleton):
     logger = None
-    summary_df = None
     output_path = Path.cwd()
 
     def __init__(self, output_path: Path = Path.cwd(), output_prefix: str = "deepsea_ai"):
         """
         Initialize the logger
         """
-        global keys
-        # create a global data frame to store a summary of the results and constrain the header to
-        # the dictionary keys
-        self.keys = keys
-        self.summary_df = pd.DataFrame(columns=self.keys)
         self.logger = logging.getLogger(LOGGER_NAME)
         self.logger.setLevel(logging.DEBUG)
         self.output_path = output_path

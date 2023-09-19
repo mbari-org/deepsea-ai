@@ -1,6 +1,5 @@
 [![MBARI](https://www.mbari.org/wp-content/uploads/2014/11/logo-mbari-3b.png)](http://www.mbari.org)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
-![license-GPL](https://img.shields.io/badge/license-GPL-blue)
 [![Python](https://img.shields.io/badge/language-Python-blue.svg)](https://www.python.org/downloads/)
 
 **DeepSeaAI** is a Python package to simplify processing deep sea video in [AWS](https://aws.amazon.com) from a command line. 
@@ -10,10 +9,16 @@ It includes reasonable defaults that have been optimized for deep sea video. The
 DeepSea-AI currently supports:
 
  - *Training [YOLOv5](http://github.com/ultralytics/yolov5) object detection* models
- - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipelines* using either:
-     * [DeepSort](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch) tracking
+ - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipeline using 
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) tracking
 
+The cost to process a video is typically less than **$1.25** per 15-minute video.
+
+The cost to run the training algorithm depends on your data size and the number of GPUs you use.  
+A large collection with 30K images and 300K localizations may cost **$300-$600** to process.
+
+
+## Getting Started
 ## Install
 
 There are two main requirements to use this:

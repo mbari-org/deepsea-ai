@@ -1,0 +1,7 @@
+Comment: This stack deploys the Megadetector YOLOv5 model
+StackName: Megadetector
+TaskDefinition: strongsort-yolov5
+ContainerImage: 548531997526.dkr.ecr.us-west-2.amazonaws.com/mbari/strongsort-yolov5:b8c720b
+FleetSize: 1
+model_location: s3://deepsea-ai-548531997526-models/Megadetector.pt
+track_config: s3://deepsea-ai-548531997526-track-conf/strong_sort_benthic.yaml

@@ -1,0 +1,32 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "Elastic cluster for processing underwater video",
+  "private": true,
+  "bin": {
+    "app": "bin/app.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "synth": "cdk synth",
+    "bootstrap": "cdk bootstrap",
+    "deploy": "cdk deploy",
+    "destroy": "cdk destroy"
+  },
+  "license": "LGPL-3.0-or-later",
+  "devDependencies": {
+    "@types/jest": "^29.5.3",
+    "@types/js-yaml": "^4.0.5",
+    "@types/node": "20.4.9",
+    "aws-cdk": "2.91.0",
+    "js-yaml": "^3.14.1",
+    "ts-node": "^10.9.1",
+    "typescript": "~5.1.6"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "2.95.1",
+    "constructs": "^10.0.0",
+    "source-map-support": "^0.5.21"
+  }
+}

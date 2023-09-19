@@ -1,20 +1,8 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline, Kevin Barnard"
-__copyright__ = "Copyright 2022, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Danelle Cline"
-__email__ = "dcline at mbari.org"
-__doc__ = '''
+# deepsea-ai, Apache-2.0 license
+# Filename: database/api.py
+# Description: Track database connection and query API
 
-Deepsea-ai database connection and query largely based on the boxjelly api connector
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
-
-from deepsea_ai.logger import debug, info, err, exception
+from deepsea_ai.logger import debug, exception
 import requests
 
 class GraphQLError(requests.HTTPError):

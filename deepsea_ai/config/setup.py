@@ -1,4 +1,6 @@
-#!/usr/bin/env python
+# deepsea-ai, Apache-2.0 license
+# Filename: config/setup.py
+# Description: Setup utility for mirror docker images to ECR, create role, and setup default data
 ###########################################################################################################
 # Credit to Alex for his blog: https://alexwlchan.net/2020/11/copying-images-from-docker-hub-to-amazon-ecr/
 # and code detailing how to mirror repositories below
@@ -6,11 +8,15 @@
 import base64
 import json
 import subprocess
+import tempfile
+from pathlib import Path
+from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
 from deepsea_ai.config import config as cfg
-from deepsea_ai.logger import err, info, debug, warn, exception
+from deepsea_ai.config.config import Config
+from deepsea_ai.logger import err, info, warn, exception
 
 
 def get_ecr_repo_names_in_account(ecr_client, *, account_id):
@@ -147,16 +153,16 @@ def create_role(account_id: str):
         ]
     }
 
-    ROLE_PERMISSIONS_JSON =  {
-            "Version": "2012-10-17",
-            "Statement": [{
-                "Effect": "Allow",
-                "Action": [
-                    "iam:GetRole",
-                    "iam:PassRole"
-                ],
-                "Resource": f"arn:aws:iam::{account_id}:role/{role_name}"
-            }]
+    ROLE_PERMISSIONS_JSON = {
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Action": [
+                "iam:GetRole",
+                "iam:PassRole"
+            ],
+            "Resource": f"arn:aws:iam::{account_id}:role/{role_name}"
+        }]
     }
 
     try:
@@ -209,6 +215,142 @@ def store_role(config: cfg):
     role_arn = results['Role']['Arn']
     info(f'Setting SageMaker Role ARN to {role_arn} in {config.path}')
     config.save('aws', 'sagemaker_arn', role_arn)
+    # Parse the ARN to get the account ID
+    account_id = role_arn.split(':')[4]
+    config.save('aws', 'account_id', account_id)
+
+
+def download_s3_file(bucket: str, key: str, local_path: Path) -> bool:
+    """
+    Download a file from s3 to a local path
+    :param bucket:  Bucket name
+    :param key: prefix/key to the object
+    :param local_path: Local path to save the file
+    :return:  True if successful, False otherwise
+    """
+    try:
+        info(f'Downloading s3://{bucket}/{key} to {local_path.as_posix()}')
+        s3 = boto3.resource('s3', region_name='us-west-2')
+        s3.Bucket(bucket).download_file(key, local_path.as_posix())
+        return True
+    except Exception as ex:
+        print(f'Exception {ex}')
+        return False
+
+
+def make_bucket(bucket: str, region: str) -> bool:
+    """
+    Create a bucket if it doesn't exist
+    :param bucket: Bucket name
+    :param region: Region name
+    :return: True if successful, False otherwise
+    """
+    s3 = boto3.client('s3', region_name=region)
+    try:
+        info(f'Creating bucket {bucket} in {region}')
+        s3.create_bucket(Bucket=bucket, CreateBucketConfiguration={'LocationConstraint': region})
+        return True
+    except ClientError as err:
+        if err.response["Error"]["Code"] == "BucketAlreadyOwnedByYou":
+            warn(f"Bucket {bucket} already exists.")
+            return True
+        else:
+            raise
+
+
+def setup_default_data(config: Config):
+    """
+    Setup default data, including video, models, and  track config.
+    This creates default data in the following buckets:
+    deepsea-ai-<account>-models
+    deepsea-ai-<account>-track-conf
+    deepsea-ai-<account>-videos
+    deepsea-ai-<account>-tracks
+    """
+    default_model_s3 = config('aws_public', 'model')
+    default_track_s3 = config('aws_public', 'track_config')
+    account = config.get_account()
+
+    # Create the buckets if they don't exist
+    buckets = [f'deepsea-ai-{account}-models',
+               f'deepsea-ai-{account}-track-conf',
+               f'deepsea-ai-{account}-videos',
+               f'deepsea-ai-{account}-tracks']
+    for bucket in buckets:
+        if not make_bucket(bucket, 'us-west-2'):
+            err(f'Cannot create bucket {bucket}')
+            return
+
+    # Save the buckets in the config
+    config.save('aws', 'models', f's3://{buckets[0]}')
+    config.save('aws', 'track_config', f's3://{buckets[1]}')
+    config.save('aws', 'videos', f's3://{buckets[2]}')
+    config.save('aws', 'tracks', f's3://{buckets[3]}')
+
+    # Download data from S3 to a temp directory and then upload to the new buckets
+    with tempfile.TemporaryDirectory() as temp_dir:
+
+        ###########################################################################################
+        # Handle video defaults
+        ###########################################################################################
+        for v in ['video_ex1', 'video_ex2', 'video_ex3']:
+            # Parse the s3 path of the default to download
+            src = urlparse(config('aws_public', v))
+            tgt = urlparse(f's3://{buckets[2]}/{Path(src.path).name}')
+
+            # Skip if the file already exists
+            s3 = boto3.resource('s3')
+            bucket_tgt = s3.Bucket(tgt.netloc)
+            found = False
+            for obj in bucket_tgt.objects.all():
+                if Path(src.path).name in obj.key:
+                    info(f'Found {Path(src.path).name} in {tgt.netloc} so skipping')
+                    found = True
+
+            if not found:
+                # Download the file from the source bucket
+                out_path = Path(temp_dir) / Path(src.path).name
+                if not download_s3_file(src.netloc, src.path.lstrip('/'), out_path):
+                    err(f'Cannot find {s3}')
+                    return
+                else:
+                    info(f'Uploading {out_path.as_posix()} to {tgt.netloc}')
+                    s3.Bucket(tgt.netloc).upload_file(out_path.as_posix(), out_path.name)
+
+        ###########################################################################################
+        # Handle model and track config defaults
+        ###########################################################################################
+
+        # Dictionary of defaults and their associated buckets to upload to
+        defaults = {default_model_s3: f"s3://{buckets[0]}", default_track_s3: f"s3://{buckets[1]}"}
+
+        for bucket_source, bucket_target in defaults.items():
+            # Parse the s3 path of the default to download
+            src = urlparse(bucket_source)
+            tgt = urlparse(bucket_target)
+
+            # Skip if the file already exists
+            s3 = boto3.resource('s3')
+            bucket_tgt = s3.Bucket(tgt.netloc)
+            found = False
+            for obj in bucket_tgt.objects.all():
+                if Path(src.path).name in obj.key:
+                    info(f'Found {Path(src.path).name} in {bucket_target} so skipping')
+                    if 'model' in bucket_target:
+                        config.save('aws', 'model', f'{bucket_target}/{Path(src.path).name}')
+                    elif 'track' in bucket_target:
+                        config.save('aws', 'track_config', f'{bucket_target}/{Path(src.path).name}')
+                    found = True
+
+            if not found:
+                # Download the file from the source bucket
+                out_path = Path(temp_dir) / Path(src.path).name
+                if not download_s3_file(src.netloc, src.path.lstrip('/'), out_path):
+                    err(f'Cannot find {s3}')
+                    return
+                else:
+                    info(f'Uploading {out_path.as_posix()} to {bucket_target}')
+                    s3.Bucket(tgt.netloc).upload_file(out_path.as_posix(), out_path.name)
 
 
 if __name__ == "__main__":
@@ -216,9 +358,10 @@ if __name__ == "__main__":
     default_config_ini = cfg.default_config_ini
     account = default_config.get_account()
     region = default_config.get_region()
-    image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
-    image_tags = [default_config('aws', t) for t in image_cfg]
-    mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account, region=region, image_tags=image_tags)
+    image_cfg = ['yolov5_container', 'strongsort_container']
+    image_tags = [default_config('docker', t) for t in image_cfg]
+    mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account, region=region,
+                                    image_tags=image_tags)
     create_role(account_id=account)
     store_role(default_config)
-
+    setup_default_data(default_config)

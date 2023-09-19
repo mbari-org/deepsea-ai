@@ -1,18 +1,6 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline"
-__copyright__ = "Copyright 2023, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Bucket utilities
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: commands/bucket.py
+# Description: S3 bucket utilities
 
 import logging
 import boto3
@@ -21,12 +9,15 @@ from botocore.exceptions import ClientError
 from deepsea_ai.logger import info
 
 
-def create(bucket: tuple, tags: dict):
+def create(bucket: tuple, tags: dict, dry_run: bool = False):
     """Create an S3 bucket
     :param bucket: Bucket to create
     :param tags: Tags to assign to the bucket
     :return: True if bucket created, or it already exists, else False
     """
+    if dry_run:
+        info(f'dry-run: Would have created bucket {bucket.netloc} with tags {tags}')
+        return True
 
     # Create bucket
     try:

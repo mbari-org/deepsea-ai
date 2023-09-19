@@ -9,6 +9,11 @@ DeepSea-AI currently supports:
  - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipelines* using either:
      * [DeepSort](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch) tracking
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) tracking
+     * 
+The cost to process a video is typically less than **$1.25** per 15-minute video.
+
+The cost to run the training algorithm depends on your data size and the number of GPUs you use.  
+A large collection with 30K images and 300K localizations may cost **$300-$600** to process.
 
 There are three main requirements to use this module:
 

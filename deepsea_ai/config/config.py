@@ -1,18 +1,6 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline, Duane Edgington"
-__copyright__ = "Copyright 2023, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Configuration helper to setup defaults and fetch cloud configuration
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
+# deepsea-ai, Apache-2.0 license
+# Filename: config/config.py
+# Description: Configuration helper to setup defaults and fetch cloud configuration
 
 import string
 
@@ -20,13 +8,16 @@ import boto3
 from configparser import ConfigParser
 import datetime as dt
 import os
+
+import botocore
 from botocore.exceptions import ClientError
 from pathlib import Path
-from typing import List
+from typing import List, Any
 from deepsea_ai.logger import err, info, debug, warn, critical, exception
 
 default_training_prefix = 'training'
 default_config_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+
 
 class Config:
 
@@ -34,6 +25,8 @@ class Config:
         """
         Read the .ini file and parse it
         """
+        # set the default output path of the sqlite job database to the same directory as the config.ini file
+        self.job_db_path = Path(os.path.dirname(os.path.abspath(__file__)))
         self.parser = ConfigParser()
         if path:
             self.path = path
@@ -58,6 +51,13 @@ class Config:
         assert len(args) == 2
         return self.parser.get(args[0], args[1])
 
+    def get_db_path(self) -> Path:
+        """
+        Get the path to the job database
+        :return:
+        """
+        return self.job_db_path
+
     def save(self, *args, **kwargs):
         assert len(args) == 3
         self.parser.set(section=args[0], option=args[1], value=args[2])
@@ -77,18 +77,28 @@ class Config:
             raise Exception('Run deepsea-ai setup or set the SAGEMAKER_ROLE environment variable')
         return sagemaker_arn
 
-    staticmethod
-    def get_account(self) -> str:
+    @staticmethod
+    def get_account() -> str:
         """
         Get the account number associated with this user
         :return:
         """
-        account_number = boto3.client('sts').get_caller_identity()['Account']
-        info(f'Found account {account_number}')
-        return account_number
+        try:
+            account_number = boto3.client('sts').get_caller_identity()['Account']
+            info(f'Found account {account_number}')
+            return account_number
+        except ClientError as e:
+            err(e)
+            msg = f'Could not get account number from AWS. Check your config.ini file. ' \
+                  f'Account number is not set in the config.ini file and AWS credentials are not configured.'
+            err(msg)
+            return None
+        except botocore.exceptions.NoCredentialsError as e:
+            err(e)
+            return None
 
-    staticmethod
-    def get_region(self) -> str:
+    @staticmethod
+    def get_region() -> str:
         """
         Get the region associated with this user
         :return:
@@ -98,8 +108,8 @@ class Config:
         info(f'Found region {region}')
         return region
 
-    staticmethod
-    def get_username(self) -> str:
+    @staticmethod
+    def get_username() -> str:
         """
         Get the user name using IAM; if IAM is not configured, this will default to the root user which may be the case
         for a new AWS account
@@ -110,13 +120,12 @@ class Config:
             response = sts.get_caller_identity()
             user_name = response['Arn'].split("/")[-1].split("@")[0]
         except ClientError as e:
-            # The user_name may be specified in the Access Denied message...
+            user_name = "Unknown"
+        except botocore.exceptions.NoCredentialsError as e:
             user_name = "Unknown"
 
         return user_name
 
-
-    staticmethod
     def get_tags(self, description: str) -> dict:
         """
         Configure tag dictionary to associate with any AWS resource.
@@ -150,16 +159,16 @@ class Config:
             allowed = allowed_chars + allowed_letters + allowed_numbers
             if not any(char in tag['Value'] for char in allowed):
                 msg = f'Tag {tag} has a value with special characters. Check your config.ini file. ' \
-                        f'Special characters are not allowed in AWS tags, e.g. dots, etc.'
+                      f'Special characters are not allowed in AWS tags, e.g. dots, etc.'
                 err(msg)
                 raise (msg)
 
         return tag_dict
 
-    staticmethod
-    def get_resources(self, stack_name: str) -> dict:
+    @staticmethod
+    def get_resources(stack_name: str) -> dict:
         """
-        Get resources relevant to the pipeline from the stack name; see deepsea-ai/cluster/stacks
+        Get resources relevant to the pipeline from the stack name
         :param stack_name: name of the stack to query in the ECS cluster
         :return: dictionary with resource names
         """
@@ -193,10 +202,18 @@ class Config:
             if 'ExpiredToken' in ex.response['Error']['Code']:
                 critical('Token expired; you need to re-authenticate your AWS credentials')
                 raise Exception('Token expired')
+            else:
+                critical(f'Unknown error: {ex}')
+                raise Exception(f'Unknown error: {ex}')
+        except botocore.exceptions.NoCredentialsError as ex:
+            exception(ex)
+            critical('No credentials; verify you have AWS credentials configured')
+            return None
+
         return None
 
-    staticmethod
-    def check_videos(self, input_path: Path, exclude: tuple) -> List[Path]:
+    @staticmethod
+    def check_videos(input_path: Path, exclude: tuple) -> List[Path]:
         """
          Check for videos with acceptable suffixes and return the Paths to them
         :param input_path: input path to search (non-recursively) or a single video file
@@ -230,6 +247,16 @@ class Config:
         info(f'Found {num_videos} videos to process')
         if num_videos == 0:
             err(f'No videos found in {input_path}')
+
+        # Check that the videos are not empty and that they exist
+        for video in videos:
+            if video.stat().st_size == 0:
+                err(f'Video {video} is empty')
+                videos.remove(video)
+
+            if not video.exists():
+                err(f'Video {video} does not exist')
+                videos.remove(video)
+
         assert (num_videos > 0), "No videos to process"
-        video_paths = [Path(x) for x in videos]
-        return video_paths
+        return videos

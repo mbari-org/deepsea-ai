@@ -1,24 +1,11 @@
-# !/usr/bin/env python
-__author__ = "Danelle Cline"
-__copyright__ = "Copyright 2022, MBARI"
-__credits__ = ["MBARI"]
-__license__ = "GPL"
-__maintainer__ = "Duane Edgington"
-__email__ = "duane at mbari.org"
-__doc__ = '''
-
-Main entry point for deepsea-ai
-
-@author: __author__
-@status: __status__
-@license: __license__
-'''
-
+# deepsea-ai, Apache-2.0 license
+# Filename: __main__
+# Description: Main entry point for the deepsea_ai command line interface
+import time
 from datetime import datetime
 
 import boto3
 import click
-import shutil
 import os
 from pathlib import Path
 from urllib.parse import urlparse
@@ -27,14 +14,17 @@ from deepsea_ai.config.config import Config
 from deepsea_ai.commands import upload_tag, process, train, bucket, monitor
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config import setup
-from deepsea_ai.database import api, queries
+from deepsea_ai.database.job.database import Job, init_db
+from deepsea_ai.database.job.misc import JobType
 from deepsea_ai import logger
 from deepsea_ai.logger import info, err, debug, warn, critical
 from deepsea_ai import __version__
-from deepsea_ai.logger.job_cache import JobCache
+from deepsea_ai import common_args
 
 default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
+cfg_option = click.option('--config', type=str, default=default_config_ini,
+                          help=f'Path to config file to override defaults in {default_config_ini}')
 
 
 def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Config:
@@ -59,12 +49,6 @@ def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Co
     else:
         custom_config = cfg.Config()
 
-    # create a job cache for tracking jobs in the path the user is running in
-    JobCache(Path(os.getcwd()))
-
-    # set the database for the job cache if it is defined in the config
-    if custom_config('database', 'gql'):
-        JobCache().set_database(custom_config('database', 'gql'))
     return custom_config
 
 
@@ -101,58 +85,50 @@ def setup_command(config, mirror):
     """
     init(log_prefix="deepsea_ai_setup")
     custom_config = cfg.Config(config)
+    init_db(custom_config)
     account = custom_config.get_account()
     region = custom_config.get_region()
-    image_cfg = ['yolov5_ecr', 'deepsort_ecr', 'strongsort_ecr']
-    image_tags = [custom_config('aws', t) for t in image_cfg]
+    image_cfg = ['yolov5_container', 'strongsort_container']
+    image_tags = [custom_config('docker', t) for t in image_cfg]
     if mirror:
         setup.mirror_docker_hub_images_to_ecr(ecr_client=boto3.client("ecr"), account_id=account,
                                               region=region, image_tags=image_tags)
     setup.create_role(account_id=account)
-    setup.store_role(default_config)
+    setup.store_role(custom_config)
 
-    # override the default config file with the custom one
-    if config:
-        shutil.copy2(config, cfg.default_config_ini)
-    else:
-        info(f'Using default config file {cfg.default_config_ini}')
+    setup.setup_default_data(custom_config)
 
 
 @cli.command(name="ecsprocess")
-@click.option('--config', type=str, default=default_config_ini,
-              help=f'Path to config file to override defaults in {default_config_ini}')
-@click.option('--check', is_flag=True, default=False, help='Check if video has been processed and loaded before '
-                                                           'sending off a job. Requires a deepsea-ai GraphQL endpoint')
 @click.option('-u', '--upload', is_flag=True, default=False,
               help='Set option to upload local video files to S3 bucket')
-@click.option('--clean', is_flag=True, default=True,
+@click.option('--clean', is_flag=True, default=False,
               help='Clean up unused artifact (e.g. video) from s3 after processing')
 @click.option('-i', '--input', type=str, default="/Volumes/M3/mezzanine/DocRicketts/2022/02/1423/",
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg understands. This can also be a single video file.')
 @click.option('-e', '--exclude', type=str, multiple=True,
               help='Exclude directory or file. Excludes any directory or file that contains the given string')
-@click.option('--cluster', type=str, required=True,
-              help='Name of the cluster to use to batch process.  This must correspond to an available Elastic '
-                   'Container Service cluster.')
-@click.option('--job', type=str, required=True,
-              help='Name of the job, e.g. DiveV4361 benthic outline')
-@click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
-@click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
-@click.option('--dry-run', is_flag=True, default=False, help='Run the command without actually submitting the job.')
-def batchprocess_command(config, check, upload, clean, cluster, job, input, exclude, conf_thres, iou_thres, dry_run):
+@common_args.job_option
+@common_args.cluster_option
+@common_args.dry_run_option
+@cfg_option
+@common_args.args
+def ecs_process(config, upload, clean, cluster, job, input, exclude, dry_run, args):
     """
      (optional) upload, then batch process in an ECS cluster
     """
-    custom_config = init(log_prefix="deepsea_ai_ecsprocess", config=config)
-    database = None
-    if check:
-        warn('Checking if video has been processed and loaded before sending off a job.'
-             ' Requires a deepsea-ai GraphQL endpoint')
-        database = api.DeepSeaAIClient(custom_config('database', 'gql'))
-
+    custom_config = init(log_prefix="dsai_ecsprocess", config=config)
+    session_maker = init_db(custom_config)
     input_path = Path(input)
-    resources = custom_config.get_resources(cluster)
+    processor = cluster
+    video_bucket = 'Unknown'
+    resources = None
+    if not dry_run:
+        resources = custom_config.get_resources(cluster)
+        video_bucket = resources['VIDEO_BUCKET']
+        processor = resources['PROCESSOR']
+
     user_name = custom_config.get_username()
     videos = custom_config.check_videos(input_path, exclude)
     tags = custom_config.get_tags(f'Video uploaded from {input} by user {user_name} ')
@@ -160,42 +136,26 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
     total_submitted = 0
     for v in videos:
         loaded = False
-        if database:
-            info(f'Checking if {v.name} has already been processed and loaded into the database...')
-            # Check if the video has already been loaded by looking it up by the media name per this job name
-            medias = database.execute(queries.GET_MEDIA_IN_JOB,
-                                      processing_job_name=f"{resources['PROCESSOR']}-{job}",
-                                      media_name=v.name)
-
-            # Found a media in the job as keyed by the processing name, so assume that this was already processed
-            if len(medias['data']['mediaInJob']) > 0:
-                info(f'Video {v.name} has already been processed and loaded...skipping')
-                loaded = True
-
         if upload and not loaded:
             if dry_run:
-                info(f'Dry run: Uploading {v.name} to S3 bucket {resources["VIDEO_BUCKET"]}')
+                info(f'Dry run: Uploading {v.name} to S3 bucket {video_bucket}')
             else:
-                upload_tag.video_data([v], urlparse(f's3://{resources["VIDEO_BUCKET"]}'), tags)
+                upload_tag.video_data([v], urlparse(f's3://{video_bucket}'), tags)
 
         if not loaded:
             if dry_run:
-                info(f'Dry run: Submitting {v.name} to {resources["PROCESSOR"]} for processing')
+                info(f'Dry run: Submitting {v.name} to cluster for processing with job {job}, cluster {cluster},processor {processor}, user {user_name}, clean {clean}, args {args}')
             else:
-                process.batch_run(resources, v, job, user_name, clean, conf_thres, iou_thres)
+                process.batch_run(session_maker, resources, v, job, user_name, clean, args)
             total_submitted += 1
         else:
             warn(f'Video {v.name} has already been processed and loaded...skipping')
 
-    info(f'==== Submitted {total_submitted} videos to {resources["PROCESSOR"]} for processing =====')
+    info(f'==== Submitted {total_submitted} videos to {processor} for processing =====')
 
 
 @cli.command(name="process")
-@click.option('--config', type=str, default=default_config_ini,
-              help=f'Path to config file to override defaults in {default_config_ini}')
 # this might be cleaner as an enum but click does not support that fully yet
-@click.option('--tracker', default='deepsort',
-              help='Tracking type: deepsort or strongsort')
 @click.option('-i', '--input', type=str, required=True,
               help='Path to the folder with video files to upload. These can be either mp4 or mov files that '
                    'ffmpeg understands. This can also be a single video file.')
@@ -206,29 +166,25 @@ def batchprocess_command(config, check, upload, clean, cluster, job, input, excl
                    f'mov files that ffmpeg understands, e.g. s3://{example_input_process_s3}')
 @click.option('--output-s3', type=str, required=True,
               help=f'Path to the s3 bucket to store the output, e.g. s3://{example_output_process_s3}')
-@click.option('-m', '--model-s3', type=str, default=default_config('aws', 'yolov5_model_s3'),
+@click.option('-m', '--model-s3', type=str, default=default_config('aws', 'model'),
               help='S3 location of the trained model tar gz file - must contain a model.tar.gz file with a valid YOLOv5 '
                    'Pytorch model.')
-@click.option('-j', '--job-description', type=str, help='The job description to use for the processing')
-@click.option('-c', '--config-s3', type=str, help='S3 location of tracking algorithm config yaml file')
-@click.option('--reid-model-url', type=click.STRING, help='Location of the reid model')
-@click.option('--model-size', type=click.INT, default=640, help='Size of the model, e.g. 640 or 1280')
-@click.option('--conf-thres', type=click.FLOAT, default=.01, help='Confidence threshold for the model')
-@click.option('--iou-thres', type=click.FLOAT, default=.1, help='IOU threshold for the model')
-@click.option('-s', '--save-vid', is_flag=True, default=False,
-              help='Set option to output original video with detection boxes overlaid.')
 @click.option('--instance-type', type=str, default='ml.g4dn.xlarge',
               help='AWS instance type, e.g. ml.g4dn.xlarge, ml.c5.xlarge')
-def process_command(config, tracker, input, exclude, input_s3, output_s3, model_s3, config_s3, model_size,
-                    reid_model_url,
-                    conf_thres, iou_thres, save_vid, job_description, instance_type):
+@common_args.dry_run_option
+@common_args.args
+@common_args.job_option
+@common_args.config_s3_option
+@cfg_option
+def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_s3, config_s3, job, instance_type, args):
     """
      upload video(s) then process with a model
     """
-    custom_config = init(log_prefix="deepsea_ai_process", config=config)
+    custom_config = init(log_prefix="dsai_process", config=config)
+    session_maker = init_db(custom_config)
 
     # get tags to apply to the resources for cost monitoring
-    tags = custom_config.get_tags(job_description)
+    tags = custom_config.get_tags(job)
 
     input_path = Path(input)
     input_s3 = urlparse(input_s3.rstrip('/'))
@@ -238,15 +194,24 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
     # create the buckets
     info(f'Creating buckets')
 
-    if bucket.create(input_s3, tags) and bucket.create(output_s3, tags):
+    if bucket.create(input_s3, tags, dry_run) and bucket.create(output_s3, tags, dry_run):
 
         videos = custom_config.check_videos(input_path, exclude)
-        input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags)
+        input_s3, size_gb = upload_tag.video_data(videos, input_s3, tags, dry_run)
+
+        # size in GB of the input data should never be < 1
+        if size_gb < 1:
+            size_gb = 1
 
         # insert the datetime prefix to make a unique key for the output
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
         output_unique_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/")
+
+        # Check if the --save-vid flag is set in the args
+        save_vid = False
+        if args and 'save_vid' in args:
+            save_vid = True
 
         # estimate the volume size needed for the job; make it 2x the size of the input if saving the video
         if save_vid:
@@ -254,9 +219,18 @@ def process_command(config, tracker, input, exclude, input_s3, output_s3, model_
         else:
             volume_size_gb = int(1.25 * size_gb)
 
-        process.script_processor_run(input_s3, output_unique_s3, model_s3, model_size, reid_model_url,
-                                     volume_size_gb, instance_type, config_s3, save_vid, conf_thres,
-                                     iou_thres, tracker, custom_config, tags)
+        # create the arguments for the process script
+        process.script_processor_run(session_maker=session_maker,
+                                     input_s3=input_s3,
+                                     output_s3=output_unique_s3,
+                                     model_s3=model_s3,
+                                     config_s3=config_s3,
+                                     volume_size_gb=volume_size_gb,
+                                     instance_type=instance_type,
+                                     tags=tags,
+                                     dry_run=dry_run,
+                                     custom_config=custom_config,
+                                     args=args)
 
 
 @cli.command(name="upload")
@@ -270,7 +244,8 @@ def upload_command(config, input, s3):
     """
     Upload videos
     """
-    custom_config = init(log_prefix="deepsea_ai_upload", config=config)
+    custom_config = init(log_prefix="dsai_upload", config=config)
+    init_db(custom_config)
     input_s3 = urlparse(s3.rstrip('/'))
     tags = custom_config.get_tags(f'Uploaded {input} to {s3}')
     bucket.create(input_s3, tags)
@@ -308,7 +283,8 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
     """
      (optional) upload training data, then train a YOLOv5 model
     """
-    custom_config = init(log_prefix="deepsea_ai_train", config=config)
+    custom_config = init(log_prefix="dsai_train", config=config)
+    init_db(custom_config)
 
     if instance_type == 'ml.p2.xlarge':
         critical(f'{instance_type} too small for model {model}. Choose ml.p3.2xlarge or better')
@@ -335,17 +311,16 @@ def train_command(config, images, labels, label_map, input_s3, output_s3, resume
 
         debug(f"Training data: {input_training} size: {size_gb} GB")
 
-        # guess on how much volume is needed per each GB plus the size for the checkpoints
-        volume_size_gb = int(2 * size_gb + 50)
-
         # insert the datetime prefix to make a unique key for the outputs
         now = datetime.utcnow()
         prefix = now.strftime("%Y%m%dT%H%M%SZ")
 
         if resume:  # resuming from previous bucket, so no need to set prefix
             ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}")
+            volume_size_gb = int(4 * size_gb + 50)
         else:
             ckpts_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/checkpoints/")
+            volume_size_gb = int(2 * size_gb + 50)
         model_s3 = urlparse(f"s3://{output_s3.netloc}/{output_s3.path.lstrip('/')}/{prefix}/models/")
 
         # train
@@ -361,9 +336,9 @@ def package_command(s3):
     """
     Package a YOLOv5 model into a format that the deepsea-ai can use in its pipelines.
     This is done at the end of the train command automatically and stored in a model.tar.gz file.
-    This is added in case checkpoints were generated outside the deepsea-ai-traing command, e.g. SageMaker Studio. Colab
+    This is added in case checkpoints were generated outside the training command, e.g. SageMaker Studio. Colab
     """
-    init(log_prefix="deepsea_ai_package")
+    init(log_prefix="dsai_package")
     train.package(urlparse(s3.rstrip('/')))
 
 
@@ -376,7 +351,7 @@ def split_command(input: str, output: str):
     """
     Split data into train/val/test sets randomly per the following percentages 85%/10%/5%
     """
-    init(log_prefix="deepsea_ai_split")
+    init(log_prefix="dsai_split")
     input_path = Path(input)
     output_path = Path(output)
 
@@ -399,24 +374,36 @@ def split_command(input: str, output: str):
                    'Container Service cluster.')
 @click.option('--config', type=str, required=False,
               help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--timeout-period', type=int, help='Timeout for monitoring in seconds; default is never')
 @click.option('--update-period', type=int, default=10, help='Update period to monitor a job; default is every 60 '
                                                             'seconds. Ignored if --job is not specified.Generates a '
                                                             'new report file in the reports/ folder')
-@click.option('--job', type=str, required=True, multiple=True,
-              help='Name of the job, e.g. DiveV4361 benthic outline')
-def monitor_command(cluster: str, config, job: str, update_period: int):
+def monitor_command(cluster: str, config, update_period: int, timeout_period: int):
     """
     Print monitoring information for the cluster
     """
-    custom_config = init(log_prefix="deepsea_ai_monitor", config=config)
+    custom_config = init(log_prefix="dsai_monitor", config=config)
+    session_maker = init_db(custom_config)
     resources = custom_config.get_resources(cluster)
-    if resources:
-        info(f'Monitoring job status of cluster {cluster}')
-        m = monitor.Monitor(job, resources, update_period)
-        m.start()
-        m.join()
-    else:
-        warn(f'No resources found for cluster {cluster}. Try another cluster with --cluster <cluster_name>')
+    if not resources:
+        err(f'No resources found for cluster {cluster}')
+        return
+    report_path = Path.cwd() / 'reports'
+
+    while True:
+        with session_maker.begin() as db:
+            # Get all the jobs
+            num_jobs = len(db.query(Job).filter(Job.job_type == JobType.ECS).all())
+            info(f'Found {num_jobs} jobs in the database with type {JobType.ECS}.')
+
+        if num_jobs > 0:
+            info(f'Monitoring {num_jobs} job')
+            m = monitor.Monitor(session_maker, report_path, resources, update_period)
+            m.start()
+            m.join(timeout_period)
+        else:
+            info(f'No jobs found in the database with type {JobType.ECS}. Checking again in 30 seconds. Ctrl-C to stop.')
+            time.sleep(30)
 
 
 if __name__ == '__main__':

@@ -16,34 +16,29 @@ export SAGEMAKER_ROLE="arn:aws:iam::872338704006:role/DeepSeaAI"
 
 ## Process Examples
 
+To run in **dry-run** mode, which will show you the command that will be run, but not actually run it:
+
+```shell
+deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --dry-run
+```
+
 To run one or more videos in a directory with the job name *"DocRickets dive 1423"*  
 
 ```
-deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ 
-```
-
-or, to specify the tracker as either **strongsort** or **deepsort**
-
-```
-deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --tracker strongsort 
+deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/  --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640"
 ```
 
 To use a different pretrained model, use the *model-s3* option e.g.
 
 ```
-deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --tracker strongsort --model-s3 s3://902005-public/models/yolov5x_mbay_benthic_model.tar.gz
+deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --model-s3 s3://902005-public/models/yolov5x_mbay_benthic_model.tar.gz --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640"
 ```
-
-To specify the confidence and IOU thresholds, use the *conf-thres* and *iou-thres* options e.g.
-
-```
-deepsea-ai process -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --tracker strongsort --iou-thres 0.1 --conf-thres 0.5
-```
+ 
 
 To process a single video, e.g.
 
 ```
-deepsea-ai process -j "DocRickets dive 1423" -i  /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/D1423_20220221T164250Z_h265.mp4 --tracker strongsort 
+deepsea-ai process -j "DocRickets dive 1423" -i  /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/D1423_20220221T164250Z_h265.mp4  --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640"
 ```
 
 ## ECS (Elastic Cluster Service) Process Examples
@@ -54,18 +49,17 @@ option. This is the most cost-effective way to process data in bulk.
 To process videos in a directory with the job name *"DocRickets 2022/02"* in your cluster called *benthic33k* : 
 
 ```
-deepsea-ai ecsprocess -u -c benthic33k -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ 
+deepsea-ai ecsprocess -u -c yolov5x-mbay-benthic -j "DocRickets dive 1423" -i /Volumes/M3/mezzanine/DocRicketts/2022/02/1423/ --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640"
 ```
 
 To process videos in a directory with the job name "DocRicketts 2021/08 with a cluster called mbari315k model", excluding any dives with the name D1371, D1374, or D1375
 
 ```
 deepsea-ai ecsprocess -u \
-        --job "DocRicketts 2021/08 with mbari315k model" \
-        --cluster strongsort-yolov5-mbari315k  \
+        --job "DocRicketts 2021/08 with benthic model" \
+        --cluster yolov5x-mbay-benthic  \
         --config 902005prod.ini \
-        --conf-thres 0.2 \
-        --iou-thres 0.2 \
         --input /Volumes/M3/mezzanine/DocRicketts/2021/08/ \
-        --exclude D1371 --exclude D1374 --exclude D1375
+        --exclude D1371 --exclude D1374 --exclude D1375 \
+        --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640" \
 ```
