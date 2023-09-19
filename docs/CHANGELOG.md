@@ -1,5 +1,42 @@
 # DeepSeaAI Changelog
 
+# [1.22.0](https://github.com/mbari-org/deepsea-ai/compare/v1.21.3...v1.22.0) (2023-09-19)
+
+
+### Bug Fixes
+
+* correct pass through of job db ([cb633d1](https://github.com/mbari-org/deepsea-ai/commit/cb633d10bb7cd7e61b38ba67263588cf6de2e006))
+* handle empty SQS message ([b9568e6](https://github.com/mbari-org/deepsea-ai/commit/b9568e67d1d9cf21ea6c57b058fa2f893440b82e))
+* handle no credential errors in config ([25df156](https://github.com/mbari-org/deepsea-ai/commit/25df156891f27627c9c276c28e6e397312519527))
+* handle resuming from checkpoint out of space rrors and dryrun ecsprocess ([89104d4](https://github.com/mbari-org/deepsea-ai/commit/89104d48641416e1b2d688772e37d434c7de2155))
+* handle single videos correctly ([f1b2618](https://github.com/mbari-org/deepsea-ai/commit/f1b26184683ffa1fa6db69bc76cc73e5f2d0e473))
+* id is autoassigned in db commit ([89fb48c](https://github.com/mbari-org/deepsea-ai/commit/89fb48c5551c276e28afc5d28128c2d24d597135))
+* no quoted args needed for sqs messages ([d854787](https://github.com/mbari-org/deepsea-ai/commit/d854787a7443e3616180b45a0cd6ff6561dae4ec))
+* remove args completely ([11bca59](https://github.com/mbari-org/deepsea-ai/commit/11bca592a62b5b2c36af39740d7ba8b9b03ee186))
+
+
+### Features
+
+* add process command test ([f2d6af3](https://github.com/mbari-org/deepsea-ai/commit/f2d6af31b89b30e51e44e7ae4c07743fa853293c))
+* added in cdk stack (needs to be moved to python) ([9b08879](https://github.com/mbari-org/deepsea-ai/commit/9b0887924a357fcfbf7d490ed4b74371623c2339))
+* added more granular config sections for docker, aws, aws_public, and added default buckets for video/track/track-config with setup command, and other enhancements to support dry-run and testing ([9ae7aff](https://github.com/mbari-org/deepsea-ai/commit/9ae7aff43fc6dfd6dc93ba06af190a920dc7e8b4))
+* added new logging group called dsai/ecs and explicit iam for log actions ([2833efe](https://github.com/mbari-org/deepsea-ai/commit/2833efebb8949b222c29a70a95e147f2c8a55a0b))
+* remove default arguments in CDK to simplify ([5172a8f](https://github.com/mbari-org/deepsea-ai/commit/5172a8ff362682a18293b76de169aa6ded32e7ba))
+* removed deepsort, added dry-run option for ecsprocess/process, and pass through --args for processing ([9e39b50](https://github.com/mbari-org/deepsea-ai/commit/9e39b50ec7df0dc88d3ca05bae9045de3e45d802))
+* test refactoring and sqlite logging for local/remote ([51794a4](https://github.com/mbari-org/deepsea-ai/commit/51794a445206394630d3a3b6fb7c284ef765e82d))
+* try to continue if no permission on bucket ([11e5d9d](https://github.com/mbari-org/deepsea-ai/commit/11e5d9d023b967825b74b8131ab0a84f7a594dc7))
+
+
+### Performance Improvements
+
+* replace pickledb with sqlalchemy and monitor test ([31f8179](https://github.com/mbari-org/deepsea-ai/commit/31f8179d8369ad26f053e81fb4871e2ac1f184ea))
+* scale out faster every 60 sec ([2405c46](https://github.com/mbari-org/deepsea-ai/commit/2405c4624b2dd7a8d6ffd42d2b1a996ab9258308))
+
+
+### Reverts
+
+* removed test code ([edb01c6](https://github.com/mbari-org/deepsea-ai/commit/edb01c661e067045118413cad9fcf3600815c991))
+
 ## [1.21.3](https://github.com/mbari-org/deepsea-ai/compare/v1.21.2...v1.21.3) (2023-05-31)
 
 
