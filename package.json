@@ -1,6 +1,6 @@
 {
   "name": "deepsea-ai",
-  "version": "1.21.3",
+  "version": "1.22.0",
   "description": "",
   "private": true,
   "author": {
@@ -55,7 +55,7 @@
   },
   "dependencies": {
     "@semantic-release/commit-analyzer": "^9.0.2",
-    "@semantic-release/npm": "^10.0.3",
+    "@semantic-release/npm": "^10.0.6",
     "@semantic-release/release-notes-generator": "^10.0.3",
     "aws-cdk": "^2.95.1",
     "aws-cdk-lib": "^2.95.1"
