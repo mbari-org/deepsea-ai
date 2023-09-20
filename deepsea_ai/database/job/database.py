@@ -38,20 +38,17 @@ class MediaBase(Base):
     updatedAt = Column(TIMESTAMP(timezone=True),
                        default=None, onupdate=func.now())
 
-
 class Job(JobBase):
     __tablename__ = "job"
 
     # one-to-many relationship with the Media table
-    media = relationship("Media", back_populates="job", cascade="all, delete-orphan")
+    media = relationship("Media", backref="job", passive_deletes=True)
 
 
 class Media(MediaBase):
     __tablename__ = "media"
 
-    job_id = Column(Integer, ForeignKey("job.id"))
-    # many-to-one relationship with the Job table
-    job = relationship("Job", back_populates="media")
+    job_id = Column(Integer, ForeignKey("job.id", ondelete="CASCADE"))
 
 
 PydanticJob = sqlalchemy_to_pydantic(Job)
@@ -80,10 +77,12 @@ def init_db(cfg: Config, reset: bool = False) -> sessionmaker:
     info(f"Initializing job cache database in {job_db_path} as {db}")
     engine = create_engine(f"sqlite:///{db}", connect_args={"check_same_thread": True}, echo=False)
 
-    if reset:
-        # Reset the database
-        info(f"Resetting job cache database in {job_db_path} as {db}")
-        Base.metadata.drop_all(engine)
+    Base.metadata.create_all(engine, tables=[Job.__table__, Media.__table__])
 
-    Base.metadata.create_all(engine)
+    if reset:
+        # Clear the database
+        with sessionmaker(bind=engine).begin() as db:
+            db.query(Job).delete()
+            db.query(Media).delete()
+
     return sessionmaker(bind=engine)
