@@ -163,7 +163,6 @@ def update_media(db: Session, job: Job, video_name: str, status: str, **kwargs):
         media.metadata_b64 = json_b64_encode(metadata_json)
 
         db.merge(media)
-        db.commit()
 
     else:
         info(f'A new media {video_name} was added to job {job.name} kwargs {kwargs}')
@@ -174,4 +173,3 @@ def update_media(db: Session, job: Job, video_name: str, status: str, **kwargs):
                           updatedAt=datetime.utcnow())
         db.add(new_media)
         job.media.append(new_media)
-        db.commit()
