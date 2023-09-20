@@ -1,5 +1,17 @@
 # DeepSeaAI Changelog
 
+## [1.22.1](https://github.com/mbari-org/deepsea-ai/compare/v1.22.0...v1.22.1) (2023-09-20)
+
+
+### Bug Fixes
+
+* redundant session commit ([02c3b94](https://github.com/mbari-org/deepsea-ai/commit/02c3b94944d9eb56a822731ae292f83ddc366ca8))
+
+
+### Performance Improvements
+
+* better sql deletion behavior with PRAGMA FOREIGN_KEYS=ON; ([f58b601](https://github.com/mbari-org/deepsea-ai/commit/f58b601debdca822e679cc0497b9ea2d0487fed8))
+
 # [1.22.0](https://github.com/mbari-org/deepsea-ai/compare/v1.21.3...v1.22.0) (2023-09-19)
 
 
