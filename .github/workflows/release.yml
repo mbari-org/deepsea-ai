@@ -42,7 +42,7 @@ jobs:
       - name: Publish package
         run: poetry publish --build
   build:
-    name: docker build
+    name:  mbari/ecs-autoscale docker build
     needs: [ semantic_release ]
     runs-on: ubuntu-latest
     steps:
@@ -59,7 +59,7 @@ jobs:
           if [[ $tag =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then  
             tag="latest"  
           else  
-            printf '#!/usr/bin/env python\n__version__ = \"%s\"\n' ${tag} > pipeline/__init__.py  
+            printf '#!/usr/bin/env python\n__version__ = \"%s\"\n' ${tag} > ./deepsea-ai/pipeline/__init__.py  
           fi  
           echo "Setting TAG=${tag}"  
           echo "TAG=${tag}" >> $GITHUB_ENV
