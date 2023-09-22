@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.22.2](https://github.com/mbari-org/deepsea-ai/compare/v1.22.1...v1.22.2) (2023-09-22)
+
+
+### Bug Fixes
+
+* added missing SUCCESS status ([4908fbe](https://github.com/mbari-org/deepsea-ai/commit/4908fbefd96b7fd5840517e66710059338da1b2a))
+
 ## [1.22.1](https://github.com/mbari-org/deepsea-ai/compare/v1.22.0...v1.22.1) (2023-09-20)
 
 
