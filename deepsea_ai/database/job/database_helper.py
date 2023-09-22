@@ -55,6 +55,11 @@ def get_status(job: Job) -> bool:
     if Status.FAILED in statuses:
         return Status.FAILED
 
+    # if all are SUCCESS, the job should be SUCCESS
+    num_success = statuses.count(Status.SUCCESS)
+    if num_success == len(statuses):
+        return Status.SUCCESS
+
     return Status.UNKNOWN
 
 
