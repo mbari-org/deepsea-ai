@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.22.3](https://github.com/mbari-org/deepsea-ai/compare/v1.22.2...v1.22.3) (2023-10-03)
+
+
+### Bug Fixes
+
+* improved error handling on NFS m3 disconnect ([816745a](https://github.com/mbari-org/deepsea-ai/commit/816745a3f9d6a91c8f958b1a50c9fb371a92e741))
+
 ## [1.22.2](https://github.com/mbari-org/deepsea-ai/compare/v1.22.1...v1.22.2) (2023-09-22)
 
 
