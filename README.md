@@ -8,14 +8,17 @@ It includes reasonable defaults that have been optimized for deep sea video. The
 
 DeepSea-AI currently supports:
 
- - *Training [YOLOv5](http://github.com/ultralytics/yolov5) object detection* models
- - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipeline using 
+ - *Training [YOLOv5](http://github.com/ultralytics/yolov5) object detection* models with up to 8 GPUs using the best available instances in AWS
+ - Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipeline using 
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) tracking
 
-The cost to process a video is typically less than **$1.25** per 15-minute video.
+The cost to process a video is typically less than **$1.25** per 15-minute video using a model designed for a 640 pixel size.
 
-The cost to run the training algorithm depends on your data size and the number of GPUs you use.  
-A large collection with 30K images and 300K localizations may cost **$300-$600** to process.
+The cost to run the training algorithm depends on your data size and the number of GPUs you use.A large collection with 30K images and 
+300K localizations may cost **$300-$600** to process, depending on the instance you choose to train on. This is reasonably small for a 
+research project, and small in comparison to purchasing your own GPU hardware.
+
+See the full documentation at [MBARI deepsea-ai](http://docs.mbari.org/deepsea-ai).
 
 
 ## Getting Started
@@ -81,7 +84,7 @@ jupyter notebook
 * [`deepsea-ai process --help` - Process one or more videos and save the results to  a bucket](docs/commands/process.md)
 * [`deepsea-ai ecsprocess --help` - Process one or more videos using the Elastic Container Service and save the results to a bucket](docs/commands/process.md)
 * [`deepsea-ai split --help` - Split your training data. This is required before the train command.](docs/data.md) 
-* [`deepsea-ai monitor --help` - Monitor processing. Use this after the ecsprocess train command.](docs/commands/monitor.md) 
+* [`deepsea-ai monitor --help` - Monitor processing. Use this after the ecsprocess train command.](docs/commands/monitor.md)
 * `deepsea-ai -h` - Print help message and exit.
  
 Source code is available at [github.com/mbari-org/deepsea-ai](https://github.com/mbari-org/deepsea-ai/).
