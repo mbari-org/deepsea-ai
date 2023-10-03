@@ -57,14 +57,23 @@ def video_data(videos: list[Path], input_s3: tuple, tags: dict, dry_run: bool = 
                 # The video does not exist so upload and retry
                 for retry in range(10):
                     try:
-                        with open(v.as_posix(), "rb") as f:
-                            info(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
-                            s3.upload_fileobj(f, input_s3.netloc, target_prefix)
-                            upload_success = True
-                            break
-                    except e:
-                        exception(e)
-                        exception(f"Error uploading {v} to s3. Retrying every 60 seconds...")
+                        info(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
+                        s3.upload_file(v.as_posix(), input_s3.netloc, target_prefix)
+                        upload_success = True
+                        info(f'File {v} uploaded successfully')
+                        break
+                    except FileNotFoundError:
+                        info(f"Local file '{v}' not found.")
+                        exception(f"Error uploading {v} to s3.")
+                        time.sleep(60)
+                    except botocore.exceptions.EndpointConnectionError as e:
+                        info(f'Network error: {e} Retrying every 60 seconds...')
+                        time.sleep(60)
+                    except TimeoutError as e:
+                        exception(f'Timeout error {e}. Retrying every 60 seconds...')
+                        time.sleep(60)
+                    except Exception as e:
+                        exception(f'Error uploading {e} {v} to s3. Retrying every 60 seconds...')
                         time.sleep(60)
 
                 if not upload_success:
