@@ -1,10 +1,18 @@
-name: deepsea-ai
+name: deepsea-ai-dev
 channels:
   - conda-forge
 dependencies:
-  - python>=3.7
-  - pip
-  - pip:
-    - -r requirements.txt
+  - python>=3.10, <3.12
+  - pytest>=6.2.5
+  - click>=8.0.0
+  - numpy>=1.23.3
+  - requests>=2.26.0
+  - tqdm>=4.41.0
+  - boto3>=1.24.70
+  - awscli>=1.25.71
+  - sagemaker>=2.102.0
+  - pydantic-sqlalchemy>=0.0.9
+  - sqlalchemy>=1.4.26, <2.0
   - mkdocs-material
   - mkdocs-jupyter
+  - poetry>=1.5.1
