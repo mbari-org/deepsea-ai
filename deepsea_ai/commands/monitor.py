@@ -46,11 +46,6 @@ class Monitor(Thread):
         info(f'Creating report path {self.report_path} if it does not exist.')
         self.report_path.mkdir(parents=True, exist_ok=True)
 
-        # reporting update_period must be >= update_period
-        if self.update_period < self.update_period:
-            warn(f'update_period must be >= update_period. Setting update_period to {self.update_period}')
-            self.update_period = self.update_period
-
     def run(self):
         try:
             if self.sim:
