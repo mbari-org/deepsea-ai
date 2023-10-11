@@ -70,10 +70,21 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push ecs-autoscale to Docker Hub
+      - name: Build and push mbari/deepsea-ai to Docker Hub
         uses: docker/build-push-action@v3
         with:
-          context: ./deepsea-ai/cdk
+          context: ./containers/pip
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            mbari/deepsea-ai:${{ env.TAG }}  
+            mbari/deepsea-ai:latest
+          labels: |
+            IMAGE_URI=mbari/deepsea-ai:${{ env.TAG }}
+      - name: Build and push mbari/ecs-autoscale to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          context: ./containers/cdk
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |

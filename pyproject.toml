@@ -5,14 +5,14 @@ description = "DeepSeaAI is a Python package to simplify processing deep sea vid
 authors = ["Danelle Cline <dcline@mbari.org>", "Duane Edgington <duane@mbari.org>"]
 repository = "https://github.com/mbari-org/deepsea-ai"
 readme = "README.md"
-license = "GPL3"
+license = "Apache License 2.0 "
 classifiers = [
     'Development Status :: 1 - Planning',
     'Environment :: Console',
     'Environment :: Web Environment',
     'Intended Audience :: Developers',
     'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: GNU General Public License (GPL)',
+    'License :: OSI Approved :: Apache-2.0',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3.8',
     'Programming Language :: Python :: 3.9',
