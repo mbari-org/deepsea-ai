@@ -1,4 +1,7 @@
-FROM python:3.10-alpine
+FROM python:3.11-alpine
+
+# Install gcc and other build tools and libraries which are needed for numpy depenedencies
+RUN apk --no-cache add gcc g++ make blas-dev lapack-dev gfortran musl-dev
 
 LABEL vendor="MBARI"
 LABEL maintainer="dcline@mbari.org"
@@ -14,15 +17,19 @@ RUN addgroup -g ${DOCKER_GID} docker && \
     adduser -D -u ${DOCKER_UID} -G docker docker_user
 
 # Create a virtual environment for the application dependencies.
-ENV VIRTUAL_ENV=/opt/venv
+ENV VIRTUAL_ENV=/home/docker_user/venv
 RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# Create default directories for the application and another for the sqlite database
-WORKDIR /app
-RUN mkdir /sqlite
-RUN pip install --upgrade deepsea-ai
-RUN chown -R docker_user:docker /app /sqlite /usr/local/lib/python3.9
+RUN chown -R docker_user:docker /home/docker_user
+
+# Install in the virtual environment as the docker user.
 USER docker_user
+
+RUN if [ "$GIT_VERSION" != "latest" ]; then \
+    pip3 install deepsea-ai==${GIT_VERSION}; \
+    else \
+    pip3 install deepsea-ai; \
+    fi
 
 ENTRYPOINT ["deepsea-ai"]
