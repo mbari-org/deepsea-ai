@@ -9,15 +9,18 @@ ARG IMAGE_URI=mbari/ecs-autoscale:${GIT_VERSION}
 
 RUN apt-get update && \
     apt-get install -y git && \
-    apt-get install -y python3-pip && \
+    apt-get install -y curl && \
     apt-get install -y openssl && \
     apt-get install -y musl-dev && \
     apt-get install -y unzip && \
-    ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1
-
-# Install AWS CLI using pip
-RUN pip3 install --upgrade pip
-RUN pip3 install awscli
+    ln -s /usr/lib/x86_64-linux-musl/libc.so /lib/libc.musl-x86_64.so.1 && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" \
+    && unzip awscliv2.zip \
+    && ./aws/install \
+    && rm -rf \
+        awscliv2.zip \
+    && apt-get -y purge curl \
+    && apt-get -y purge unzip
 
 WORKDIR /tmp
 
