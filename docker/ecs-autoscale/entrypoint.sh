@@ -5,10 +5,10 @@
 set -x
 # Flag an error if there are not two arguments
 if [ "$#" -ne 1 ]; then
-    echo "Usage: ./deploy.sh <path to config.yml> <path to save the output>"
+    echo "Usage: ./deploy.sh <path to config.yml> <path to save cdk output>"
     exit 1
 fi
-cd /app
+
 # Get the account number associated with the current IAM credentials
 account=$(aws sts get-caller-identity --query Account --output text)
 
@@ -21,5 +21,10 @@ export CDK_STACK_CONFIG=$1
 export CDK_DEPLOY_ACCOUNT=$account
 export CDK_DEPLOY_REGION=$region
 
-#export PATH=$PATH:$(pwd)/node_modules/.bin:/usr/local/bin:/opt/homebrew/bin
-cdk bootstrap --output ${out_dir} && cdk synth --output ${out_dir} && cdk deploy --output ${out_dir} --require-approval never
+# If there is a second argument, use it as the output directory
+if [ "$#" -eq 2 ]; then
+    cdk bootstrap --output $2 && cdk synth --output $2 && cdk deploy --output $2 --require-approval never
+    exit 0
+else
+    cdk bootstrap && cdk synth && cdk deploy --require-approval never
+fi
