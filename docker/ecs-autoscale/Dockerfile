@@ -36,7 +36,6 @@ RUN mv /tmp/app/deepsea_ai/cdk/app/* . && \
     mv /tmp/app/docker/ecs-autoscale/entrypoint.sh . && \
     rm -rf /tmp/app
 
-ADD entrypoint.sh .
 RUN chmod +x entrypoint.sh
 
 # Install the required node modules

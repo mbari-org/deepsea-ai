@@ -7,18 +7,18 @@
 set -x
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BASE_DIR="$(cd "$(dirname "${SCRIPT_DIR}/../../" )" && pwd )"
-cd $BASE_DIR
 
-containers=(ecs-autoscale deepsea-ai)
+containers=(deepsea-ai ecs-autoscale)
 
 # Get the short version of the hash of the commit
 git_hash=$(git log -1 --format=%h)
 
 for container in "${containers[@]}"
 do
-    docker build --label GIT_COMMIT=$git_hash \
-    --build-arg IMAGE_URI=mbari/${container}:$git_hash \
-    --platform linux/amd64 \
-    -t mbari/${container}:$git_hash \
-    -f docker/${container} .
+    cd $SCRIPT_DIR/${container} && \
+	    docker build --label GIT_COMMIT=$git_hash \
+	    --build-arg IMAGE_URI=mbari/${container}:$git_hash \
+	    --build-arg GIT_VERSION=latest \
+	    --platform linux/amd64 \
+	    -t mbari/${container}:$git_hash .
 done

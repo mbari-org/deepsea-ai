@@ -1,7 +1,7 @@
 FROM python:3.11-alpine
 
 # Install gcc and other build tools and libraries which are needed for numpy depenedencies
-RUN apk --no-cache add gcc g++ make blas-dev lapack-dev gfortran musl-dev
+RUN apk --no-cache add gcc g++ make blas-dev lapack-dev gfortran musl-dev git
 
 LABEL vendor="MBARI"
 LABEL maintainer="dcline@mbari.org"
@@ -25,11 +25,14 @@ RUN chown -R docker_user:docker /home/docker_user
 
 # Install in the virtual environment as the docker user.
 USER docker_user
+WORKDIR /home/docker_user
 
 RUN if [ "$GIT_VERSION" != "latest" ]; then \
-    pip3 install deepsea-ai==${GIT_VERSION}; \
+    git clone https://github.com/mbari-org/deepsea-ai.git -b ${GIT_VERSION}; \
     else \
-    pip3 install deepsea-ai; \
+    git clone https://github.com/mbari-org/deepsea-ai.git ;\
     fi
 
+WORKDIR deepsea-ai
+RUN pip install poetry && poetry install
 ENTRYPOINT ["deepsea-ai"]
