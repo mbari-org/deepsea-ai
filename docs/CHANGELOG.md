@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.23.0](https://github.com/mbari-org/deepsea-ai/compare/v1.22.3...v1.23.0) (2023-10-19)
+
+
+### Features
+
+* added support for LOG_PATH env ([1251ae7](https://github.com/mbari-org/deepsea-ai/commit/1251ae71e9337ae37188b76da0ac43df2d5df704))
+
 ## [1.22.3](https://github.com/mbari-org/deepsea-ai/compare/v1.22.2...v1.22.3) (2023-10-03)
 
 
