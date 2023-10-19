@@ -28,7 +28,7 @@ cfg_option = click.option('--config', type=str, default=default_config_ini,
 
 
 def init(log_prefix: str = "deepsea_ai", config: str = default_config_ini) -> Config:
-    python_path = Path('logs')
+    python_path = Path(os.environ.get('LOG_PATH', 'logs'))
     logger.create_logger_file(python_path, log_prefix)
 
     # get the AWS profile from the environment and use it for all AWS commands
