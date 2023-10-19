@@ -31,18 +31,22 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
       - name: Install Poetry
         run: curl -sSL https://install.python-poetry.org | python3 -
       - name: Add Poetry to path
-        run: echo "${HOME}/.poetry/bin" >> $GITHUB_PATH
+        run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
       - run: poetry install
+      - name: Supress sqlachemy warning
+        run: echo "SQLALCHEMY_SILENCE_UBER_WARNING=1" >> $GITHUB_ENV
       - run: SAGEMAKER_ROLE=${{ secrets.SAGEMAKER_ROLE }} poetry run pytest
       - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
       - name: Publish package
         run: poetry publish --build
   build:
-    name:  mbari/ecs-autoscale docker build
+    name:  Docker builds
     needs: [ semantic_release ]
     runs-on: ubuntu-latest
     steps:
@@ -57,9 +61,7 @@ jobs:
           tag_v=$(git describe --tags $(git rev-list --tags --max-count=1))  
           tag=$(echo $tag_v | sed 's/v//')  
           if [[ $tag =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then  
-            tag="latest"  
-          else  
-            printf '#!/usr/bin/env python\n__version__ = \"%s\"\n' ${tag} > ./deepsea-ai/pipeline/__init__.py  
+            tag="latest"
           fi  
           echo "Setting TAG=${tag}"  
           echo "TAG=${tag}" >> $GITHUB_ENV
@@ -70,14 +72,35 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and push ecs-autoscale to Docker Hub
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build and push mbari/deepsea-ai to Docker Hub
         uses: docker/build-push-action@v3
         with:
-          context: ./deepsea-ai/cdk
+          context: ./containers/deepsea-ai
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: |
+            mbari/deepsea-ai:${{ env.TAG }}  
+            mbari/deepsea-ai:latest
+          args: |
+            GIT_VERSION=${{ env.TAG }}
+          labels: |
+            IMAGE_URI=mbari/deepsea-ai:${{ env.TAG }}
+      - name: Build and push mbari/ecs-autoscale to Docker Hub
+        uses: docker/build-push-action@v3
+        with:
+          context: ./containers/ecs-autoscale
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
             mbari/ecs-autoscale:${{ env.TAG }}  
             mbari/ecs-autoscale:latest
+          args: |
+            GIT_VERSION=${{ env.TAG }}
           labels: |
             IMAGE_URI=mbari/ecs-autoscale:${{ env.TAG }}

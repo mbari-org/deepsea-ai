@@ -1,0 +1,38 @@
+FROM python:3.11-alpine
+
+# Install gcc and other build tools and libraries which are needed for numpy depenedencies
+RUN apk --no-cache add gcc g++ make blas-dev lapack-dev gfortran musl-dev git
+
+LABEL vendor="MBARI"
+LABEL maintainer="dcline@mbari.org"
+LABEL license="Apache License 2.0"
+
+ARG GIT_VERSION=latest
+ARG IMAGE_URI=mbari/deepsea-ai:${GIT_VERSION}
+ARG DOCKER_GID=998
+ARG DOCKER_UID=582
+
+# Create a user with a specific UID and GID.
+RUN addgroup -g ${DOCKER_GID} docker && \
+    adduser -D -u ${DOCKER_UID} -G docker docker_user
+
+# Create a virtual environment for the application dependencies.
+ENV VIRTUAL_ENV=/home/docker_user/venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+RUN chown -R docker_user:docker /home/docker_user
+
+# Install in the virtual environment as the docker user.
+USER docker_user
+WORKDIR /home/docker_user
+
+RUN if [ "$GIT_VERSION" != "latest" ]; then \
+    git clone https://github.com/mbari-org/deepsea-ai.git -b ${GIT_VERSION}; \
+    else \
+    git clone https://github.com/mbari-org/deepsea-ai.git ;\
+    fi
+
+WORKDIR deepsea-ai
+RUN pip install poetry && poetry install
+ENTRYPOINT ["deepsea-ai"]
