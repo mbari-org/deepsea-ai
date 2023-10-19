@@ -1,5 +1,6 @@
 name: New Release
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -81,26 +82,26 @@ jobs:
       - name: Build and push mbari/deepsea-ai to Docker Hub
         uses: docker/build-push-action@v3
         with:
-          context: ./containers/deepsea-ai
+          context: ./docker/deepsea-ai
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
             mbari/deepsea-ai:${{ env.TAG }}  
             mbari/deepsea-ai:latest
-          args: |
+          build-args: |
             GIT_VERSION=${{ env.TAG }}
           labels: |
             IMAGE_URI=mbari/deepsea-ai:${{ env.TAG }}
       - name: Build and push mbari/ecs-autoscale to Docker Hub
         uses: docker/build-push-action@v3
         with:
-          context: ./containers/ecs-autoscale
+          context: ./docker/ecs-autoscale
           push: true
           platforms: linux/amd64,linux/arm64
           tags: |
             mbari/ecs-autoscale:${{ env.TAG }}  
             mbari/ecs-autoscale:latest
-          args: |
+          build-argsg: |
             GIT_VERSION=${{ env.TAG }}
           labels: |
             IMAGE_URI=mbari/ecs-autoscale:${{ env.TAG }}
