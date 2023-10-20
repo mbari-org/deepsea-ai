@@ -38,6 +38,7 @@ class CustomLogger(Singleton):
         self.logger = logging.getLogger(LOGGER_NAME)
         self.logger.setLevel(logging.DEBUG)
         self.output_path = output_path
+        self.output_path.mkdir(parents=True, exist_ok=True)
         formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
 
         # default log file date to today
