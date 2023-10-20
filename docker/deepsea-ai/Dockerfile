@@ -1,7 +1,7 @@
 FROM python:3.11-alpine
 
 # Install gcc and other build tools and libraries which are needed for numpy depenedencies
-RUN apk --no-cache add gcc g++ make blas-dev lapack-dev gfortran musl-dev git
+RUN apk --no-cache add gcc g++ make blas-dev lapack-dev gfortran musl-dev git libffi-dev
 
 LABEL vendor="MBARI"
 LABEL maintainer="dcline@mbari.org"

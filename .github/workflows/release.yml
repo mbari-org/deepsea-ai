@@ -101,7 +101,7 @@ jobs:
           tags: |
             mbari/ecs-autoscale:${{ env.TAG }}  
             mbari/ecs-autoscale:latest
-          build-argsg: |
+          build-args: |
             GIT_VERSION=${{ env.TAG }}
           labels: |
             IMAGE_URI=mbari/ecs-autoscale:${{ env.TAG }}
