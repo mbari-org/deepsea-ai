@@ -12,12 +12,13 @@ classifiers = [
     'Environment :: Web Environment',
     'Intended Audience :: Developers',
     'Intended Audience :: Science/Research',
-    'License :: OSI Approved :: Apache-2.0',
+    'License :: OSI Approved :: Apache Software License',
     'Operating System :: OS Independent',
     'Programming Language :: Python :: 3.10',
     'Programming Language :: Python :: 3.11',
-    'Topic :: Scientific/Engineering :: Image Processing',
-    'Topic :: Scientific/Engineering :: Artificial Intelligence'
+    'Topic :: Scientific/Engineering :: Image Recognition',
+    'Topic :: Scientific/Engineering :: Artificial Intelligence',
+    "Topic :: Multimedia :: Video"
 ]
 
 [tool.poetry.scripts]
