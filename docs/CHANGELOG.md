@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.23.1](https://github.com/mbari-org/deepsea-ai/compare/v1.23.0...v1.23.1) (2023-10-20)
+
+
+### Bug Fixes
+
+* handle missing log directory ([67acae0](https://github.com/mbari-org/deepsea-ai/commit/67acae082cd7e9eb1add67f5eccd82fb84aa93ed))
+
 # [1.23.0](https://github.com/mbari-org/deepsea-ai/compare/v1.22.3...v1.23.0) (2023-10-19)
 
 
