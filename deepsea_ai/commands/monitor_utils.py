@@ -114,8 +114,7 @@ def log_queue_status(session_maker: sessionmaker, resources: dict) -> dict:
     :return: Dictionary of the number of messages visible in each queue
     """
     client = boto3.client('sqs')
-    # queues = ['VIDEO_QUEUE', 'TRACK_QUEUE', 'DEAD_QUEUE']
-    queues = ['DEAD_QUEUE']
+    queues = ['VIDEO_QUEUE', 'TRACK_QUEUE', 'DEAD_QUEUE']
     cluster = resources['CLUSTER']
     processor = resources['PROCESSOR']
     num_messages_visible = {}
