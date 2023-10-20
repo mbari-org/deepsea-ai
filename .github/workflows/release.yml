@@ -42,7 +42,7 @@ jobs:
       - run: poetry install
       - name: Supress sqlachemy warning
         run: echo "SQLALCHEMY_SILENCE_UBER_WARNING=1" >> $GITHUB_ENV
-      - run: SAGEMAKER_ROLE=${{ secrets.SAGEMAKER_ROLE }} poetry run pytest
+      - run: SAGEMAKER_ROLE=${{ secrets.SAGEMAKER_ROLE }} AWS_DEFAULT_REGION=us-west-2 poetry run pytest
       - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
       - name: Publish package
         run: poetry publish --build
@@ -84,7 +84,7 @@ jobs:
         with:
           context: ./docker/deepsea-ai
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: |
             mbari/deepsea-ai:${{ env.TAG }}  
             mbari/deepsea-ai:latest
@@ -97,7 +97,7 @@ jobs:
         with:
           context: ./docker/ecs-autoscale
           push: true
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           tags: |
             mbari/ecs-autoscale:${{ env.TAG }}  
             mbari/ecs-autoscale:latest
