@@ -28,9 +28,9 @@ USER docker_user
 WORKDIR /home/docker_user
 
 RUN if [ "$GIT_VERSION" != "latest" ]; then \
-    git clone https://github.com/mbari-org/deepsea-ai.git -b ${GIT_VERSION}; \
+    git clone -b v${GIT_VERSION} --depth 1 https://github.com/mbari-org/deepsea-ai.git; \
     else \
-    git clone https://github.com/mbari-org/deepsea-ai.git ;\
+    git clone --depth 1 https://github.com/mbari-org/deepsea-ai.git;\
     fi
 
 WORKDIR deepsea-ai

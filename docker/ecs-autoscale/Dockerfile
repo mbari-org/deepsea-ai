@@ -25,9 +25,9 @@ RUN apt-get update && \
 WORKDIR /tmp
 
 RUN if [ "$GIT_VERSION" != "latest" ]; then \
-    git clone --branch $GIT_VERSION --depth 1 https://github.com/mbari-org/deepsea-ai.git app; \
+    git clone -b v${GIT_VERSION} --depth 1 https://github.com/mbari-org/deepsea-ai.git app; \
     else \
-    git clone https://github.com/mbari-org/deepsea-ai.git app; \
+    git clone --depth 1 https://github.com/mbari-org/deepsea-ai.git app; \
     fi
 
 WORKDIR /app
