@@ -112,7 +112,7 @@ def mirror_docker_hub_images_to_ecr(ecr_client, *, account_id, region, image_tag
 
 def create_role(account_id: str):
     """
-    Sets up the IAM role called DeepSeaAI to support ECR and SageMaker
+    Sets up the IAM role called DeepSeaAI to support ECR, SageMaker, and ECS
     :param account_id: AWS account ID
     """
     session = boto3.session.Session()
@@ -184,6 +184,10 @@ def create_role(account_id: str):
             MaxSessionDuration=session_secs
         )
 
+        iam.attach_role_policy(
+            PolicyArn='arn:aws:iam::aws:policy/AWSCloudFormationFullAccess',
+            RoleName=role_name
+        )
         iam.attach_role_policy(
             PolicyArn='arn:aws:iam::aws:policy/AmazonSageMakerFullAccess',
             RoleName=role_name

@@ -23,6 +23,7 @@ from deepsea_ai import common_args
 
 default_config = cfg.Config(quiet=True)
 default_config_ini = cfg.default_config_ini
+default_report_dir = cfg.default_report_dir
 cfg_option = click.option('--config', type=str, default=default_config_ini,
                           help=f'Path to config file to override defaults in {default_config_ini}')
 
@@ -374,11 +375,13 @@ def split_command(input: str, output: str):
                    'Container Service cluster.')
 @click.option('--config', type=str, required=False,
               help=f'Path to config file to override defaults in {default_config_ini}')
+@click.option('--report-path', type=str, required=False, default=default_report_dir,
+              help=f'Path to save reports to. Defaults to {default_report_dir}')
 @click.option('--timeout-period', type=int, help='Timeout for monitoring in seconds; default is never')
 @click.option('--update-period', type=int, default=10, help='Update period to monitor a job; default is every 60 '
                                                             'seconds. Ignored if --job is not specified.Generates a '
                                                             'new report file in the reports/ folder')
-def monitor_command(cluster: str, config, update_period: int, timeout_period: int):
+def monitor_command(cluster: str, config, update_period: int, timeout_period: int, report_path: str):
     """
     Print monitoring information for the cluster
     """
@@ -388,7 +391,7 @@ def monitor_command(cluster: str, config, update_period: int, timeout_period: in
     if not resources:
         err(f'No resources found for cluster {cluster}')
         return
-    report_path = Path.cwd() / 'reports'
+    report_path = Path(report_path)
 
     while True:
         with session_maker.begin() as db:

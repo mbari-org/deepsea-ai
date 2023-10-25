@@ -17,33 +17,34 @@ from deepsea_ai.logger import err, info, debug, warn, critical, exception
 
 default_training_prefix = 'training'
 default_config_ini = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config.ini')
+default_report_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'reports')
 
 
 class Config:
 
-    def __init__(self, path: str = None, quiet: bool = False):
+    def __init__(self, custom_config_ini: str = None, quiet: bool = False):
         """
         Read the .ini file and parse it
         """
         # set the default output path of the sqlite job database to the same directory as the config.ini file
         self.job_db_path = Path(os.path.dirname(os.path.abspath(__file__)))
         self.parser = ConfigParser()
-        if path:
-            self.path = path
+        if custom_config_ini:
+            self.config_ini = custom_config_ini
         else:
-            self.path = default_config_ini
+            self.config_ini = default_config_ini
 
-        if not os.path.isfile(self.path):
-            raise Exception(f'Bad path to {self.path}. Is your {self.path} missing?')
+        if not os.path.isfile(self.config_ini):
+            raise Exception(f'Bad path to {self.config_ini}. Is your {self.config_ini} missing?')
 
-        self.parser.read(self.path)
-        lines = open(self.path).readlines()
+        self.parser.read(self.config_ini)
+        lines = open(self.config_ini).readlines()
         if not quiet:
-            info(f"=============== Config file {self.path} =================")
+            info(f"=============== Config file {self.config_ini} =================")
             for l in lines:
                 info(l.strip())
 
-            if not path:
+            if not custom_config_ini:
                 info(f"============ You can override these settings by creating a customconfig.ini file and pass that "
                      f"in with --config=customconfig.ini =====")
 
@@ -61,7 +62,7 @@ class Config:
     def save(self, *args, **kwargs):
         assert len(args) == 3
         self.parser.set(section=args[0], option=args[1], value=args[2])
-        with open(self.path, 'w') as fp:
+        with open(self.config_ini, 'w') as fp:
             self.parser.write(fp)
 
     def get_role(self) -> str:

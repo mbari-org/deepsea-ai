@@ -53,7 +53,7 @@ class Monitor(Thread):
                     # check the status of the job in the database
                     job = db.query(Job).first()
                     if job:
-                        create_report(job, Path('reports'), self.resources)
+                        create_report(job, self.report_path, self.resources)
                 return
 
             # Run forever until Ctrl-C
@@ -79,7 +79,7 @@ class Monitor(Thread):
                                 medias = db.query(Media).filter(Media.job_id == job.id).all()
                                 info(f"Found {len(medias)} media in job {job.name}")
                                 if len(medias) > 0:  # if there are media in the cluster, create a report
-                                    create_report(job, Path('reports'), self.resources)
+                                    create_report(job, self.report_path, self.resources)
 
                 info(f'Checking again in {self.update_period} seconds. Ctrl-C to stop.')
                 time.sleep(self.update_period)
