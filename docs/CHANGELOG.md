@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.1](https://github.com/mbari-org/deepsea-ai/compare/v1.24.0...v1.24.1) (2023-10-25)
+
+
+### Bug Fixes
+
+* correct path in info ([63035cd](https://github.com/mbari-org/deepsea-ai/commit/63035cdd63b0581cc3d0e0310fd630b4c6702fe8))
+
 # [1.24.0](https://github.com/mbari-org/deepsea-ai/compare/v1.23.1...v1.24.0) (2023-10-25)
 
 
