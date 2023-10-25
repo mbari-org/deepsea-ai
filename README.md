@@ -11,14 +11,24 @@ DeepSea-AI currently supports:
  - *Training [YOLOv5](http://github.com/ultralytics/yolov5) object detection* models with up to 8 GPUs using the best available instances in AWS
  - Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipeline using 
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) tracking
+ - Scaling processing with [AWS Elastic Container Service](https://aws.amazon.com/ecs/)
+[click image below to see larger example]
+[![ Image link ](docs/imgs/ecs_arch_small.png)](docs/imgs/ecs_arch.png)
 
-The cost to process a video is typically less than **$1.25** per 15-minute video using a model designed for a 640 pixel size.
+The cost to process a video is typically less than **$1.25** per 1-hour video using a model designed for a 640 pixel size.
 
-The cost to run the training algorithm depends on your data size and the number of GPUs you use.A large collection with 30K images and 
+The cost to train a YOLOv5 model depends on your data size and the number of GPUs you use.A large collection with 30K images and 
 300K localizations may cost **$300-$600** to process, depending on the instance you choose to train on. This is reasonably small for a 
 research project, and small in comparison to purchasing your own GPU hardware.
 
 See the full documentation at [MBARI deepsea-ai](http://docs.mbari.org/deepsea-ai).
+ 
+## Processing
+The processing technology uses the [AWS Elastic Container Service](https://aws.amazon.com/ecs/) with an architecture
+that includes a SQS messaging queue to start the processing. Simply upload a video 
+to an S3 bucket then submit a job with the location of that video to the queue to 
+start processing. The result is returned to a S3 bucket and the video is optionally 
+removed to reduce storage cost.
 
 
 ## Getting Started
