@@ -217,7 +217,7 @@ def store_role(config: cfg):
     iam = session.client('iam')
     results = iam.get_role(RoleName="DeepSeaAI")
     role_arn = results['Role']['Arn']
-    info(f'Setting SageMaker Role ARN to {role_arn} in {config.path}')
+    info(f'Setting SageMaker Role ARN to {role_arn} in {config.config_ini}')
     config.save('aws', 'sagemaker_arn', role_arn)
     # Parse the ARN to get the account ID
     account_id = role_arn.split(':')[4]
