@@ -47,8 +47,7 @@ deepsea-ai setup --mirror
 
 ## Tutorials
 
-* [FathomNet](docs/notebooks/fathomnet_train.ipynb) ✨ Recommended first step to learn more about how to train a YOLOv5 object detection model using freely available FathomNet data
-* [Processing video with YOLOv5](docs/notebooks/yolov5_process.ipynb) ✨ Recommended first step to learn more about how to process video with YOLOv5
+* [FathomNet](notebooks/fathomnet_train.ipynb) ✨ Recommended first step to learn more about how to train a YOLOv5 object detection model using freely available FathomNet data
 
 ### Create the Anaconda environment
 

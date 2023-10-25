@@ -16,6 +16,7 @@ site = http://deepsea-ai.shore.mbari.org
 gql = %(site)s/graphql 
 ```
 
+## Cost tracking with AWS tags
 The settings below should be modified if you want to tag the workflow for cost tracking.
 ```ini
 [tags]
@@ -25,6 +26,7 @@ stage = dev
 application = detection
 ```
 
+## Tracking and detection models with the process command
 The settings below control what models are used for detection and tracking.
 These are the default models that are used when running the ``deepsea-ai process``
 command. If you want to use different models, you can override these settings
@@ -35,5 +37,22 @@ command. If you want to use different models, you can override these settings
 model = s3://deepsea-ai-548531997526-models/yolov5x_mbay_benthic_model.tar.gz
 track_config = s3://deepsea-ai-548531997526-track-conf/strong_sort_benthic.yaml
 ```
+
+## Tracking and detection models with the ecsprocess command
+The settings below control what models are used for detection and tracking with the ecsprocess command
+and are only used with the setup --mirror option to mirror the models to the Elastic Container Registry (ECR).
+
+
+```shell
+deepsea-ai process --config config/config.ini --mirror
+```
+
+```ini
+[docker]
+yolov5_container = mbari/deepsea-yolov5:1.1.2
+strongsort_container = mbari/strongsort-yolov5:1.10.0
+```
+
+
 
 

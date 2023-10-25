@@ -35,8 +35,11 @@ nav:
       - commands/train.md
       - commands/process.md
       - commands/monitor.md
+      - commands/ecsdeploy.md
   - Configuration: 'config.md'
   - Prepare your data: 'data.md'
+  - Tutorials:
+      - notebooks/fathomnet_train.ipynb
   - Change Log: CHANGELOG.md
 
 
