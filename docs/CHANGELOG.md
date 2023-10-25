@@ -1,5 +1,17 @@
 # DeepSeaAI Changelog
 
+# [1.24.0](https://github.com/mbari-org/deepsea-ai/compare/v1.23.1...v1.24.0) (2023-10-25)
+
+
+### Features
+
+* added option to pass in reporting directory ([be5b290](https://github.com/mbari-org/deepsea-ai/commit/be5b2902043ef995065c4e996d5620c1d81c1356))
+
+
+### Performance Improvements
+
+* bump ecs storage from 10 to 20 GB and run 2 tasks per instance for improved throughput. relax the 1 GPU requirement to support running two videos per GPU as there is no fractional support for GPUs matching in AWS. this effectively doubles the number of videos per instance ([9dce062](https://github.com/mbari-org/deepsea-ai/commit/9dce0626f5b36ca330b4e4bb7300fa2044e322b6))
+
 ## [1.23.1](https://github.com/mbari-org/deepsea-ai/compare/v1.23.0...v1.23.1) (2023-10-20)
 
 
