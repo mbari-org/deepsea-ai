@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.3](https://github.com/mbari-org/deepsea-ai/compare/v1.24.2...v1.24.3) (2023-10-26)
+
+
+### Bug Fixes
+
+* correct pass through of database path and some refactoring of the config.ini ([e9c688c](https://github.com/mbari-org/deepsea-ai/commit/e9c688c3b65b4ea3f739da6fe4379460bff69baa))
+
 ## [1.24.2](https://github.com/mbari-org/deepsea-ai/compare/v1.24.1...v1.24.2) (2023-10-26)
 
 
