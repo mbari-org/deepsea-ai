@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # Deploy ecs-autoscale stack to AWS
-# Run with ./deploy.sh <path to config.yml> <path to save the output>
-# Example: ./deploy.sh config.yml /tmp
+# Run with ./entrypoint.sh <path to config.yml> <path to save the output>
+# Example: ./entrypoint.sh config.yml /tmp
 set -x
 # Flag an error if there are not two arguments
-if [ "$#" -ne 1 ]; then
-    echo "Usage: ./deploy.sh <path to config.yml> <path to save cdk output>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: ./entrypoint.sh <path to config.yml> <path to save cdk output>"
     exit 1
 fi
 
@@ -21,10 +21,4 @@ export CDK_STACK_CONFIG=$1
 export CDK_DEPLOY_ACCOUNT=$account
 export CDK_DEPLOY_REGION=$region
 
-# If there is a second argument, use it as the output directory
-if [ "$#" -eq 2 ]; then
-    cdk bootstrap --output $2 && cdk synth --output $2 && cdk deploy --output $2 --require-approval never
-    exit 0
-else
-    cdk bootstrap && cdk synth && cdk deploy --require-approval never
-fi
+cdk bootstrap --output $2 && cdk synth --output $2 && cdk deploy --output $2 --require-approval never

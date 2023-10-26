@@ -41,5 +41,18 @@ RUN chmod +x entrypoint.sh
 # Install the required node modules
 RUN npm install && npm install -g aws-cdk
 
+ARG DOCKER_GID=998
+ARG DOCKER_UID=582
+
+# Create a user with a specific UID and GID and add to docker group
+RUN addgroup -g ${DOCKER_GID} docker && \
+    adduser -D -u ${DOCKER_UID} -G docker docker_user
+
+RUN chown -R docker_user:docker /home/docker_user && \
+    chown -R docker_user:docker /app
+
+# Run as the docker user
+USER docker_user
+
 RUN export PATH=$PATH:/app/node_modules/.bin
 ENTRYPOINT [ "/app/entrypoint.sh" ]
