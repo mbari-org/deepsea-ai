@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.2](https://github.com/mbari-org/deepsea-ai/compare/v1.24.1...v1.24.2) (2023-10-26)
+
+
+### Bug Fixes
+
+* handle second arg to save cdk output and run ecs container as docker_user to be consistent with mbari/deepsea-ai container ([10451ec](https://github.com/mbari-org/deepsea-ai/commit/10451ec618c8f04dd50e21236d7b0559d5265ee1))
+
 ## [1.24.1](https://github.com/mbari-org/deepsea-ai/compare/v1.24.0...v1.24.1) (2023-10-25)
 
 
