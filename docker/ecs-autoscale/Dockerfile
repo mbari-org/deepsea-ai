@@ -1,4 +1,4 @@
-FROM node:18-slim as app
+FROM node:20-slim as app
 
 LABEL vendor="MBARI"
 LABEL maintainer="dcline@mbari.org"
@@ -38,8 +38,8 @@ RUN mv /tmp/app/deepsea_ai/cdk/app/* . && \
 
 RUN chmod +x entrypoint.sh
 
-# Install the required node modules
-RUN npm install && npm install -g aws-cdk
+# Install the required node modules, and force the latest version of aws-cdk
+RUN npm -g uninstall aws-cdk && npm install -g aws-cdk &&  npm install
 
 ARG DOCKER_GID=998
 ARG DOCKER_UID=582

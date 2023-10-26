@@ -1,5 +1,5 @@
 {
-  "name": "app",
+  "name": "ecs-autoscale",
   "version": "1.0.0",
   "description": "Elastic cluster for processing underwater video",
   "private": true,
@@ -14,18 +14,18 @@
     "deploy": "cdk deploy",
     "destroy": "cdk destroy"
   },
-  "license": "LGPL-3.0-or-later",
+  "license": "Apache License 2.0",
   "devDependencies": {
     "@types/jest": "^29.5.3",
     "@types/js-yaml": "^4.0.5",
     "@types/node": "20.4.9",
-    "aws-cdk": "2.91.0",
+    "aws-cdk": "^2.103.0",
     "js-yaml": "^3.14.1",
     "ts-node": "^10.9.1",
     "typescript": "~5.1.6"
   },
   "dependencies": {
-    "aws-cdk-lib": "2.95.1",
+    "aws-cdk-lib": "^2.103.0",
     "constructs": "^10.0.0",
     "source-map-support": "^0.5.21"
   }
