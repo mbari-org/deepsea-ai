@@ -45,8 +45,8 @@ ARG DOCKER_GID=998
 ARG DOCKER_UID=582
 
 # Create a user with a specific UID and GID and add to docker group
-RUN addgroup -g ${DOCKER_GID} docker && \
-    adduser -D -u ${DOCKER_UID} -G docker docker_user
+RUN groupadd -g ${DOCKER_GID} docker && \
+    useradd -u ${DOCKER_UID} -g ${DOCKER_GID} -m docker_user
 
 RUN chown -R docker_user:docker /home/docker_user && \
     chown -R docker_user:docker /app
