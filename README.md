@@ -1,5 +1,7 @@
+
 [![MBARI](https://www.mbari.org/wp-content/uploads/2014/11/logo-mbari-3b.png)](http://www.mbari.org)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/language-Python-blue.svg)](https://www.python.org/downloads/)
 
 **DeepSeaAI** is a Python package to simplify processing deep sea video in [AWS](https://aws.amazon.com) from a command line. 
@@ -96,7 +98,13 @@ jupyter notebook
 * [`deepsea-ai split --help` - Split your training data. This is required before the train command.](docs/data.md) 
 * [`deepsea-ai monitor --help` - Monitor processing. Use this after the ecsprocess train command.](docs/commands/monitor.md)
 * `deepsea-ai -h` - Print help message and exit.
- 
+
+## Setting up an Elastic Container Service (ECS) cluster 
+
+To process videos in bulk, you can setup an ECS cluster to process videos in parallel.
+See the [ECS setup documentation](docs/ecsdeploy.md) for more details.
+
+---
 Source code is available at [github.com/mbari-org/deepsea-ai](https://github.com/mbari-org/deepsea-ai/).
   
 For more details, see the [official documentation](http://docs.mbari.org/deepsea-ai/install).
