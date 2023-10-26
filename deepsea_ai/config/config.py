@@ -26,8 +26,6 @@ class Config:
         """
         Read the .ini file and parse it
         """
-        # set the default output path of the sqlite job database to the same directory as the config.ini file
-        self.job_db_path = Path(os.path.dirname(os.path.abspath(__file__)))
         self.parser = ConfigParser()
         if custom_config_ini:
             self.config_ini = custom_config_ini
@@ -48,16 +46,17 @@ class Config:
                 info(f"============ You can override these settings by creating a customconfig.ini file and pass that "
                      f"in with --config=customconfig.ini =====")
 
+        if self.__call__('database', 'job_db_path') is None:
+            # set the default output path of the sqlite job database to the same directory as the config.ini file
+            self.job_db_path = Path(os.path.dirname(os.path.abspath(__file__)))
+        else:
+            self.job_db_path = Path(self.__call__('database', 'job_db_path'))
+
+        self.job_db_path.mkdir(parents=True, exist_ok=True)
+
     def __call__(self, *args, **kwargs):
         assert len(args) == 2
         return self.parser.get(args[0], args[1])
-
-    def get_db_path(self) -> Path:
-        """
-        Get the path to the job database
-        :return:
-        """
-        return self.job_db_path
 
     def save(self, *args, **kwargs):
         assert len(args) == 3

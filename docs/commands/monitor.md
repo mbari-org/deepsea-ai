@@ -9,20 +9,12 @@ and is used here to identify the cluster with the --cluster option.
 This is useful to monitor the progress of a job, e.g. how many videos are processing, how many are left, and how many have failed.
 This also generates a simple report of the job status by default every 30 minutes (1800 seconds).
 This is configurable using the --update-period option.
-
-For example, to monitor and generate a report for the job "Dive1377" in the cluster public33k, run
-
+ 
 ```
-deepsea-ai monitor --cluster public33k --job "DocRicketts Dive D1377" 
+deepsea-ai monitor --cluster public33k " 
 ```
 
-Multiple jobs can be monitored at the same time, e.g. to monitor the jobs "Dive1377" and "Dive1378" in the cluster public33k, run
-
-```
-deepsea-ai monitor --cluster public33k --job "DocRicketts Dive D1377" --job "DocRicketts Dive D1378"
-```
-
-This will generate a report in the reports/ directory, e.g. *reports/DocRicketts_Dive_D1377_20230323.txt*
+This will generate a report in the reports/ directory for each job, e.g. *reports/DocRicketts_Dive_D1377_20230323.txt*
 while continuously monitoring the job status.
 
 ```text
@@ -49,7 +41,7 @@ Index, Media, Last Updated, Status
     By default, this update is every 30 minutes, or when the job starts.
     To get more frequent updates, use the --update-period, e.g. to get updates every 2 minutes or 120 seconds, run
     ``` 
-        deepsea-ai monitor --cluster public33k --job Dive1377  --update-period 120
+        deepsea-ai monitor --cluster public33k  --update-period 120
     ``` 
 
 !!! alert inline end
@@ -60,11 +52,4 @@ Index, Media, Last Updated, Status
 The Elastic Cluster scales up and down based on the number of videos in the queue.  The default is 6 videos.
 
 **Please ask if you need to increase the number of videos that can be processed in parallel.** 
- 
-
-### Need more?
-If you want to see more detail with the monitor command, please submit a github issue with a request to add more detail to the monitor command.
-There are many ways to monitor the cluster, and we are open to suggestions.
-
-If you have a deepsea-ai dashboard, you can see some basic information on the
-queue status in the dashboard, e.g. [http://deepsea-ai.shore.mbari.org/#/clusters](http://deepsea-ai.shore.mbari.org/#/clusters)
+  

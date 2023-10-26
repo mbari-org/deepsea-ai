@@ -73,7 +73,7 @@ def init_db(cfg: Config, reset: bool = False) -> sessionmaker:
     job_db_path.mkdir(parents=True, exist_ok=True)
 
     # Name the database based on the account number to avoid collisions
-    db = f'sqlite_job_cache_{account}.db'
+    db = f'{job_db_path}/sqlite_job_cache_{account}.db'
     info(f"Initializing job cache database in {job_db_path} as {db}")
     engine = create_engine(f"sqlite:///{db}", connect_args={"check_same_thread": True}, echo=False)
 

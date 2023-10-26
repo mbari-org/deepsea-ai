@@ -8,12 +8,16 @@ Pass that in with the ``--config`` option. For example:
 deepsea-ai process --config config/config.ini
 ```
 
-The settings below can be modified to support connecting with a [database](https://github.com/mbari-org/deepsea-ai-backend).
-This is useful for avoiding reprocessing videos that have already been processed.
+The settings below can be modified to 
+* Support connecting with a [deepsea-ai database](https://github.com/mbari-org/deepsea-ai-database).
+This is useful for avoiding reprocessing videos that have already been processed
+* Processing jobs commands and their status are captured  with the --monitor 
+command in a SQLite database.  The default location is the current directory, 
+but this can be changed with the job_db_path setting.
 ```ini
 [database]
-site = http://deepsea-ai.shore.mbari.org
-gql = %(site)s/graphql 
+track_db_api = http://deepsea-ai.shore.mbari.org/graphql
+job_db_path = .
 ```
 
 ## Cost tracking with AWS tags

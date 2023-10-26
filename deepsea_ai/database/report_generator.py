@@ -39,9 +39,9 @@ def create_report(job: Job, output_path: Path, resources: dict = None):
     job_report_name = f"{jobs_p.name}, Total media: {num_media}, Created at: {created_time} "
 
     # Get additional information from the deepsea_ai database if it exists
-    if default_config('database', 'gql') and resources:
+    if default_config('database', 'track_db_api') and resources:
         try:
-            database = api.DeepSeaAIClient(default_config('database', 'gql'))
+            database = api.DeepSeaAIClient(default_config('database', 'track_db_api'))
             jobs_q = database.execute(queries.GET_JOB_SUMMARY, job_uuid=job_hash(f"{resources['PROCESSOR']}{job.name}"))
             if len(jobs_q['data']['jobs']) > 0:
                 job_id = jobs_q['data']['jobs'][0]['id']
