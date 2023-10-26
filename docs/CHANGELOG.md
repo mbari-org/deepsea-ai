@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.4](https://github.com/mbari-org/deepsea-ai/compare/v1.24.3...v1.24.4) (2023-10-26)
+
+
+### Performance Improvements
+
+* bump to latest cdk 2.103.0 and adjust license ([7255757](https://github.com/mbari-org/deepsea-ai/commit/7255757a3af44612eac75d35deb4a5246aa7da27))
+
 ## [1.24.3](https://github.com/mbari-org/deepsea-ai/compare/v1.24.2...v1.24.3) (2023-10-26)
 
 
