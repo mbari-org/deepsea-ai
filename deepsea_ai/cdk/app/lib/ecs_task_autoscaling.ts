@@ -31,7 +31,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
       minCapacity: 0,
       maxCapacity: config.FleetSize,
       cooldown: cdk.Duration.minutes(15),
-      blockDevices: [{ deviceName: '/dev/sdh', volume:  autoscaling.BlockDeviceVolume.ebs(20)}],
+      blockDevices: [{ deviceName: '/dev/sdh', volume:  autoscaling.BlockDeviceVolume.ebs(10)}],
       vpc
     })
 
@@ -152,6 +152,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     taskDefinition.addContainer(config.StackName, {
       image: ecs.ContainerImage.fromRegistry(config.ContainerImage),
       memoryReservationMiB: 3072,
+      gpuCount: 1,
       stopTimeout: cdk.Duration.seconds(60),
       logging,
       environment: {
@@ -181,11 +182,12 @@ export class AutoScalingTaskStack extends cdk.Stack {
       statistic: "Average"
     })
 
-    // Spin-up one service, two tasks per instance
+    // Spin-up one service, one task per instance
     const service = new ecs.Ec2Service(this, `service-${config}`, {
       cluster: cluster,
-      desiredCount: 2,
-      taskDefinition: taskDefinition
+      desiredCount: 0,
+      taskDefinition: taskDefinition,
+      placementStrategies: [ecs.PlacementStrategy.spreadAcross('instanceId')] //to deploy only once task per instance
     })
 
     // Grant SQS permissions to an ECS service.
