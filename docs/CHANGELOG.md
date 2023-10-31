@@ -1,5 +1,17 @@
 # DeepSeaAI Changelog
 
+## [1.24.5](https://github.com/mbari-org/deepsea-ai/compare/v1.24.4...v1.24.5) (2023-10-31)
+
+
+### Bug Fixes
+
+* update status for repeat jobs and force database commit ([24126b4](https://github.com/mbari-org/deepsea-ai/commit/24126b4343b3ef121ee107b1d4a291d2c023bc2c))
+
+
+### Reverts
+
+* to single GPU task per instance ([de53f9c](https://github.com/mbari-org/deepsea-ai/commit/de53f9c0cafa5d25fb11f1317ce907b74c9c2c23))
+
 ## [1.24.4](https://github.com/mbari-org/deepsea-ai/compare/v1.24.3...v1.24.4) (2023-10-26)
 
 
