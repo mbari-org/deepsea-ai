@@ -147,6 +147,12 @@ def update_media(db: Session, job: Job, video_name: str, status: str, **kwargs):
         info(f'Found media {video_name} in job {job.name}')
 
         # Update the media status, timestamp and any additional kwargs
+        # Only update if the timestamp is newer than the last update
+        if 'timestamp' in kwargs:
+            if media.updatedAt > kwargs['timestamp']:
+                info(f'Not updating media {video_name} in job {job.name} because the timestamp is older.')
+                return
+
         media.status = status
         media.updatedAt = datetime.utcnow()
 

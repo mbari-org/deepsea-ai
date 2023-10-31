@@ -101,8 +101,9 @@ def update_job(db: Session, sqs_message: dict, cluster: str, status: str):
     else:
         info(f'Found job {job.name} running on {cluster} in cache.')
 
-    # pass through the metadata
-    update_media(db, job, sqs_message["video"], status, metadata_b64=sqs_message['metadata_b64'])
+    # get the timestamp from the message and convert it to a datetime
+    timestamp = datetime.strptime(sqs_message['timestamp'], '%Y%m%dT%H%M%S')
+    update_media(db, job, sqs_message["video"], status, timestamp=timestamp, metadata_b64=sqs_message['metadata_b64'])
 
 
 def log_queue_status(session_maker: sessionmaker, resources: dict) -> dict:
