@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.6](https://github.com/mbari-org/deepsea-ai/compare/v1.24.5...v1.24.6) (2023-10-31)
+
+
+### Bug Fixes
+
+* update media timestamp only with newer message ([5c02b49](https://github.com/mbari-org/deepsea-ai/commit/5c02b49af9e31bb9e89c51bd9726d2fe233ab81a))
+
 ## [1.24.5](https://github.com/mbari-org/deepsea-ai/compare/v1.24.4...v1.24.5) (2023-10-31)
 
 
