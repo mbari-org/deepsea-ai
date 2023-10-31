@@ -403,7 +403,10 @@ def monitor_command(cluster: str, config, update_period: int, timeout_period: in
             info(f'Monitoring {num_jobs} job')
             m = monitor.Monitor(session_maker, report_path, resources, update_period)
             m.start()
-            m.join(timeout_period)
+            if timeout_period:
+                m.join(timeout_period)
+            else:
+               break 
         else:
             info(f'No jobs found in the database with type {JobType.ECS}. Checking again in 30 seconds. Ctrl-C to stop.')
             time.sleep(30)

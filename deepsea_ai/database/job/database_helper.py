@@ -146,10 +146,6 @@ def update_media(db: Session, job: Job, video_name: str, status: str, **kwargs):
 
         info(f'Found media {video_name} in job {job.name}')
 
-        if status == Status.QUEUED and media.status == Status.RUNNING or media.status == Status.SUCCESS or media.status == Status.FAILED:
-            info(f'Media {video_name} in job {job.name} is already {media.status}. Not updating to {status}')
-            return
-
         # Update the media status, timestamp and any additional kwargs
         media.status = status
         media.updatedAt = datetime.utcnow()
@@ -167,7 +163,8 @@ def update_media(db: Session, job: Job, video_name: str, status: str, **kwargs):
                 metadata_json[key] = value
         media.metadata_b64 = json_b64_encode(metadata_json)
 
-        db.merge(media)
+        db.commit()
+        db.flush()
 
     else:
         info(f'A new media {video_name} was added to job {job.name} kwargs {kwargs}')

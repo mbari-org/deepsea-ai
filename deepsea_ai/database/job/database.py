@@ -75,7 +75,7 @@ def init_db(cfg: Config, reset: bool = False) -> sessionmaker:
     # Name the database based on the account number to avoid collisions
     db = f'{job_db_path}/sqlite_job_cache_{account}.db'
     info(f"Initializing job cache database in {job_db_path} as {db}")
-    engine = create_engine(f"sqlite:///{db}", connect_args={"check_same_thread": True}, echo=False)
+    engine = create_engine(f"sqlite:///{db}", connect_args={"check_same_thread": False}, echo=True)
 
     Base.metadata.create_all(engine, tables=[Job.__table__, Media.__table__])
 

@@ -136,6 +136,8 @@ def log_queue_status(session_maker: sessionmaker, resources: dict) -> dict:
                     with session_maker() as db:
                         for message in messages:
                             update_job(db, message, cluster, Status.SUCCESS)
+                        db.flush()
+                        db.commit()
 
             if q == 'VIDEO_QUEUE':
                 info(f'{processor}:{q} number of videos to process: '
@@ -159,6 +161,8 @@ def log_queue_status(session_maker: sessionmaker, resources: dict) -> dict:
                     with session_maker() as db:
                         for message in messages:
                             update_job(db, message, cluster, Status.FAILED)
+                        db.flush()
+                        db.commit()
 
     except ClientError as e:
         exception(e)

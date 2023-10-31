@@ -67,19 +67,18 @@ class Monitor(Thread):
                     info(f'No activity for {self.resources["PROCESSOR"]}.')
                 else:
                     # Generate a report every update_period when there is activity
-                    if queue_activity > 0:
-                        info(f"Getting all media being processed in cluster {self.resources['CLUSTER']}")
+                    info(f"Getting all media being processed in cluster {self.resources['CLUSTER']}")
 
-                        with self.session_maker() as db:
-                            # Get all jobs with the job type ECS
-                            jobs_in_clusters = db.query(Job).filter(Job.job_type == JobType.ECS).all()
+                    with self.session_maker() as db:
+                        # Get all jobs with the job type ECS
+                        jobs_in_clusters = db.query(Job).filter(Job.job_type == JobType.ECS).all()
 
-                            # Get all media in the jobs that are in the cluster
-                            for job in jobs_in_clusters:
-                                medias = db.query(Media).filter(Media.job_id == job.id).all()
-                                info(f"Found {len(medias)} media in job {job.name}")
-                                if len(medias) > 0:  # if there are media in the cluster, create a report
-                                    create_report(job, self.report_path, self.resources)
+                        # Get all media in the jobs that are in the cluster
+                        for job in jobs_in_clusters:
+                            medias = db.query(Media).filter(Media.job_id == job.id).all()
+                            info(f"Found {len(medias)} media in job {job.name}")
+                            if len(medias) > 0:  # if there are media in the cluster, create a report
+                                create_report(job, self.report_path, self.resources)
 
                 info(f'Checking again in {self.update_period} seconds. Ctrl-C to stop.')
                 time.sleep(self.update_period)
