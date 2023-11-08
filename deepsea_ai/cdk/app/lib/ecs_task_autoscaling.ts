@@ -173,7 +173,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     })
 
     const scaleOutQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
-      period: cdk.Duration.minutes(1),
+      period: cdk.Duration.minutes(5),
       statistic: "Average"
     })
 
@@ -185,6 +185,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     // Spin-up one service, one task per instance
     const service = new ecs.Ec2Service(this, `service-${config}`, {
       cluster: cluster,
+      daemon: false,
       desiredCount: 0,
       taskDefinition: taskDefinition,
       placementStrategies: [ecs.PlacementStrategy.spreadAcross('instanceId')] //to deploy only once task per instance
