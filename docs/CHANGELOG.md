@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.9](https://github.com/mbari-org/deepsea-ai/compare/v1.24.8...v1.24.9) (2023-11-08)
+
+
+### Bug Fixes
+
+* change scale in to the longest expected processing time of 2 hours for scale-in protection in cases with just one instance, one video ([886e17b](https://github.com/mbari-org/deepsea-ai/commit/886e17b8f69ec478f11a33cec19c4b8b4d3d0bda))
+
 ## [1.24.8](https://github.com/mbari-org/deepsea-ai/compare/v1.24.7...v1.24.8) (2023-11-08)
 
 
