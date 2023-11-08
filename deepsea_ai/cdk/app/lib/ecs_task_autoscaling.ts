@@ -178,7 +178,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     })
 
     const scaleInQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
-      period: cdk.Duration.minutes(60),
+      period: cdk.Duration.minutes(120),
       statistic: "Average"
     })
 
