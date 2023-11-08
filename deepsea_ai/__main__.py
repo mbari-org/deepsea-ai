@@ -230,6 +230,7 @@ def process_command(config, dry_run, input, exclude, input_s3, output_s3, model_
                                      instance_type=instance_type,
                                      tags=tags,
                                      dry_run=dry_run,
+                                     job_name=job,
                                      custom_config=custom_config,
                                      args=args)
 

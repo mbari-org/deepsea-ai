@@ -25,11 +25,10 @@ code_path = Path(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
 def script_processor_run(session_maker: sessionmaker, dry_run: bool, input_s3: tuple, output_s3: tuple, model_s3: tuple,
                          volume_size_gb: int, instance_type: str, custom_config: cfg.Config,
-                         tags: dict, config_s3: str, args: str):
+                         tags: dict, config_s3: str, args: str, job_name: str):
     """
     Process a collection of videos with the ScriptProcessor
     """
-    user_name = "SIM" if dry_run else custom_config.get_username()
 
     arguments = ['dettrack', f"--model-s3=s3://{model_s3.netloc}/{model_s3.path.lstrip('/')}"]
     if args:
@@ -50,13 +49,12 @@ def script_processor_run(session_maker: sessionmaker, dry_run: bool, input_s3: t
     image_uri_ecr = f"{account}.dkr.ecr.{region}.amazonaws.com/{image_uri_docker}"
     # log the video as running; the processor is the docker image
     processor = image_uri_ecr.split('/')[-1]
-    base_job_name = f'strongsort-yolov5-{user_name}'
 
     script_processor = ScriptProcessor(command=['python3'],
                                        image_uri=image_uri_ecr,
                                        role=custom_config.get_role(),
                                        instance_count=1,
-                                       base_job_name=base_job_name,
+                                       base_job_name=job_name,
                                        instance_type=instance_type,
                                        volume_size_in_gb=volume_size_gb,
                                        max_runtime_in_seconds=172800,
@@ -64,7 +62,6 @@ def script_processor_run(session_maker: sessionmaker, dry_run: bool, input_s3: t
 
     # log it
     info(f"Start script processor for inputs s3://{input_s3.netloc}/{input_s3.path.lstrip('/')}")
-    job_name = f"{base_job_name}-{datetime.utcnow().strftime('%Y%m%dT%H%M%S')}"
     info(f"Job name: {job_name}")
 
     def log_fini(db: Session, j: Job, status: str, **kwargs):
