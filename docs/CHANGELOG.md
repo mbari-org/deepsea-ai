@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.7](https://github.com/mbari-org/deepsea-ai/compare/v1.24.6...v1.24.7) (2023-11-08)
+
+
+### Performance Improvements
+
+* CDK slow the spin-up to 5 minute average and set daemon false explicitly on service ([2455e9d](https://github.com/mbari-org/deepsea-ai/commit/2455e9d5549d787b8e1fbc71417a2fde0e3fbf64))
+
 ## [1.24.6](https://github.com/mbari-org/deepsea-ai/compare/v1.24.5...v1.24.6) (2023-10-31)
 
 
