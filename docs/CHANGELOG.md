@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.8](https://github.com/mbari-org/deepsea-ai/compare/v1.24.7...v1.24.8) (2023-11-08)
+
+
+### Bug Fixes
+
+* pass through the job name to the process sagemaker job for consistency with the ecsprocess command ([9ffd71b](https://github.com/mbari-org/deepsea-ai/commit/9ffd71b855303eb1d9ee699800889c2eda789596))
+
 ## [1.24.7](https://github.com/mbari-org/deepsea-ai/compare/v1.24.6...v1.24.7) (2023-11-08)
 
 
