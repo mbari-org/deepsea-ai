@@ -178,7 +178,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
     })
 
     const scaleInQueueMetric = videoSqsQueue.metricApproximateNumberOfMessagesVisible({
-      period: cdk.Duration.minutes(120),
+      period: cdk.Duration.minutes(180),
       statistic: "Average"
     })
 
@@ -188,6 +188,8 @@ export class AutoScalingTaskStack extends cdk.Stack {
       daemon: false,
       desiredCount: 0,
       taskDefinition: taskDefinition,
+      minHealthyPercent: 0,
+      maxHealthyPercent: 100,
       placementStrategies: [ecs.PlacementStrategy.spreadAcross('instanceId')] //to deploy only once task per instance
     })
 
@@ -196,11 +198,11 @@ export class AutoScalingTaskStack extends cdk.Stack {
     trackSqsQueue.grantConsumeMessages(service.taskDefinition.taskRole)
 
     // Task scaling steps
-    const serviceOutScaling = service.autoScaleTaskCount({minCapacity: 0, maxCapacity: config.FleetSize});
-    serviceOutScaling.scaleOnMetric(`scaling-${config}`, {
+    const taskOutScaling = service.autoScaleTaskCount({minCapacity: 0, maxCapacity: config.FleetSize});
+    taskOutScaling.scaleOnMetric(`scaling-${config}`, {
       metric: scaleOutQueueMetric,
       scalingSteps: [
-        { upper: 0, change: -1 },
+        { upper: 0, change: 0 },
         { lower: 1, change: 1 }
       ],
       cooldown: cdk.Duration.minutes(5),
@@ -216,7 +218,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
 
     const scalingOutAction = new autoscaling.StepScalingAction(this, 'scale-out-action', {
       autoScalingGroup: asg,
-      estimatedInstanceWarmup:  cdk.Duration.minutes(2),
+      estimatedInstanceWarmup:  cdk.Duration.minutes(5),
       adjustmentType: autoscaling.AdjustmentType.CHANGE_IN_CAPACITY})
 
     // The threshold is set to 1 so the lower bound must be equal to 0
