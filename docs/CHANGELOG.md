@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.10](https://github.com/mbari-org/deepsea-ai/compare/v1.24.9...v1.24.10) (2023-11-14)
+
+
+### Performance Improvements
+
+* remove scale down on tasks, bump up warmup time to 5 minutes to allow for longer model spin-up; bump to 180 minutes for complex videos ([a32c60f](https://github.com/mbari-org/deepsea-ai/commit/a32c60fc499f26b460dda75eb021275c3d688d6d))
+
 ## [1.24.9](https://github.com/mbari-org/deepsea-ai/compare/v1.24.8...v1.24.9) (2023-11-08)
 
 
