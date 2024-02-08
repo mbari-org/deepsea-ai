@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+## [1.24.11](https://github.com/mbari-org/deepsea-ai/compare/v1.24.10...v1.24.11) (2024-02-08)
+
+
+### Bug Fixes
+
+* update link to preparing data doc ([3a1a358](https://github.com/mbari-org/deepsea-ai/commit/3a1a358f8ac80bf62bf699e4e3f15af94d55b759))
+
 ## [1.24.10](https://github.com/mbari-org/deepsea-ai/compare/v1.24.9...v1.24.10) (2023-11-14)
 
 
