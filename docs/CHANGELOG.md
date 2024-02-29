@@ -1,5 +1,12 @@
 # DeepSeaAI Changelog
 
+# [1.25.0](https://github.com/mbari-org/deepsea-ai/compare/v1.24.11...v1.25.0) (2024-02-29)
+
+
+### Features
+
+* added support for specifying the volume size (BlockDeviceVolumeGB) and timeout (TimeoutHours) in the ECS config.yml file to support larger video/model processing ([be93068](https://github.com/mbari-org/deepsea-ai/commit/be93068fcfc9543cb4934958f3ef19e10abf2b8b))
+
 ## [1.24.11](https://github.com/mbari-org/deepsea-ai/compare/v1.24.10...v1.24.11) (2024-02-08)
 
 
