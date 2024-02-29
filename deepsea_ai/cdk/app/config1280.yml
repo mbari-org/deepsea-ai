@@ -3,5 +3,7 @@ StackName: Megadetector
 TaskDefinition: strongsort-yolov5
 ContainerImage: 548531997526.dkr.ecr.us-west-2.amazonaws.com/mbari/strongsort-yolov5:1.10.0
 FleetSize: 1
+BlockDeviceVolumeGB: 55
+TimeoutHours: 2
 model_location: s3://deepsea-ai-548531997526-models/Megadetector.pt
 track_config: s3://deepsea-ai-548531997526-track-conf/strong_sort_benthic.yaml

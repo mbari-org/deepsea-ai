@@ -31,7 +31,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
       minCapacity: 0,
       maxCapacity: config.FleetSize,
       cooldown: cdk.Duration.minutes(15),
-      blockDevices: [{ deviceName: '/dev/sdh', volume:  autoscaling.BlockDeviceVolume.ebs(10)}],
+      blockDevices: [{ deviceName: '/dev/sdh', volume:  autoscaling.BlockDeviceVolume.ebs(config.BlockDeviceVolumeGB)}],
       vpc
     })
 
@@ -49,11 +49,11 @@ export class AutoScalingTaskStack extends cdk.Stack {
     const maxReceiveCount = 600
 
     // Set the video processing visibility timeout to the maximum time that it takes to process a video once the message is dequeued
-    const videoTimeout = cdk.Duration.hours(2)
+    const videoTimeout = cdk.Duration.hours(config.TimeoutHours)
 
-    // Set the track processing visibility timeeout to the maximum time that it takes to ingest the track once the message is dequeued
+    // Set the track processing visibility timeout to the maximum time that it takes to ingest the track once the message is dequeued
     // or the maximum time that it takes to monitor the status of the job
-    const trackTimeout = cdk.Duration.hours(2)
+    const trackTimeout = cdk.Duration.hours(config.TimeoutHours)
 
     const deadLetterQueue = new sqs.Queue(this, 'dead', {
       retentionPeriod: cdk.Duration.days(10),
