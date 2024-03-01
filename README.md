@@ -102,7 +102,7 @@ jupyter notebook
 ## Setting up an Elastic Container Service (ECS) cluster 
 
 To process videos in bulk, you can setup an ECS cluster to process videos in parallel.
-See the [ECS setup documentation](docs/ecsdeploy.md) for more details.
+See the [ECS setup documentation](docs/commands/ecsdeploy.md) for more details.
 
 ---
 Source code is available at [github.com/mbari-org/deepsea-ai](https://github.com/mbari-org/deepsea-ai/).
