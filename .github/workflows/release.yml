@@ -9,23 +9,31 @@ jobs:
     runs-on: ubuntu-latest
     name: Runs semantic release
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
+
+      - uses: codfish/semantic-release-action@v3.1.0
+        id: semantic
         with:
-          fetch-depth: 0
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: "lts/*"
-      - name: Install dependencies
-        run: npm install commitizen @semantic-release/commit-analyzer @semantic-release/release-notes-generator @semantic-release/exec @semantic-release/changelog @semantic-release/npm @semantic-release/git
-      - name: Release
+          dry-run: false
+          branches: |
+            ['main']
+          additional-packages: |
+            ['@semantic-release/git']
+          plugins: |
+            ['@semantic-release/git', '@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator', '@semantic-release/github', '@semantic-release/git']
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: 000000000000000
-          GIT_AUTHOR_NAME: danellecline
-          GIT_COMMITTER_NAME: danellecline
-        run: npx semantic-release
+
+      - name: docker push version
+        if: steps.semantic.outputs.new-release-published == 'true'
+        run: |
+          docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }} 
+          docker buildx create --name mybuilder --platform linux/amd64,linux/arm64 --use
+          pushd docker/deepsea-ai && docker buildx build --push --platform linux/amd64,linux/arm64 -t mbari/deepsea-ai:$RELEASE_VERSION --label IMAGE_URI=mbari/deepsea-ai:$RELEASE_VERSION .
+          popd
+          pushd docker/ecs-autoscale && docker buildx build --push --platform linux/amd64,linux/arm64 -t mbari/ecs-autoscale:$RELEASE_VERSION --label IMAGE_URI=mbari/ecs-autoscale:$RELEASE_VERSION .
+
   pypi_release:
     name: Builds Using Poetry and Publishes to PyPI
     runs-on: ubuntu-latest
@@ -46,62 +54,3 @@ jobs:
       - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
       - name: Publish package
         run: poetry publish --build
-  build:
-    name:  Docker builds
-    needs: [ semantic_release ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code and all tags and branches
-        uses: actions/checkout@v2
-        id: version
-        with:
-          fetch-depth: 0
-
-      - name: Get docker tag
-        run: |
-          tag_v=$(git describe --tags $(git rev-list --tags --max-count=1))  
-          tag=$(echo $tag_v | sed 's/v//')  
-          if [[ $tag =~ ^v[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then  
-            tag="latest"
-          fi  
-          echo "Setting TAG=${tag}"  
-          echo "TAG=${tag}" >> $GITHUB_ENV
-
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v1
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Build and push mbari/deepsea-ai to Docker Hub
-        uses: docker/build-push-action@v3
-        with:
-          context: ./docker/deepsea-ai
-          push: true
-          platforms: linux/amd64
-          tags: |
-            mbari/deepsea-ai:${{ env.TAG }}  
-            mbari/deepsea-ai:latest
-          build-args: |
-            GIT_VERSION=${{ env.TAG }}
-          labels: |
-            IMAGE_URI=mbari/deepsea-ai:${{ env.TAG }}
-      - name: Build and push mbari/ecs-autoscale to Docker Hub
-        uses: docker/build-push-action@v3
-        with:
-          context: ./docker/ecs-autoscale
-          push: true
-          platforms: linux/amd64
-          tags: |
-            mbari/ecs-autoscale:${{ env.TAG }}  
-            mbari/ecs-autoscale:latest
-          build-args: |
-            GIT_VERSION=${{ env.TAG }}
-          labels: |
-            IMAGE_URI=mbari/ecs-autoscale:${{ env.TAG }}
