@@ -31,7 +31,7 @@ export class AutoScalingTaskStack extends cdk.Stack {
       minCapacity: 0,
       maxCapacity: config.FleetSize,
       cooldown: cdk.Duration.minutes(15),
-      blockDevices: [{ deviceName: '/dev/sdh', volume:  autoscaling.BlockDeviceVolume.ebs(config.BlockDeviceVolumeGB)}],
+      blockDevices: [{ deviceName: '/dev/xvda', volume:  autoscaling.BlockDeviceVolume.ebs(config.BlockDeviceVolumeGBRoot), }],
       vpc
     })
 

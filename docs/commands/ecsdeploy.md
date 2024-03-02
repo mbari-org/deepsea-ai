@@ -33,6 +33,8 @@ The following is the YAML formatting that describes the model.
  * The **TaskDefinition** is the name of the ECS task definition that will be created.  
  * The **ContainerImage** is the location of the docker image that will be deployed.  This corresponds to the docker image that was uploaded with the [setup](/commands/setup) --mirror command.
  * The **FleetSize** is the number of CUDA enabled Amazon Machine Instances that will be deployed. This is limited to whatever quota you have requested in your account.
+ * The **BlockDeviceVolumeGBRoot** is the size of the EBS volume that will be attached to the instance.  This is used to store the video, model and the results. Make sure this is large enough for your video and model.
+ * The **TimeoutHours** is the maximum time that the task will run.  This is used to stop the task if it is taking too long.  This is useful to prevent runaway tasks from running up costs. Set this to a reasonable value for your video size and model.
 
 ### Example YAML file
 
@@ -47,6 +49,8 @@ StackName: Megadetector
 TaskDefinition: strongsort-yolov5
 ContainerImage: 168552337187.dkr.ecr.us-west-2.amazonaws.com/mbari/strongsort-yolov5:1.10.0
 FleetSize: 1
+BlockDeviceVolumeGBRoot: 10
+TimeoutHours: 2
 model_location: s3://deepsea-ai-168552337187-models/Megadetector.pt
 track_config: s3://deepsea-ai-168552337187-track-conf/strong_sort_benthic.yaml
 ```
