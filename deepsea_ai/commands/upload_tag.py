@@ -32,6 +32,7 @@ def video_data(videos: list[Path], input_s3: tuple, tags: dict, dry_run: bool = 
     # upload and tag the video objects individually
     uploaded_videos = []
     size_gb = 1
+    max_bandwidth = 62 * 1024 * 1024 # 62 MB/s
     for v in videos:
         # add the size of the video to the total
         size_gb += v.stat().st_size /(1024**3)
@@ -58,7 +59,8 @@ def video_data(videos: list[Path], input_s3: tuple, tags: dict, dry_run: bool = 
                 for retry in range(10):
                     try:
                         info(f'Uploading {v} to s3://{input_s3.netloc}/{target_prefix}...')
-                        s3.upload_file(v.as_posix(), input_s3.netloc, target_prefix)
+                        s3.upload_file(v.as_posix(), input_s3.netloc, target_prefix,
+                                       Config=boto3.s3.transfer.TransferConfig(max_bandwidth=max_bandwidth))
                         upload_success = True
                         info(f'File {v} uploaded successfully')
                         break
