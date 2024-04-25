@@ -1,5 +1,4 @@
 # Test the sqlite database with pydantic
-import json
 import time
 from datetime import datetime
 from pathlib import Path
@@ -223,6 +222,7 @@ def test_update_one_media(setup_database):
         # Get the media with the name vid3.mp4 and update the timestamp and status to SUCCESS
         update_media(db, job, 'vid3.mp4', Status.SUCCESS)
 
+    # with session_maker.begin() as db:
         media = db.query(Media).filter(Media.name == 'vid3.mp4').first()
 
         # Verify that the number of medias is the same, except a newer timestamp
