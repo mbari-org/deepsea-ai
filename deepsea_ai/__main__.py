@@ -11,7 +11,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from deepsea_ai.config.config import Config
-from deepsea_ai.commands import upload_tag, process, train, bucket, monitor
+from deepsea_ai.commands import upload_tag, process, train, bucket, monitor, ecsshutdown
 from deepsea_ai.config import config as cfg
 from deepsea_ai.config import setup
 from deepsea_ai.database.job.database import Job, init_db
@@ -153,6 +153,17 @@ def ecs_process(config, upload, clean, cluster, job, input, exclude, dry_run, ar
             warn(f'Video {v.name} has already been processed and loaded...skipping')
 
     info(f'==== Submitted {total_submitted} videos to {processor} for processing =====')
+
+@cli.command(name="ecsshutdown")
+@common_args.cluster_option
+@cfg_option
+def ecs_shutdown(config, cluster):
+    """
+     Shutdown the ECS cluster, stopping all running tasks, services, and instances and removing any proccessed tracks
+    """
+    custom_config = init(log_prefix="dsai_ecsshutdown", config=config)
+    resources = custom_config.get_resources(cluster)
+    ecsshutdown.ecsshutdown(resources, cluster)
 
 
 @cli.command(name="process")
