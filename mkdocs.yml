@@ -36,6 +36,7 @@ nav:
       - commands/process.md
       - commands/monitor.md
       - commands/ecsdeploy.md
+      - commands/ecsshutdown.md
   - Configuration: 'config.md'
   - Prepare your data: 'data.md'
   - Tutorials:
