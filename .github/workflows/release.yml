@@ -20,7 +20,7 @@ jobs:
           additional-packages: |
             ['@semantic-release/git']
           plugins: |
-            ['@semantic-release/git', '@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator', '@semantic-release/github', '@semantic-release/git']
+            ['@semantic-release/git', '@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator',  '@semantic-release/changelog', '@semantic-release/github', '@semantic-release/git']
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: 000000000000000
