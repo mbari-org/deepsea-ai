@@ -50,10 +50,10 @@ aws configure
 aws --version
 ```
 
-Then install the module
+Then install directly from pypi
 
 ```shell
-pip install -U deepsea-ai
+pip install deepsea-ai
 ```
 
 Setting up the AWS environment is done with the setup mirror command.  This only needs to be done once, or when you upgrade

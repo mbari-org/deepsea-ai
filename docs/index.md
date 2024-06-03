@@ -9,7 +9,8 @@ DeepSea-AI currently supports:
  - *Processing video with [YOLOv5](http://github.com/ultralytics/yolov5) detection and tracking pipelines* using either:
      * [DeepSort](https://github.com/mikel-brostrom/Yolov5_DeepSort_Pytorch) tracking
      * [StrongSort](https://github.com/mikel-brostrom/Yolov5_StrongSORT_OSNet) tracking
-     * 
+ - Scaling processing with [AWS Elastic Container Service](https://aws.amazon.com/ecs/)
+
 The cost to process a video is typically less than **$1.25** per 15-minute video.
 
 The cost to run the training algorithm depends on your data size and the number of GPUs you use.  
@@ -29,10 +30,10 @@ aws configure
 aws --version
 ```
 
-Then install the module
+Then install directly from pypi
 
 ```shell
-pip install -U deepsea-ai
+pip install deepsea-ai
 ```
 
 Setting up the AWS environment is done with the setup *mirror* command.  This only needs to be done once, or when you upgrade
