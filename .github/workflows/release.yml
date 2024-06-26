@@ -5,53 +5,49 @@ on:
     branches:
       - main
 jobs:
-  semantic_release:
+ semantic_release:
     runs-on: ubuntu-latest
     name: Runs semantic release
     steps:
-      - uses: actions/checkout@v3
-
-      - uses: codfish/semantic-release-action@v3.1.0
-        id: semantic
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
-          dry-run: false
-          branches: |
-            ['main']
-          additional-packages: |
-            ['@semantic-release/git']
-          plugins: |
-            ['@semantic-release/git', '@semantic-release/commit-analyzer', '@semantic-release/release-notes-generator',  '@semantic-release/changelog', '@semantic-release/github', '@semantic-release/git']
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: 000000000000000
+          fetch-depth: 0
+
+      - name: Python Semantic Release
+        id: semantic
+        uses: python-semantic-release/python-semantic-release@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: docker push version
-        if: steps.semantic.outputs.new-release-published == 'true'
+        if: steps.semantic.outputs.released == 'true'
         run: |
+          export RELEASE_VERSION=$(echo ${{ steps.semantic.outputs.tag }} | cut -c 2-)
           docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }} 
           docker buildx create --name mybuilder --platform linux/amd64,linux/arm64 --use
           pushd docker/deepsea-ai && docker buildx build --push --platform linux/amd64,linux/arm64 -t mbari/deepsea-ai:$RELEASE_VERSION --label IMAGE_URI=mbari/deepsea-ai:$RELEASE_VERSION .
           popd
           pushd docker/ecs-autoscale && docker buildx build --push --platform linux/amd64,linux/arm64 -t mbari/ecs-autoscale:$RELEASE_VERSION --label IMAGE_URI=mbari/ecs-autoscale:$RELEASE_VERSION .
 
-  pypi_release:
-    name: Builds Using Poetry and Publishes to PyPI
-    runs-on: ubuntu-latest
-    continue-on-error: true
-    if: ${{ needs.semantic.outputs.new-release-published == 'true' }}
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v3
-        with:
-          python-version: "3.10"
-      - name: Install Poetry
-        run: curl -sSL https://install.python-poetry.org | python3 -
-      - name: Add Poetry to path
-        run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
-      - run: poetry install
-      - name: Supress sqlachemy warning
-        run: echo "SQLALCHEMY_SILENCE_UBER_WARNING=1" >> $GITHUB_ENV
-      - run: SAGEMAKER_ROLE=${{ secrets.SAGEMAKER_ROLE }} AWS_DEFAULT_REGION=us-west-2 poetry run pytest
-      - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
-      - name: Publish package
-        run: poetry publish --build
+pypi_release:
+  name: Builds Using Poetry and Publishes to PyPI
+  runs-on: ubuntu-latest
+  continue-on-error: true
+  if: ${{ needs.semantic.outputs.new-release-published == 'true' }}
+  steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v3
+      with:
+        python-version: "3.10"
+    - name: Install Poetry
+      run: curl -sSL https://install.python-poetry.org | python3 -
+    - name: Add Poetry to path
+      run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
+    - run: poetry install
+    - name: Supress sqlachemy warning
+      run: echo "SQLALCHEMY_SILENCE_UBER_WARNING=1" >> $GITHUB_ENV
+    - run: SAGEMAKER_ROLE=${{ secrets.SAGEMAKER_ROLE }} AWS_DEFAULT_REGION=us-west-2 poetry run pytest
+    - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
+    - name: Publish package
+      run: poetry publish --build
