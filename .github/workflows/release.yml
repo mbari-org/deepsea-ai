@@ -30,24 +30,24 @@ jobs:
           popd
           pushd docker/ecs-autoscale && docker buildx build --push --platform linux/amd64,linux/arm64 -t mbari/ecs-autoscale:$RELEASE_VERSION --label IMAGE_URI=mbari/ecs-autoscale:$RELEASE_VERSION .
 
-pypi_release:
-  name: Builds Using Poetry and Publishes to PyPI
-  runs-on: ubuntu-latest
-  continue-on-error: true
-  if: ${{ needs.semantic.outputs.new-release-published == 'true' }}
-  steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
-    - name: Install Poetry
-      run: curl -sSL https://install.python-poetry.org | python3 -
-    - name: Add Poetry to path
-      run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
-    - run: poetry install
-    - name: Supress sqlachemy warning
-      run: echo "SQLALCHEMY_SILENCE_UBER_WARNING=1" >> $GITHUB_ENV
-    - run: SAGEMAKER_ROLE=${{ secrets.SAGEMAKER_ROLE }} AWS_DEFAULT_REGION=us-west-2 poetry run pytest
-    - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
-    - name: Publish package
-      run: poetry publish --build
+    pypi_release:
+      name: Builds Using Poetry and Publishes to PyPI
+      runs-on: ubuntu-latest
+      continue-on-error: true
+      if: ${{ needs.semantic.outputs.new-release-published == 'true' }}
+      steps:
+        - uses: actions/checkout@v2
+        - uses: actions/setup-python@v3
+          with:
+            python-version: "3.10"
+        - name: Install Poetry
+          run: curl -sSL https://install.python-poetry.org | python3 -
+        - name: Add Poetry to path
+          run: echo "${HOME}/.local/bin" >> $GITHUB_PATH
+        - run: poetry install
+        - name: Supress sqlachemy warning
+          run: echo "SQLALCHEMY_SILENCE_UBER_WARNING=1" >> $GITHUB_ENV
+        - run: SAGEMAKER_ROLE=${{ secrets.SAGEMAKER_ROLE }} AWS_DEFAULT_REGION=us-west-2 poetry run pytest
+        - run: poetry config pypi-token.pypi "${{ secrets.PYPI_API_TOKEN }}"
+        - name: Publish package
+          run: poetry publish --build
