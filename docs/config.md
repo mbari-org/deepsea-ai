@@ -56,7 +56,8 @@ deepsea-ai process --config config/config.ini --mirror
 yolov5_container = mbari/deepsea-yolov5:1.1.2
 strongsort_container = mbari/strongsort-yolov5:1.10.0
 ```
-
+---
+**Updated: 2024-08-14**
 
 
 

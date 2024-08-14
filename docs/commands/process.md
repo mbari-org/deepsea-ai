@@ -66,3 +66,6 @@ deepsea-ai ecsprocess -u \
         --exclude D1371 --exclude D1374 --exclude D1375 \
         --args "--agnostic-nms --iou-thres=0.5 --conf-thres=0.01 --imgsz=640" \
 ```
+
+---
+**Updated: 2024-08-14**

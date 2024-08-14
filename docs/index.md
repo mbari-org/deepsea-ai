@@ -83,4 +83,6 @@ jupyter notebook
  
 Source code is available at [github.com/mbari-org/deepsea-ai](https://github.com/mbari-org/deepsea-ai/).
   
-For more details, see the [official documentation](http://docs.mbari.org/deepsea-ai/install).
+For more details, see the [official documentation](http://docs.mbari.org/deepsea-ai/).
+---
+**Updated: 2024-08-14**

@@ -138,3 +138,5 @@ variable SAGEMAKER_ROLE
 ```shell
 export SAGEMAKER_ROLE=arn:aws:iam::12345678911:role/DeepSeaAI
 ```
+---
+**Updated: 2024-08-14**

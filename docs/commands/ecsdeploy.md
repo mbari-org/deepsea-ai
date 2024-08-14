@@ -80,3 +80,5 @@ docker run -v $PWD:/data \
             /data/stacks/megadetector
 ```
 
+---
+**Updated: 2024-08-14**

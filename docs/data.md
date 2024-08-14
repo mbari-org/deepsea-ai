@@ -45,6 +45,16 @@ split
 
 
 Lastly, a plain text file is needed to map the numeric class IDs in the labels/ to names. That is passed in with the **--label-map** option.
+This is a simple text file with the yolo names in the sorted order of the training label indexes.
+
+For example, if you have only two classes Benthocodon and Nanomia which map to classes 0 and 1 respectively, the class file looks like this, 
+with one class per line:
+
+```text
+Benthocodon
+Nanomia
+```
+
 
 ## Why do I need a label-map file?
 
@@ -53,3 +63,5 @@ which contains the model configuration and class values. The YAML file is autoge
 with the help of this simple .txt file.  **Important** the class names should be listed in the same sorted order of the 
 class labels in the YOLO Darknet TXT files. Pay attention to your order as it is a common mistake. 
 
+---
+**Updated: 2024-08-14**

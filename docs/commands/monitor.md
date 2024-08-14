@@ -53,3 +53,6 @@ The Elastic Cluster scales up and down based on the number of videos in the queu
 
 **Please ask if you need to increase the number of videos that can be processed in parallel.** 
   
+
+---
+**Updated: 2024-08-14**
