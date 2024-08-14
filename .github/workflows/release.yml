@@ -29,6 +29,23 @@ jobs:
           pushd docker/deepsea-ai && docker buildx build --push --platform linux/amd64,linux/arm64 -t mbari/deepsea-ai:$RELEASE_VERSION --label IMAGE_URI=mbari/deepsea-ai:$RELEASE_VERSION .
           popd
           pushd docker/ecs-autoscale && docker buildx build --push --platform linux/amd64,linux/arm64 -t mbari/ecs-autoscale:$RELEASE_VERSION --label IMAGE_URI=mbari/ecs-autoscale:$RELEASE_VERSION .
+
+ push_readme_to_dockerhub:
+    runs-on: ubuntu-latest
+    name: Push README to Docker Hub
+    steps:
+      - name: git checkout
+        uses: actions/checkout@v2
+      - name: push README to Dockerhub
+        uses: christian-korneck/update-container-description-action@v1
+        env:
+          DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
+        with:
+          destination_container_repo: mbari/deepsea-ai:latest
+          provider: dockerhub
+          short_description: 'Simplify processing deep sea video in AWS in SageMaker or ECS.'
+          readme_file: 'README.md'
  pypi_release:
     name: Builds Using Poetry and Publishes to PyPI
     runs-on: ubuntu-latest

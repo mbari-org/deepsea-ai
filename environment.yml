@@ -1,4 +1,4 @@
-name: deepsea-ai-dev
+name: deepsea-ai
 channels:
   - conda-forge
 dependencies:
